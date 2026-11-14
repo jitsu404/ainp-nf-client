@@ -105,6 +105,8 @@ function CentreDashboard() {
           <Card title="Your role">
             <div className="kv" style={{ gridTemplateColumns: '1fr' }}>
               <div><span>Role</span><b>{role.label}{user.designation ? ` · ${user.designation}` : ''}</b></div>
+              <div><span>Organization</span><b>{user.organization || '—'}</b></div>
+              <div><span>Email · Mobile</span><b>{user.email}{user.mobile ? ` · ${user.mobile}` : ''}</b></div>
               <div><span>PI of this centre since</span><b>{formatDate(user.createdAt)}</b></div>
               <div><span>Last sign-in</span><b>{formatDateTime(user.lastLoginAt)}</b></div>
             </div>

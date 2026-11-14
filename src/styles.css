@@ -270,3 +270,5 @@ table.entry.ro td { padding: 8px 10px; }
 .error-fallback { max-width: 520px; margin: 40px auto; padding: 28px; text-align: center; display: grid; gap: 10px; justify-items: center; }
 .error-fallback h2 { font-size: 18px; }
 .error-stack { text-align: left; white-space: pre-wrap; max-height: 180px; overflow: auto; font-size: 11px; background: var(--bg); padding: 8px; border-radius: 6px; }
+.form { align-items: start; }
+.form .field { align-content: start; }

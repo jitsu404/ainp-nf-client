@@ -31,6 +31,10 @@ export const TABLE_PAGE_SIZE = 12
 // ── Domain values ────────────────────────────────────────────────────────────
 export const HOST_TYPES = ['SAU', 'ICAR', 'CAU', 'Deemed University', 'Other']
 export const DEFAULT_PI_DESIGNATION = 'Agronomist'
+/** Must match TITLES in icar-nf-backend/src/modules/users/users.names.ts. */
+export const TITLES = ['Dr', 'Prof', 'Mr', 'Mrs', 'Ms']
+/** Default organization for PCU and Super Admin accounts. */
+export const PCU_ORGANIZATION = 'ICAR-Indian Institute of Farming Systems Research, Modipuram'
 
 /** Must match passwordSchema in icar-nf-backend/src/modules/users/users.dto.ts. */
 export const PASSWORD_RULE = {

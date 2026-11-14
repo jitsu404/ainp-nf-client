@@ -3,12 +3,12 @@ import { KeyRound, Power, UserPlus } from 'lucide-react'
 import { useAuth } from '../auth'
 import { AsyncFormModal, CredentialsModal, ErrorNote } from '../components/forms'
 import { Badge, Card, Page, Table, Tabs } from '../components/ui'
-import { PASSWORD_RULE } from '../config/constants'
+import { personFields, temporaryPasswordField } from '../components/personFields'
+import { PCU_ORGANIZATION } from '../config/constants'
 import { formatDateTime } from '../hooks'
 import { toast } from '../lib/toast'
 import { useActivateUser, useCreateUser, useDeactivateUser, useResetPassword, useUsers } from '../queries/users'
 
-const tempPasswordField = { name: 'temporaryPassword', label: 'Temporary password', generate: true, full: true, hint: `${PASSWORD_RULE.text} They must change it at first sign-in.` }
 
 /**
  * PCU and Super Admin accounts. Only roles the signed-in user may manage are shown
@@ -50,6 +50,7 @@ export default function Accounts() {
               { label: 'Name', render: (u) => <b style={{ fontWeight: 550 }}>{u.name}{u.id === me.id && <span className="muted"> (you)</span>}</b> },
               { label: 'Designation', render: (u) => u.designation || '—' },
               { label: 'Email', key: 'email' },
+              { label: 'Mobile', render: (u) => <span className="nowrap">{u.mobile || '—'}</span> },
               { label: 'Last sign-in', render: (u) => <span className="nowrap">{formatDateTime(u.lastLoginAt)}</span> },
               {
                 label: 'Status',
@@ -75,14 +76,11 @@ export default function Accounts() {
         <AsyncFormModal
           title="Add account"
           fields={[
-            { name: 'roleId', label: 'Role', type: 'select', options: roles.map((r) => [r.id, r.label]) },
-            { name: 'name', label: 'Full name' },
-            { name: 'designation', label: 'Designation', required: false, hint: 'e.g. National PI, Principal Scientist' },
-            { name: 'email', label: 'Email (used to sign in)', type: 'email' },
-            { name: 'phone', label: 'Phone', type: 'tel', required: false },
-            tempPasswordField,
+            { name: 'roleId', label: 'Role', type: 'select', options: roles.map((r) => [r.id, r.label]), full: true },
+            ...personFields(),
+            temporaryPasswordField,
           ]}
-          initial={{ roleId }}
+          initial={{ roleId, title: 'Dr', organization: PCU_ORGANIZATION }}
           submitLabel="Create account"
           onSubmit={createUser.mutateAsync}
           onDone={(u, body) => {
@@ -97,7 +95,7 @@ export default function Accounts() {
         <AsyncFormModal
           title={`Reset password for ${modal.user.name}`}
           intro={<p className="muted">They’ll be signed out everywhere and must choose a new password at their next sign-in.</p>}
-          fields={[tempPasswordField]}
+          fields={[temporaryPasswordField]}
           submitLabel="Reset password"
           onSubmit={(body) => resetPassword.mutateAsync({ id: modal.user.id, ...body })}
           onDone={(_r, body) => setCredentials({ name: modal.user.name, email: modal.user.email, password: body.temporaryPassword, title: 'Password reset' })}

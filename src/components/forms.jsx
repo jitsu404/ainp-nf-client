@@ -44,7 +44,13 @@ export function AsyncFormModal({ title, subtitle, fields, initial = {}, onSubmit
     setError(null)
     try {
       // Send only filled-in values; the API treats missing optional fields as "not provided".
-      const body = Object.fromEntries(Object.entries(values).filter(([, v]) => String(v ?? '').trim() !== ''))
+      // A `clearable` field (on edit forms) that was emptied is sent as null, which clears it.
+      const clearable = new Set(fields.filter((f) => f.clearable).map((f) => f.name))
+      const body = Object.fromEntries(
+        Object.entries(values)
+          .map(([k, v]) => [k, String(v ?? '').trim() === '' ? (clearable.has(k) && initial[k] ? null : undefined) : v])
+          .filter(([, v]) => v !== undefined),
+      )
       const result = await onSubmit(body)
       onDone?.(result, body)
       onClose()

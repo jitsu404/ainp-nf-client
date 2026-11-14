@@ -4,27 +4,14 @@ import { ArrowLeft, KeyRound, Pencil, Power, UserPlus, UserRoundCog } from 'luci
 import { useAuth } from '../auth'
 import { AsyncFormModal, CredentialsModal, ErrorNote } from '../components/forms'
 import { Badge, Card, Page, Table } from '../components/ui'
-import { DEFAULT_PI_DESIGNATION, PASSWORD_RULE, ROUTES } from '../config/constants'
+import { personFields, personValues, temporaryPasswordField } from '../components/personFields'
+import { DEFAULT_PI_DESIGNATION, ROUTES } from '../config/constants'
 import { formatDate, formatDateTime } from '../hooks'
 import { toast } from '../lib/toast'
 import { useAssignCentrePi, useCentre, useCentrePis, useUpdateCentre } from '../queries/centres'
 import { useDeactivateUser, useResetPassword, useUpdateUser } from '../queries/users'
 import { centreFields } from './Centres'
 
-const personFields = [
-  { name: 'name', label: 'Full name', hint: 'e.g. Dr. A. K. Sharma' },
-  { name: 'designation', label: 'Designation', required: false, hint: 'e.g. Chief Agronomist' },
-  { name: 'email', label: 'Email (used to sign in)', type: 'email' },
-  { name: 'phone', label: 'Phone', type: 'tel', required: false },
-]
-
-const tempPasswordField = {
-  name: 'temporaryPassword',
-  label: 'Temporary password',
-  generate: true,
-  full: true,
-  hint: `${PASSWORD_RULE.text} They must change it at first sign-in.`,
-}
 
 const initials = (name) => name.replace(/^Dr\.?\s*/i, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
@@ -102,7 +89,11 @@ export default function CentreDetail() {
                   <div>
                     <b style={{ fontSize: 15 }}>{current.name}</b>
                     <div className="muted">{current.designation || 'Centre PI'}</div>
-                    <div className="small" style={{ marginTop: 6 }}>{current.email}{current.phone && ` · ${current.phone}`}</div>
+                    <div className="small" style={{ marginTop: 6 }}>{current.email}{current.mobile && ` · ${current.mobile}`}</div>
+                    {current.organization && <div className="small muted">{current.organization}</div>}
+                    {(!current.title || !current.mobile) && (
+                      <div style={{ marginTop: 6 }}><Badge tone="amber">Details incomplete: use Edit details</Badge></div>
+                    )}
                     <div className="small muted">PI since {formatDate(current.createdAt)} · last sign-in {formatDateTime(current.lastLoginAt)}</div>
                     {current.mustChangePassword && <div style={{ marginTop: 6 }}><Badge tone="amber">Hasn’t signed in and set a password yet</Badge></div>}
                   </div>
@@ -170,8 +161,8 @@ export default function CentreDetail() {
               <b>{current.name}</b> will be removed as Centre PI and can no longer sign in. Their past work stays with the centre.
             </div>
           )}
-          fields={[...personFields, tempPasswordField, ...(current ? [{ name: 'reason', label: 'Reason for replacing the current PI', type: 'textarea', hint: 'e.g. Transferred, retired, new PI nominated by the university' }] : [])]}
-          initial={{ designation: DEFAULT_PI_DESIGNATION }}
+          fields={[...personFields(), temporaryPasswordField, ...(current ? [{ name: 'reason', label: 'Reason for replacing the current PI', type: 'textarea', hint: 'e.g. Transferred, retired, new PI nominated by the university' }] : [])]}
+          initial={{ title: 'Dr', designation: DEFAULT_PI_DESIGNATION, organization: c.host }}
           submitLabel={current ? 'Replace PI' : 'Assign PI'}
           onSubmit={assignPi.mutateAsync}
           onDone={(pi, body) => setCredentials({ name: pi.name, email: pi.email, password: body.temporaryPassword, title: 'Centre PI assigned' })}
@@ -182,8 +173,8 @@ export default function CentreDetail() {
       {modal === 'editPi' && current && (
         <AsyncFormModal
           title={`Edit ${current.name}`}
-          fields={personFields}
-          initial={{ name: current.name, designation: current.designation, email: current.email, phone: current.phone }}
+          fields={personFields({ edit: true })}
+          initial={personValues(current)}
           onSubmit={(body) => updateUser.mutateAsync({ id: current.id, ...body })}
           onDone={() => toast.success('PI details updated')}
           onClose={close}
@@ -194,7 +185,7 @@ export default function CentreDetail() {
         <AsyncFormModal
           title={`Reset password for ${current.name}`}
           intro={<p className="muted">They’ll be signed out everywhere and must choose a new password at their next sign-in.</p>}
-          fields={[tempPasswordField]}
+          fields={[temporaryPasswordField]}
           submitLabel="Reset password"
           onSubmit={(body) => resetPassword.mutateAsync({ id: current.id, ...body })}
           onDone={(_r, body) => setCredentials({ name: current.name, email: current.email, password: body.temporaryPassword, title: 'Password reset' })}
