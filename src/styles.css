@@ -247,3 +247,18 @@ table.entry.ro td { padding: 8px 10px; }
   .sidebar, .topbar, .demo-note, .tabs, .toolbar, .btn, .tricolour { display: none !important; }
   .app { display: block; } .overlay { position: static; background: none; padding: 0; } .modal { box-shadow: none; max-width: none; }
 }
+
+/* ── Live (API-backed) screens ── */
+.field-error { color: var(--red); font-size: 12px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .02em; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.splash { min-height: 100vh; display: grid; place-items: center; color: var(--muted); }
+.login-card form { display: grid; gap: 14px; }
+.login-card .note { margin-bottom: 4px; }
+.pi-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; }
+.pi-card .avatar { width: 44px; height: 44px; font-size: 15px; }
+.muted-row td { color: var(--muted); }
+.user .avatar { color: #fff; font-size: 12px; }
+.kv.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nowrap { white-space: nowrap; }

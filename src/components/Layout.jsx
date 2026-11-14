@@ -1,26 +1,31 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FlaskConical, Briefcase, Mail, IndianRupee, FileCheck2, Users, CalendarCheck, FolderOpen, BarChart3, Database, ShieldCheck, Cloud, Menu, Bell, LogOut } from 'lucide-react'
+import { NavLink, Outlet } from 'react-router-dom'
+import { Building2, LayoutDashboard, LogOut, Menu, ShieldCheck, UserCog } from 'lucide-react'
+import { useAuth } from '../auth'
+import { programme } from '../programme/config'
 
-const Icons = { LayoutDashboard, FlaskConical, Briefcase, Mail, IndianRupee, FileCheck2, Users, CalendarCheck, FolderOpen, BarChart3, Database, ShieldCheck, Cloud, Menu, Bell, LogOut }
-import { useStore } from '../store'
-import { MODULES, ROLE_LIST, ROLES } from '../roles'
-import { usePending } from '../pages/pending'
+/**
+ * Navigation for this phase (Super Admin and PCU). Items appear based on the capabilities and
+ * manageable roles in the session from the API. The prototype's other modules (research, finance,
+ * AUC/SoE …) come back here one by one as each is connected to the backend.
+ */
+export const navItems = (auth) => [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, show: true },
+  { to: '/centres', label: 'Centres & PIs', icon: Building2, show: auth.can('centres.manage') },
+  {
+    to: '/accounts',
+    label: 'PCU accounts',
+    icon: ShieldCheck,
+    show: auth.assignable.some((r) => r.id === 'pc'),
+  },
+  { to: '/account', label: 'My account', icon: UserCog, show: true },
+].filter((item) => item.show)
 
 export default function Layout() {
-  const { programme, role, user, centre, session, setSession, fy, setFy, db } = useStore()
+  const auth = useAuth()
+  const { user, role, logout } = auth
   const [open, setOpen] = useState(false)
-  const navigate = useNavigate()
-  const pending = usePending()
-  const mods = MODULES.filter((m) => role.modules.includes(m.id))
-  const groups = [...new Set(mods.map((m) => m.group))]
-  const initials = user.name.replace(/^Dr\.\s*/, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('')
-
-  const switchRole = (roleId) => {
-    const next = ROLES[roleId]
-    setSession({ roleId, centreId: next.scope === 'centre' ? session.centreId || db.centres[0].id : session.centreId })
-    navigate('/')
-  }
+  const initials = user.name.replace(/^(Dr|Mr|Mrs|Ms)\.?\s*/i, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
   return (
     <div className="app">
@@ -30,20 +35,12 @@ export default function Layout() {
           <div><b>{programme.short}</b><span>{programme.system}<br />ICAR-IIFSR, Modipuram</span></div>
         </div>
         <nav className="nav" onClick={() => setOpen(false)}>
-          {groups.map((g) => (
-            <div key={g}>
-              <h5>{g}</h5>
-              {mods.filter((m) => m.group === g).map((m) => {
-                const Icon = Icons[m.icon]
-                const count = pending.filter((p) => p.module === m.id).length
-                return (
-                  <NavLink key={m.id} to={m.path} end={m.path === '/'}>
-                    <Icon size={17} />{m.label}{count > 0 && m.id !== 'dashboard' && <span className="count">{count}</span>}
-                  </NavLink>
-                )
-              })}
-            </div>
-          ))}
+          <div>
+            <h5>{role.label}</h5>
+            {navItems(auth).map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} end={to === '/'}><Icon size={17} />{label}</NavLink>
+            ))}
+          </div>
         </nav>
         <div className="side-foot">
           <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
@@ -55,24 +52,14 @@ export default function Layout() {
 
       <div className="main">
         <header className="topbar">
-          <button className="icon-btn menu-btn" onClick={() => setOpen(!open)} aria-label="Menu"><Icons.Menu size={20} /></button>
-          <span className="title grow">{centre ? `${centre.name} centre · ${centre.host}` : programme.name}</span>
-          <label className="row small muted" style={{ gap: 6 }}><span className="hide-sm">Financial year</span>
-            <select value={fy} onChange={(e) => setFy(e.target.value)}>{programme.fys.map((y) => <option key={y}>{y}</option>)}</select>
-          </label>
-          <label className="row small muted" style={{ gap: 6 }}><span className="hide-sm">View as</span>
-            <select value={role.id} onChange={(e) => switchRole(e.target.value)}>{ROLE_LIST.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select>
-          </label>
-          <button className="icon-btn" onClick={() => navigate('/')} aria-label="Pending actions">
-            <Icons.Bell size={18} />{pending.length > 0 && <span className="dot">{pending.length}</span>}
-          </button>
+          <button className="icon-btn menu-btn" onClick={() => setOpen(!open)} aria-label="Menu"><Menu size={20} /></button>
+          <span className="title grow">{programme.name}</span>
           <div className="user">
             <span className="avatar">{initials}</span>
-            <div><b>{user.name}</b><span>{role.label}{centre ? ` · ${centre.name}` : ''}</span></div>
-            <button className="icon-btn" onClick={() => { setSession(null); navigate('/') }} aria-label="Sign out" title="Sign out"><Icons.LogOut size={17} /></button>
+            <div><b>{user.name}</b><span>{role.label}</span></div>
+            <button className="icon-btn" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={17} /></button>
           </div>
         </header>
-        <div className="demo-note">First-draft prototype with sample data. Use “View as” to see each role’s screens. Figures, names and reference numbers are illustrative.</div>
         <main className="content"><Outlet /></main>
       </div>
     </div>

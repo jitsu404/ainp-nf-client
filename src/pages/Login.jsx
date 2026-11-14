@@ -1,13 +1,30 @@
 import { useState } from 'react'
-import { LogIn } from 'lucide-react'
-import { useStore } from '../store'
-import { ROLE_LIST, ROLES } from '../roles'
+import { Loader2, LogIn } from 'lucide-react'
+import { useAuth } from '../auth'
+import { ErrorNote } from '../components/forms'
+import { programme } from '../programme/config'
 
 export default function Login() {
-  const { programme, setSession, db } = useStore()
-  const [roleId, setRoleId] = useState('pc')
-  const [centreId, setCentreId] = useState(db.centres[0].id)
-  const role = ROLES[roleId]
+  const { login, notice } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!email || !password || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await login(email.trim(), password)
+    } catch (err) {
+      setError(err)
+      setPassword('')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="login">
@@ -30,23 +47,22 @@ export default function Login() {
         <div className="login-card">
           <span className="eyebrow">{programme.short}</span>
           <h2>Sign in</h2>
-          <div className="field"><label>Role</label></div>
-          <div className="role-grid">
-            {ROLE_LIST.map((r) => (
-              <button key={r.id} className={`role-card ${roleId === r.id ? 'on' : ''}`} onClick={() => setRoleId(r.id)}>
-                <em>{r.level === programme.unit ? 'Coordinating Unit' : r.level}</em><b>{r.label}</b>
-              </button>
-            ))}
-          </div>
-          {role.scope === 'centre' && (
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Centre</label>
-              <select value={centreId} onChange={(e) => setCentreId(e.target.value)}>
-                {db.centres.map((c) => <option key={c.id} value={c.id}>{c.name} – {c.host}</option>)}
-              </select>
+          <form onSubmit={submit} noValidate>
+            {notice && !error && <div className="note warn">{notice}</div>}
+            <ErrorNote error={error} />
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
             </div>
-          )}
-          <button className="btn" onClick={() => setSession({ roleId, centreId })}><LogIn size={16} /> Sign in</button>
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <button className="btn" type="submit" disabled={!email || !password || busy}>
+              {busy ? <Loader2 size={16} className="spin" /> : <LogIn size={16} />} Sign in
+            </button>
+            <p className="muted small">Accounts are created by the Project Coordination Unit. Forgot your password? Ask the PCU to reset it.</p>
+          </form>
         </div>
       </section>
     </div>
