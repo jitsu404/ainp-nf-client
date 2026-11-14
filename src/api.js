@@ -1,6 +1,7 @@
 // Thin client for the icar-nf-backend REST API.
-// The base URL comes from config/constants.js. In development Vite proxies /api to the backend
-// (vite.config.js), so the browser sees one origin and the httpOnly session cookie is sent.
+// The base URL comes from config/constants.js. By default it is '/api/v1' and Vite proxies it to
+// the backend (vite.config.js). A full URL (VITE_API_BASE_URL) also works, provided the backend's
+// CLIENT_ORIGIN is set to this app's origin.
 
 import { API_BASE_URL, PASSWORD_CHANGE_REQUIRED, SESSION_ENDED_CODES } from './config/constants'
 
@@ -37,7 +38,11 @@ async function request(method, path, body) {
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
       method,
-      credentials: 'same-origin',
+      // 'include' so the session cookie is stored and sent even when the API is on another origin
+      // of the same site (e.g. VITE_API_BASE_URL=http://localhost:5000/api/v1, or api.nf.example.in).
+      // The backend allows this only for CLIENT_ORIGIN (CORS with credentials), and SameSite=Strict
+      // still keeps the cookie away from other sites.
+      credentials: 'include',
       headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
