@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth'
 import Layout, { navItems } from './components/Layout'
-import { useStore } from './store'
+import { ROUTES } from './config/constants'
+import { Toaster } from './lib/toast'
 import Accounts from './pages/Accounts'
 import AccountPage, { ForcedPasswordChange } from './pages/ChangePassword'
 import CentreDetail from './pages/CentreDetail'
@@ -15,7 +16,6 @@ import Login from './pages/Login'
 
 export default function App() {
   const auth = useAuth()
-  const { toasts } = useStore()
 
   let content
   if (auth.status === 'loading') content = <div className="splash">Loading…</div>
@@ -26,12 +26,12 @@ export default function App() {
     content = (
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          {allowed.has('/centres') && <Route path="/centres" element={<Centres />} />}
-          {allowed.has('/centres') && <Route path="/centres/:id" element={<CentreDetail />} />}
-          {allowed.has('/accounts') && <Route path="/accounts" element={<Accounts />} />}
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path={ROUTES.home} element={<Home />} />
+          {allowed.has(ROUTES.centres) && <Route path={ROUTES.centres} element={<Centres />} />}
+          {allowed.has(ROUTES.centres) && <Route path={ROUTES.centre(':id')} element={<CentreDetail />} />}
+          {allowed.has(ROUTES.accounts) && <Route path={ROUTES.accounts} element={<Accounts />} />}
+          <Route path={ROUTES.myAccount} element={<AccountPage />} />
+          <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
         </Route>
       </Routes>
     )
@@ -41,7 +41,7 @@ export default function App() {
     <>
       <div className="tricolour" />
       {content}
-      <div className="toasts">{toasts.map((t) => <div key={t.id} className="toast">{t.text}</div>)}</div>
+      <Toaster />
     </>
   )
 }

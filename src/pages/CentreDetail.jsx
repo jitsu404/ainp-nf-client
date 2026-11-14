@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, KeyRound, Pencil, Power, UserPlus, UserRoundCog } from 'lucide-react'
-import { centresApi, usersApi } from '../api'
 import { useAuth } from '../auth'
 import { AsyncFormModal, CredentialsModal, ErrorNote } from '../components/forms'
 import { Badge, Card, Page, Table } from '../components/ui'
-import { formatDate, formatDateTime, useLoad } from '../hooks'
-import { useStore } from '../store'
+import { DEFAULT_PI_DESIGNATION, PASSWORD_RULE, ROUTES } from '../config/constants'
+import { formatDate, formatDateTime } from '../hooks'
+import { toast } from '../lib/toast'
+import { useAssignCentrePi, useCentre, useCentrePis, useUpdateCentre } from '../queries/centres'
+import { useDeactivateUser, useResetPassword, useUpdateUser } from '../queries/users'
 import { centreFields } from './Centres'
 
 const personFields = [
@@ -19,44 +21,49 @@ const personFields = [
 const tempPasswordField = {
   name: 'temporaryPassword',
   label: 'Temporary password',
-  type: 'text',
   generate: true,
   full: true,
-  hint: 'At least 10 characters with a letter and a digit. They must change it at first sign-in.',
+  hint: `${PASSWORD_RULE.text} They must change it at first sign-in.`,
 }
+
+const initials = (name) => name.replace(/^Dr\.?\s*/i, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
 export default function CentreDetail() {
   const { id } = useParams()
   const { can } = useAuth()
-  const { notify } = useStore()
   const [modal, setModal] = useState(null) // which dialog is open
   const [credentials, setCredentials] = useState(null)
 
-  const centre = useLoad(() => centresApi.get(id), [id])
-  const pis = useLoad(() => centresApi.pis(id), [id])
-  const reload = () => { centre.reload(); pis.reload() }
+  const centre = useCentre(id)
+  const pis = useCentrePis(id)
+  const updateCentre = useUpdateCentre(id)
+  const assignPi = useAssignCentrePi(id)
+  const updateUser = useUpdateUser()
+  const resetPassword = useResetPassword()
+  const deactivateUser = useDeactivateUser()
 
   const c = centre.data
   const current = (pis.data ?? []).find((p) => p.isActive)
   const past = (pis.data ?? []).filter((p) => !p.isActive)
   const manage = can('centres.manage')
+  const close = () => setModal(null)
 
+  // 4xx errors (e.g. 404 for an unknown or out-of-scope centre) come back here; 5xx and network
+  // failures go to the page's error boundary instead (lib/queryClient.js).
   if (centre.error) {
     return (
       <Page title="Centre">
-        <div className="stack"><ErrorNote error={centre.error} /><Link to="/centres" className="btn ghost">Back to centres</Link></div>
+        <div className="stack"><ErrorNote error={centre.error} /><Link to={ROUTES.centres} className="btn ghost">Back to centres</Link></div>
       </Page>
     )
   }
   if (!c) return <Page title="Centre"><p className="muted">Loading…</p></Page>
 
-  const close = () => setModal(null)
-
   return (
     <Page
       title={<span className="row" style={{ gap: 10 }}>{c.name} <Badge tone="blue">{c.code}</Badge><Badge>{c.isActive ? 'Active' : 'Inactive'}</Badge></span>}
       actions={<>
-        <Link to="/centres" className="btn ghost"><ArrowLeft size={15} /> Centres</Link>
+        <Link to={ROUTES.centres} className="btn ghost"><ArrowLeft size={15} /> Centres</Link>
         {manage && <button className="btn ghost" onClick={() => setModal('edit')}><Pencil size={15} /> Edit centre</button>}
         {manage && (
           <button className={`btn ${c.isActive ? 'danger' : 'ghost'}`} onClick={() => setModal('toggleCentre')}>
@@ -91,7 +98,7 @@ export default function CentreDetail() {
             {current ? (
               <div className="stack" style={{ gap: 12 }}>
                 <div className="pi-card">
-                  <span className="avatar">{current.name.replace(/^Dr\.?\s*/i, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span>
+                  <span className="avatar">{initials(current.name)}</span>
                   <div>
                     <b style={{ fontSize: 15 }}>{current.name}</b>
                     <div className="muted">{current.designation || 'Centre PI'}</div>
@@ -110,7 +117,7 @@ export default function CentreDetail() {
               </div>
             ) : (
               <div className="empty" style={{ padding: 18 }}>
-                {pis.loading ? 'Loading…' : c.isActive ? 'No Centre PI assigned. Assign the agronomist who will lead this centre.' : 'This centre is inactive.'}
+                {pis.isPending ? 'Loading…' : c.isActive ? 'No Centre PI assigned. Assign the agronomist who will lead this centre.' : 'This centre is inactive.'}
               </div>
             )}
           </Card>
@@ -137,32 +144,23 @@ export default function CentreDetail() {
           title={`Edit ${c.name}`}
           fields={centreFields(true)}
           initial={{ code: c.code, name: c.name, host: c.host, hostShort: c.hostShort, hostType: c.hostType, city: c.city, state: c.state, pincode: c.pincode, zone: c.zone, type: c.type }}
-          onSubmit={(body) => centresApi.update(id, body)}
-          onDone={() => { notify('Centre updated'); reload() }}
+          onSubmit={updateCentre.mutateAsync}
+          onDone={() => toast.success('Centre updated')}
           onClose={close}
         />
       )}
 
-      {modal === 'toggleCentre' && (c.isActive ? (
+      {modal === 'toggleCentre' && (
         <AsyncFormModal
-          title={`Deactivate ${c.name}?`}
-          intro={<div className="note warn">The centre is hidden from active lists. Its records and its PI’s account are kept; the PI can still sign in.</div>}
+          title={c.isActive ? `Deactivate ${c.name}?` : `Reactivate ${c.name}?`}
+          intro={c.isActive && <div className="note warn">The centre is hidden from active lists. Its records and its PI’s account are kept; the PI can still sign in.</div>}
           fields={[]}
-          submitLabel="Deactivate centre"
-          onSubmit={() => centresApi.update(id, { isActive: false })}
-          onDone={() => { notify('Centre deactivated'); reload() }}
+          submitLabel={c.isActive ? 'Deactivate centre' : 'Reactivate centre'}
+          onSubmit={() => updateCentre.mutateAsync({ isActive: !c.isActive })}
+          onDone={() => toast.success(c.isActive ? 'Centre deactivated' : 'Centre reactivated')}
           onClose={close}
         />
-      ) : (
-        <AsyncFormModal
-          title={`Reactivate ${c.name}?`}
-          fields={[]}
-          submitLabel="Reactivate centre"
-          onSubmit={() => centresApi.update(id, { isActive: true })}
-          onDone={() => { notify('Centre reactivated'); reload() }}
-          onClose={close}
-        />
-      ))}
+      )}
 
       {modal === 'assign' && (
         <AsyncFormModal
@@ -173,13 +171,10 @@ export default function CentreDetail() {
             </div>
           )}
           fields={[...personFields, tempPasswordField, ...(current ? [{ name: 'reason', label: 'Reason for replacing the current PI', type: 'textarea', hint: 'e.g. Transferred, retired, new PI nominated by the university' }] : [])]}
-          initial={{ designation: 'Agronomist' }}
+          initial={{ designation: DEFAULT_PI_DESIGNATION }}
           submitLabel={current ? 'Replace PI' : 'Assign PI'}
-          onSubmit={async (body) => (await centresApi.assignPi(id, body)).data}
-          onDone={(pi, body) => {
-            setCredentials({ name: pi.name, email: pi.email, password: body.temporaryPassword, title: 'Centre PI assigned' })
-            reload()
-          }}
+          onSubmit={assignPi.mutateAsync}
+          onDone={(pi, body) => setCredentials({ name: pi.name, email: pi.email, password: body.temporaryPassword, title: 'Centre PI assigned' })}
           onClose={close}
         />
       )}
@@ -189,8 +184,8 @@ export default function CentreDetail() {
           title={`Edit ${current.name}`}
           fields={personFields}
           initial={{ name: current.name, designation: current.designation, email: current.email, phone: current.phone }}
-          onSubmit={(body) => usersApi.update(current.id, body)}
-          onDone={() => { notify('PI details updated'); reload() }}
+          onSubmit={(body) => updateUser.mutateAsync({ id: current.id, ...body })}
+          onDone={() => toast.success('PI details updated')}
           onClose={close}
         />
       )}
@@ -201,7 +196,7 @@ export default function CentreDetail() {
           intro={<p className="muted">They’ll be signed out everywhere and must choose a new password at their next sign-in.</p>}
           fields={[tempPasswordField]}
           submitLabel="Reset password"
-          onSubmit={(body) => usersApi.resetPassword(current.id, body.temporaryPassword)}
+          onSubmit={(body) => resetPassword.mutateAsync({ id: current.id, ...body })}
           onDone={(_r, body) => setCredentials({ name: current.name, email: current.email, password: body.temporaryPassword, title: 'Password reset' })}
           onClose={close}
         />
@@ -213,8 +208,8 @@ export default function CentreDetail() {
           intro={<div className="note warn">Their account is deactivated and they can no longer sign in. The centre will have no PI until you assign one.</div>}
           fields={[{ name: 'reason', label: 'Reason', type: 'textarea' }]}
           submitLabel="Remove PI"
-          onSubmit={(body) => usersApi.deactivate(current.id, body.reason)}
-          onDone={() => { notify('Centre PI removed'); reload() }}
+          onSubmit={(body) => deactivateUser.mutateAsync({ id: current.id, reason: body.reason })}
+          onDone={() => toast.success('Centre PI removed')}
           onClose={close}
         />
       )}

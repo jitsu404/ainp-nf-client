@@ -3,10 +3,11 @@ import { KeyRound, Loader2 } from 'lucide-react'
 import { useAuth } from '../auth'
 import { ErrorNote } from '../components/forms'
 import { Card, Page } from '../components/ui'
+import { PASSWORD_RULE } from '../config/constants'
 import { programme } from '../programme/config'
 
-const RULE = 'At least 10 characters, with a letter and a digit.'
-const meetsRule = (p) => p.length >= 10 && /[A-Za-z]/.test(p) && /\d/.test(p)
+const RULE = PASSWORD_RULE.text
+const meetsRule = PASSWORD_RULE.test
 
 function PasswordForm({ onDone }) {
   const { changePassword } = useAuth()

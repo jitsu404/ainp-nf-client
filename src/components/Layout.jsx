@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { Building2, LayoutDashboard, LogOut, Menu, ShieldCheck, UserCog } from 'lucide-react'
 import { useAuth } from '../auth'
+import { ROUTES } from '../config/constants'
 import { programme } from '../programme/config'
+import { PageErrorBoundary } from './ErrorBoundaries'
 
 /**
  * Navigation for this phase (Super Admin and PCU). Items appear based on the capabilities and
@@ -10,15 +12,15 @@ import { programme } from '../programme/config'
  * AUC/SoE …) come back here one by one as each is connected to the backend.
  */
 export const navItems = (auth) => [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, show: true },
-  { to: '/centres', label: 'Centres & PIs', icon: Building2, show: auth.can('centres.manage') },
+  { to: ROUTES.home, label: 'Dashboard', icon: LayoutDashboard, show: true },
+  { to: ROUTES.centres, label: 'Centres & PIs', icon: Building2, show: auth.can('centres.manage') },
   {
-    to: '/accounts',
+    to: ROUTES.accounts,
     label: 'PCU accounts',
     icon: ShieldCheck,
     show: auth.assignable.some((r) => r.id === 'pc'),
   },
-  { to: '/account', label: 'My account', icon: UserCog, show: true },
+  { to: ROUTES.myAccount, label: 'My account', icon: UserCog, show: true },
 ].filter((item) => item.show)
 
 export default function Layout() {
@@ -38,7 +40,7 @@ export default function Layout() {
           <div>
             <h5>{role.label}</h5>
             {navItems(auth).map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} end={to === '/'}><Icon size={17} />{label}</NavLink>
+              <NavLink key={to} to={to} end={to === ROUTES.home}><Icon size={17} />{label}</NavLink>
             ))}
           </div>
         </nav>
@@ -60,7 +62,10 @@ export default function Layout() {
             <button className="icon-btn" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={17} /></button>
           </div>
         </header>
-        <main className="content"><Outlet /></main>
+        <main className="content">
+          {/* A failing page shows a fallback here; the sidebar and topbar keep working. */}
+          <PageErrorBoundary><Outlet /></PageErrorBoundary>
+        </main>
       </div>
     </div>
   )

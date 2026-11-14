@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { KeyRound, Power, UserPlus } from 'lucide-react'
-import { usersApi } from '../api'
 import { useAuth } from '../auth'
 import { AsyncFormModal, CredentialsModal, ErrorNote } from '../components/forms'
 import { Badge, Card, Page, Table, Tabs } from '../components/ui'
-import { formatDateTime, useLoad } from '../hooks'
-import { useStore } from '../store'
+import { PASSWORD_RULE } from '../config/constants'
+import { formatDateTime } from '../hooks'
+import { toast } from '../lib/toast'
+import { useActivateUser, useCreateUser, useDeactivateUser, useResetPassword, useUsers } from '../queries/users'
+
+const tempPasswordField = { name: 'temporaryPassword', label: 'Temporary password', generate: true, full: true, hint: `${PASSWORD_RULE.text} They must change it at first sign-in.` }
 
 /**
  * PCU and Super Admin accounts. Only roles the signed-in user may manage are shown
@@ -14,15 +17,19 @@ import { useStore } from '../store'
  */
 export default function Accounts() {
   const { assignable, user: me } = useAuth()
-  const { notify } = useStore()
   // PCU first: that is what this page is mostly for.
   const roles = assignable.filter((r) => r.id !== 'pi').sort((a, b) => (a.id === 'pc' ? -1 : b.id === 'pc' ? 1 : 0))
   const [roleId, setRoleId] = useState(roles[0]?.id ?? 'pc')
   const [modal, setModal] = useState(null) // { type, user? }
   const [credentials, setCredentials] = useState(null)
 
-  const users = useLoad(() => usersApi.list({ roleId, limit: 100, sort: 'name' }), [roleId])
-  const rows = users.data ?? []
+  const users = useUsers({ roleId })
+  const createUser = useCreateUser()
+  const resetPassword = useResetPassword()
+  const deactivateUser = useDeactivateUser()
+  const activateUser = useActivateUser()
+
+  const rows = users.data?.data ?? []
   const close = () => setModal(null)
   const roleLabel = roles.find((r) => r.id === roleId)?.label ?? ''
 
@@ -38,7 +45,7 @@ export default function Accounts() {
           <Tabs value={roleId} onChange={setRoleId} tabs={roles.map((r) => [r.id, r.label])} />
           <Table
             rows={rows}
-            empty={users.loading ? 'Loading…' : `No ${roleLabel} accounts yet.`}
+            empty={users.isPending ? 'Loading…' : `No ${roleLabel} accounts yet.`}
             columns={[
               { label: 'Name', render: (u) => <b style={{ fontWeight: 550 }}>{u.name}{u.id === me.id && <span className="muted"> (you)</span>}</b> },
               { label: 'Designation', render: (u) => u.designation || '—' },
@@ -73,15 +80,14 @@ export default function Accounts() {
             { name: 'designation', label: 'Designation', required: false, hint: 'e.g. National PI, Principal Scientist' },
             { name: 'email', label: 'Email (used to sign in)', type: 'email' },
             { name: 'phone', label: 'Phone', type: 'tel', required: false },
-            { name: 'temporaryPassword', label: 'Temporary password', generate: true, full: true, hint: 'They must change it at first sign-in.' },
+            tempPasswordField,
           ]}
           initial={{ roleId }}
           submitLabel="Create account"
-          onSubmit={async (body) => (await usersApi.create(body)).data}
+          onSubmit={createUser.mutateAsync}
           onDone={(u, body) => {
             setCredentials({ name: u.name, email: u.email, password: body.temporaryPassword })
             setRoleId(u.roleId)
-            users.reload()
           }}
           onClose={close}
         />
@@ -91,9 +97,9 @@ export default function Accounts() {
         <AsyncFormModal
           title={`Reset password for ${modal.user.name}`}
           intro={<p className="muted">They’ll be signed out everywhere and must choose a new password at their next sign-in.</p>}
-          fields={[{ name: 'temporaryPassword', label: 'Temporary password', generate: true, full: true }]}
+          fields={[tempPasswordField]}
           submitLabel="Reset password"
-          onSubmit={(body) => usersApi.resetPassword(modal.user.id, body.temporaryPassword)}
+          onSubmit={(body) => resetPassword.mutateAsync({ id: modal.user.id, ...body })}
           onDone={(_r, body) => setCredentials({ name: modal.user.name, email: modal.user.email, password: body.temporaryPassword, title: 'Password reset' })}
           onClose={close}
         />
@@ -105,8 +111,8 @@ export default function Accounts() {
           intro={<div className="note warn">They can no longer sign in. Their account and everything they recorded are kept.</div>}
           fields={[{ name: 'reason', label: 'Reason', type: 'textarea' }]}
           submitLabel="Deactivate"
-          onSubmit={(body) => usersApi.deactivate(modal.user.id, body.reason)}
-          onDone={() => { notify(`${modal.user.name} deactivated`); users.reload() }}
+          onSubmit={(body) => deactivateUser.mutateAsync({ id: modal.user.id, reason: body.reason })}
+          onDone={() => toast.success(`${modal.user.name} deactivated`)}
           onClose={close}
         />
       )}
@@ -116,8 +122,8 @@ export default function Accounts() {
           title={`Reactivate ${modal.user.name}?`}
           fields={[]}
           submitLabel="Reactivate"
-          onSubmit={() => usersApi.activate(modal.user.id)}
-          onDone={() => { notify(`${modal.user.name} reactivated`); users.reload() }}
+          onSubmit={() => activateUser.mutateAsync({ id: modal.user.id })}
+          onDone={() => toast.success(`${modal.user.name} reactivated`)}
           onClose={close}
         />
       )}

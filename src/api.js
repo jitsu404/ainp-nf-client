@@ -1,8 +1,8 @@
 // Thin client for the icar-nf-backend REST API.
-// In development Vite proxies /api to the backend (vite.config.js), so the browser sees one origin
-// and the httpOnly session cookie (SameSite=Strict) is sent automatically.
+// The base URL comes from config/constants.js. In development Vite proxies /api to the backend
+// (vite.config.js), so the browser sees one origin and the httpOnly session cookie is sent.
 
-const BASE = '/api/v1'
+import { API_BASE_URL, PASSWORD_CHANGE_REQUIRED, SESSION_ENDED_CODES } from './config/constants'
 
 /** An error response from the API: { code, message, details, requestId, status }. */
 export class ApiError extends Error {
@@ -13,22 +13,29 @@ export class ApiError extends Error {
     this.code = code
     this.details = details
     this.requestId = requestId
+    /** Set once the auth layer has dealt with it, so the global handler doesn't report it again. */
+    this.handled = false
   }
 
   /** Field-level messages from a 400 VALIDATION_ERROR, e.g. { email: ['Invalid email'] }. */
   get fieldErrors() {
     return this.details?.body?.fieldErrors ?? this.details?.query?.fieldErrors ?? {}
   }
+
+  /** True when the session is over or blocked; the auth layer handles these. */
+  get isSessionError() {
+    return SESSION_ENDED_CODES.includes(this.code) || this.code === PASSWORD_CHANGE_REQUIRED
+  }
 }
 
 // Lets the auth layer react when the session ends or a password change becomes required.
-let onAuthError = () => {}
-export const setAuthErrorHandler = (fn) => { onAuthError = fn }
+let onSessionError = () => {}
+export const setSessionErrorHandler = (fn) => { onSessionError = fn }
 
 async function request(method, path, body) {
   let res
   try {
-    res = await fetch(`${BASE}${path}`, {
+    res = await fetch(`${API_BASE_URL}${path}`, {
       method,
       credentials: 'same-origin',
       headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
@@ -43,8 +50,11 @@ async function request(method, path, body) {
 
   if (!res.ok || !json?.success) {
     const error = new ApiError(res.status, json?.error ?? { message: `Request failed (${res.status})` })
-    const authCodes = ['AUTH_REQUIRED', 'INVALID_TOKEN', 'TOKEN_EXPIRED', 'SESSION_EXPIRED', 'PASSWORD_CHANGE_REQUIRED']
-    if (authCodes.includes(error.code) && !path.startsWith('/auth/')) onAuthError(error)
+    // Auth endpoints report their own errors (e.g. wrong password on the sign-in form).
+    if (error.isSessionError && !path.startsWith('/auth/')) {
+      error.handled = true
+      onSessionError(error)
+    }
     throw error
   }
   return { data: json.data, meta: json.meta }
@@ -61,7 +71,7 @@ export const api = {
   patch: (path, body) => request('PATCH', path, body),
 }
 
-// ── Endpoints used by the app ──────────────────────────────────────────────
+// ── Endpoints ────────────────────────────────────────────────────────────────
 export const authApi = {
   me: () => api.get('/auth/me'),
   login: (email, password) => api.post('/auth/login', { email, password }),

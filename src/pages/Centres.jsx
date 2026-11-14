@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
-import { centresApi } from '../api'
+import { Loader2, Plus, Search } from 'lucide-react'
 import { useAuth } from '../auth'
 import { AsyncFormModal, ErrorNote } from '../components/forms'
 import { Badge, Card, Page, Select, Table } from '../components/ui'
-import { useDebounced, useLoad } from '../hooks'
+import { HOST_TYPES, ROUTES, TABLE_PAGE_SIZE } from '../config/constants'
+import { useDebounced } from '../hooks'
 import { programme } from '../programme/config'
-
-export const HOST_TYPES = ['SAU', 'ICAR', 'CAU', 'Deemed University', 'Other']
+import { useCentres, useCreateCentre } from '../queries/centres'
 
 /** Fields shared by "Add centre" and "Edit centre". */
 export const centreFields = (isEdit) => [
@@ -32,8 +31,9 @@ export default function Centres() {
   const [adding, setAdding] = useState(false)
   const q = useDebounced(search)
 
-  const centres = useLoad(() => centresApi.list({ limit: 100, sort: 'name', search: q, isActive: status }), [q, status])
-  const rows = centres.data ?? []
+  const centres = useCentres({ search: q, isActive: status })
+  const createCentre = useCreateCentre()
+  const rows = centres.data?.data ?? []
 
   return (
     <Page title="Centres & Centre PIs"
@@ -47,13 +47,16 @@ export default function Centres() {
             </label>
             <Select value={status} onChange={setStatus} options={[['true', 'Active centres'], ['false', 'Inactive centres']]} all="All centres" />
             <span className="grow" />
-            <span className="muted small">{centres.loading ? 'Loading…' : `${rows.length} centre${rows.length === 1 ? '' : 's'}`}</span>
+            <span className="muted small row" style={{ gap: 6 }}>
+              {centres.isFetching && <Loader2 size={13} className="spin" />}
+              {centres.isPending ? 'Loading…' : `${rows.length} centre${rows.length === 1 ? '' : 's'}`}
+            </span>
           </div>
           <Table
             rows={rows}
-            pageSize={12}
-            onRow={(c) => navigate(`/centres/${c.id}`)}
-            empty={centres.loading ? 'Loading…' : 'No centres match.'}
+            pageSize={TABLE_PAGE_SIZE}
+            onRow={(c) => navigate(ROUTES.centre(c.id))}
+            empty={centres.isPending ? 'Loading…' : 'No centres match.'}
             columns={[
               { label: 'Code', key: 'code' },
               { label: 'Centre', render: (c) => <b style={{ fontWeight: 550 }}>{c.name}</b> },
@@ -73,8 +76,8 @@ export default function Centres() {
           fields={centreFields(false)}
           initial={{ type: programme.centreTypes[0] }}
           submitLabel="Add centre"
-          onSubmit={async (body) => (await centresApi.create(body)).data}
-          onDone={(centre) => navigate(`/centres/${centre.id}`)}
+          onSubmit={createCentre.mutateAsync}
+          onDone={(centre) => navigate(ROUTES.centre(centre.id))}
           onClose={() => setAdding(false)}
         />
       )}
