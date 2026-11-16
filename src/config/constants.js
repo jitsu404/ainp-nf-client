@@ -44,9 +44,21 @@ export const PASSWORD_RULE = {
 }
 
 // Research. Each must match the backend model of the same name.
-export const EXPERIMENT_DESIGNS = ['RCBD', 'Factorial RBD', 'Split plot', 'Non-replicated', 'Survey']
-/** Designs without replications (data is one value per treatment). */
-export const UNREPLICATED_DESIGNS = ['Non-replicated', 'Survey']
+// Designs as named in the AINP-NF Annual Report. Must match EXPERIMENT_DESIGNS and the two lists
+// below in icar-nf-backend/src/modules/experiments/experiments.model.ts.
+export const EXPERIMENT_DESIGNS = ['RBD', 'Split plot', 'Strip plot', 'Non-replicated', 'Farmer participatory', 'Survey']
+export const DESIGN_HINTS = {
+  RBD: 'Randomized (complete) block design. Treatment ANOVA, CD and CV are calculated.',
+  'Split plot': 'Main plots and sub plots, replicated. Treatment means are shown; ANOVA is not available yet.',
+  'Strip plot': 'Replicated or un-replicated. Treatment means are shown; ANOVA is not available yet.',
+  'Non-replicated': 'Large plots, one value per treatment.',
+  'Farmer participatory': 'Validation in farmers’ fields (e.g. SCSP/STC). One value per treatment.',
+  Survey: 'Characterization survey (e.g. geo-referenced). One value per item.',
+}
+/** At least 2 replications. */
+export const DESIGNS_NEEDING_REPLICATIONS = ['RBD', 'Split plot']
+/** Never replicated (data is one value per treatment). Strip plot may be either. */
+export const UNREPLICATED_DESIGNS = ['Non-replicated', 'Farmer participatory', 'Survey']
 export const EXPERIMENT_STATUSES = ['Draft', 'Active', 'Closed']
 export const TRIAL_STATUSES = ['Setup', 'Running', 'Completed']
 export const SHEET_STATUSES = ['Draft', 'Submitted', 'Returned', 'Approved']

@@ -4,7 +4,7 @@ import { Loader2, Plus, Search } from 'lucide-react'
 import { useAuth } from '../auth'
 import { ErrorNote, SaveModal } from '../components/forms'
 import { Badge, Card, Page, Select, Table } from '../components/ui'
-import { EXPERIMENT_DESIGNS, EXPERIMENT_STATUSES, ROUTES, TABLE_PAGE_SIZE, UNREPLICATED_DESIGNS } from '../config/constants'
+import { DESIGN_HINTS, DESIGNS_NEEDING_REPLICATIONS, EXPERIMENT_DESIGNS, EXPERIMENT_STATUSES, ROUTES, TABLE_PAGE_SIZE, UNREPLICATED_DESIGNS } from '../config/constants'
 import { useDebounced } from '../hooks'
 import { toast } from '../lib/toast'
 import { useFinancialYears, useMasterOptions } from '../queries/masters'
@@ -78,8 +78,8 @@ export function ExperimentDetailsModal({ experiment, save, onClose, onCreated })
     code: experiment?.code ?? '',
     title: experiment?.title ?? '',
     programmeCode: experiment?.programmeCode ?? '',
-    design: experiment?.design ?? 'RCBD',
-    replications: experiment?.replications ?? 3,
+    design: experiment?.design ?? 'RBD',
+    replications: experiment ? experiment.replications ?? '' : 3,
     startYear: experiment?.startYear ?? '',
     seasons: experiment?.seasons ?? [],
     objectives: (experiment?.objectives ?? []).join('\n'),
@@ -87,6 +87,10 @@ export function ExperimentDetailsModal({ experiment, save, onClose, onCreated })
   }))
   const set = (k, value) => setV((s) => ({ ...s, [k]: value }))
   const replicated = !UNREPLICATED_DESIGNS.includes(v.design)
+  const needsReps = DESIGNS_NEEDING_REPLICATIONS.includes(v.design)
+  const reps = String(v.replications ?? '').trim()
+  // Strip plot may be un-replicated (empty); otherwise replicated designs need 2 or more.
+  const repsOk = !replicated ? true : reps === '' ? !needsReps : Number.isInteger(Number(reps)) && Number(reps) >= 2 && Number(reps) <= 20
   const startYear = v.startYear || current
   const locked = experiment?.dataLocked
 
@@ -101,7 +105,7 @@ export function ExperimentDetailsModal({ experiment, save, onClose, onCreated })
     // Once data exists the design and replications are frozen; don't send them unchanged.
     if (!locked) {
       b.design = v.design
-      b.replications = replicated ? Number(v.replications) : null
+      b.replications = replicated && reps !== '' ? Number(reps) : null
     }
     if (experiment) b.status = v.status
     else b.code = v.code.trim()
@@ -119,7 +123,7 @@ export function ExperimentDetailsModal({ experiment, save, onClose, onCreated })
     }
   }
 
-  const ready = v.title.trim().length >= 5 && v.programmeCode && startYear && (experiment || v.code.trim()) && (!replicated || Number(v.replications) >= 2)
+  const ready = v.title.trim().length >= 5 && v.programmeCode && startYear && (experiment || v.code.trim()) && repsOk
 
   return (
     <SaveModal title={experiment ? `Edit ${experiment.code}` : 'New experiment'}
@@ -146,10 +150,12 @@ export function ExperimentDetailsModal({ experiment, save, onClose, onCreated })
           <select id="x-design" value={v.design} disabled={locked} onChange={(e) => set('design', e.target.value)}>
             {EXPERIMENT_DESIGNS.map((d) => <option key={d}>{d}</option>)}
           </select>
+          <span className="muted small">{DESIGN_HINTS[v.design]}</span>
         </div>
         <div className="field"><label htmlFor="x-reps">Replications</label>
           <input id="x-reps" type="number" min={2} max={20} value={replicated ? v.replications ?? '' : ''} disabled={!replicated || locked}
-            onChange={(e) => set('replications', e.target.value)} placeholder={replicated ? '' : 'Not replicated'} />
+            onChange={(e) => set('replications', e.target.value)} placeholder={!replicated ? 'Not replicated' : needsReps ? '' : 'None (un-replicated)'} />
+          {replicated && !repsOk && <span className="field-error">{needsReps ? `${v.design} needs 2–20 replications.` : 'Leave empty, or enter 2–20.'}</span>}
         </div>
         <div className="field"><label htmlFor="x-year">Start year</label>
           <select id="x-year" value={startYear} onChange={(e) => set('startYear', e.target.value)}>
