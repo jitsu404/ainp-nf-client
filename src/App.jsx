@@ -7,12 +7,18 @@ import Accounts from './pages/Accounts'
 import AccountPage, { ForcedPasswordChange } from './pages/ChangePassword'
 import CentreDetail from './pages/CentreDetail'
 import Centres from './pages/Centres'
+import ExperimentDetail from './pages/ExperimentDetail'
+import Experiments from './pages/Experiments'
 import Home from './pages/Home'
 import Login from './pages/Login'
+import Masters from './pages/Masters'
+import SheetDetail from './pages/SheetDetail'
+import Sheets from './pages/Sheets'
+import TrialDetail from './pages/TrialDetail'
 
-// Live app for this phase: Super Admin and PCU sign in with real accounts and manage centres and
-// Centre PIs through the API. The prototype's other screens (src/pages/Research…, Finance…) stay
-// in the codebase and are brought back as each module gets its backend.
+// Live app: centres and accounts, masters, and research (experiments → trials → observation
+// sheets), all through the API. The prototype's other screens (Finance, AUC/SoE …) stay in the
+// codebase and are brought back as each module gets its backend.
 
 export default function App() {
   const auth = useAuth()
@@ -30,6 +36,16 @@ export default function App() {
           {allowed.has(ROUTES.centres) && <Route path={ROUTES.centres} element={<Centres />} />}
           {allowed.has(ROUTES.centres) && <Route path={ROUTES.centre(':id')} element={<CentreDetail />} />}
           {allowed.has(ROUTES.accounts) && <Route path={ROUTES.accounts} element={<Accounts />} />}
+          {allowed.has(ROUTES.masters) && <Route path={ROUTES.masters} element={<Masters />} />}
+          {allowed.has(ROUTES.experiments) && <>
+            <Route path={ROUTES.experiments} element={<Experiments />} />
+            <Route path={ROUTES.experiment(':id')} element={<ExperimentDetail />} />
+            <Route path={ROUTES.trial(':id')} element={<TrialDetail />} />
+          </>}
+          {allowed.has(ROUTES.sheets) && <>
+            <Route path={ROUTES.sheets} element={<Sheets />} />
+            <Route path={ROUTES.sheet(':id')} element={<SheetDetail />} />
+          </>}
           <Route path={ROUTES.myAccount} element={<AccountPage />} />
           <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
         </Route>

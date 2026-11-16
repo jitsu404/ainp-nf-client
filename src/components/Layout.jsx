@@ -1,18 +1,23 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { Building2, LayoutDashboard, LogOut, Menu, ShieldCheck, UserCog } from 'lucide-react'
+import { Building2, ClipboardList, Database, FlaskConical, LayoutDashboard, LogOut, Menu, ShieldCheck, UserCog } from 'lucide-react'
 import { useAuth } from '../auth'
 import { ROUTES } from '../config/constants'
 import { programme } from '../programme/config'
 import { PageErrorBoundary } from './ErrorBoundaries'
 
 /**
- * Navigation for this phase (Super Admin and PCU). Items appear based on the capabilities and
- * manageable roles in the session from the API. The prototype's other modules (research, finance,
+ * Navigation. Items appear based on the capabilities and manageable roles in the session from the
+ * API; App.jsx only creates routes for the items shown. The prototype's other modules (finance,
  * AUC/SoE …) come back here one by one as each is connected to the backend.
  */
+const researchUser = (auth) =>
+  ['research.config', 'research.enter', 'research.review', 'research.approve'].some((c) => auth.can(c))
+
 export const navItems = (auth) => [
   { to: ROUTES.home, label: 'Dashboard', icon: LayoutDashboard, show: true },
+  { to: ROUTES.experiments, label: 'Experiments', icon: FlaskConical, show: researchUser(auth) },
+  { to: ROUTES.sheets, label: 'Observation sheets', icon: ClipboardList, show: researchUser(auth) },
   { to: ROUTES.centres, label: 'Centres & PIs', icon: Building2, show: auth.can('centres.manage') },
   {
     to: ROUTES.accounts,
@@ -20,6 +25,7 @@ export const navItems = (auth) => [
     icon: ShieldCheck,
     show: auth.assignable.some((r) => r.id === 'pc'),
   },
+  { to: ROUTES.masters, label: 'Masters', icon: Database, show: auth.can('masters.edit') },
   { to: ROUTES.myAccount, label: 'My account', icon: UserCog, show: true },
 ].filter((item) => item.show)
 

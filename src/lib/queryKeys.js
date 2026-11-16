@@ -13,4 +13,29 @@ export const queryKeys = {
     all: ['users'],
     list: (filters) => ['users', 'list', filters],
   },
+  masters: {
+    all: ['masters'],
+    types: () => ['masters', 'types'],
+    list: (type, filters) => ['masters', 'list', type, filters],
+  },
+  financialYears: {
+    all: ['financialYears'],
+  },
+  parameters: {
+    all: ['parameters'],
+    list: (filters) => ['parameters', 'list', filters],
+  },
+  // Research data. A sheet carries its protocol and a trial its experiment, so research mutations
+  // invalidate the whole 'research' tree.
+  research: {
+    all: ['research'],
+    experiments: (filters) => ['research', 'experiments', 'list', filters],
+    experiment: (id) => ['research', 'experiments', 'detail', id],
+    trials: (filters) => ['research', 'trials', 'list', filters],
+    trial: (id) => ['research', 'trials', 'detail', id],
+    sheets: (filters) => ['research', 'sheets', 'list', filters],
+    sheet: (id) => ['research', 'sheets', 'detail', id],
+    analysis: (id) => ['research', 'sheets', 'detail', id, 'analysis'],
+    summary: (filters) => ['research', 'sheets', 'summary', filters],
+  },
 }

@@ -1,0 +1,99 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { experimentsApi, sheetsApi, trialsApi } from '../api'
+import { queryKeys } from '../lib/queryKeys'
+
+// Research data hooks: PCU experiments (protocols) → centre trials → observation sheets.
+// Centre users only ever receive their own centre's trials and sheets (the API scopes them).
+
+export function useExperiments(filters = {}) {
+  return useQuery({
+    queryKey: queryKeys.research.experiments(filters),
+    queryFn: async () => (await experimentsApi.list(filters)).data,
+  })
+}
+
+export function useExperiment(id) {
+  return useQuery({
+    queryKey: queryKeys.research.experiment(id),
+    queryFn: async () => (await experimentsApi.get(id)).data,
+    enabled: Boolean(id),
+  })
+}
+
+export function useTrials(filters = {}, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: queryKeys.research.trials(filters),
+    queryFn: async () => (await trialsApi.list(filters)).data,
+    enabled,
+  })
+}
+
+export function useTrial(id) {
+  return useQuery({
+    queryKey: queryKeys.research.trial(id),
+    queryFn: async () => (await trialsApi.get(id)).data,
+    enabled: Boolean(id),
+  })
+}
+
+export function useSheets(filters = {}, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: queryKeys.research.sheets(filters),
+    queryFn: async () => (await sheetsApi.list(filters)).data,
+    enabled,
+  })
+}
+
+export function useSheet(id) {
+  return useQuery({
+    queryKey: queryKeys.research.sheet(id),
+    queryFn: async () => (await sheetsApi.get(id)).data,
+    enabled: Boolean(id),
+  })
+}
+
+export function useSheetAnalysis(id, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: queryKeys.research.analysis(id),
+    queryFn: async () => (await sheetsApi.analysis(id)).data,
+    enabled: Boolean(id) && enabled,
+  })
+}
+
+/** Cross-centre treatment means. `params` = { experimentId, fyCode, seasonCode?, includeUnapproved? } */
+export function useExperimentSummary(params) {
+  return useQuery({
+    queryKey: queryKeys.research.summary(params),
+    queryFn: async () => (await sheetsApi.summary(params)).data,
+    enabled: Boolean(params.experimentId && params.fyCode),
+  })
+}
+
+// Every research change refreshes the whole research tree (see queryKeys.research).
+const useResearchMutation = (mutationFn) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    meta: { inlineErrors: true },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.research.all }),
+  })
+}
+
+export const useCreateExperiment = () => useResearchMutation(async (body) => (await experimentsApi.create(body)).data)
+export const useUpdateExperiment = (id) => useResearchMutation(async (body) => (await experimentsApi.update(id, body)).data)
+export const useUpdateTrial = (id) => useResearchMutation(async (body) => (await trialsApi.update(id, body)).data)
+export const useCreateSheet = () => useResearchMutation(async (body) => (await sheetsApi.create(body)).data)
+
+/** Saves changed cells: [{ treatmentCode, replication, parameterId, value }]; null clears a cell. */
+export const useSaveSheetValues = (id) => useResearchMutation(async (values) => (await sheetsApi.saveValues(id, values)).data)
+
+/** ({ action: 'submit' | 'return' | 'approve', remark }) */
+export const useSheetTransition = (id) =>
+  useResearchMutation(async ({ action, remark }) => {
+    const call = { submit: sheetsApi.submit, return: sheetsApi.returnSheet, approve: sheetsApi.approve }[action]
+    return (await call(id, remark)).data
+  })
+
+/** Excel import: ({ file, dryRun }) → { dryRun, total, filled, cleared, errors }. */
+export const useImportSheet = (id) =>
+  useResearchMutation(async ({ file, dryRun }) => (await sheetsApi.importFile(id, file, dryRun)).data)

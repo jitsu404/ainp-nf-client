@@ -21,6 +21,7 @@ export const MAX_PAGE_SIZE = 100
 export const QUERY_STALE_TIME_MS = 30_000 // data counts as fresh for 30 s, then refetches in the background
 export const QUERY_GC_TIME_MS = 5 * 60_000 // unused cache entries are dropped after 5 min
 export const QUERY_RETRY_COUNT = 2 // network and 5xx errors only; 4xx are never retried
+export const REFERENCE_STALE_TIME_MS = 5 * 60_000 // masters, years, parameters change rarely
 
 // ── UI ───────────────────────────────────────────────────────────────────────
 export const TOAST_DURATION_MS = 3500
@@ -42,11 +43,33 @@ export const PASSWORD_RULE = {
   test: (p) => p.length >= 10 && /[A-Za-z]/.test(p) && /\d/.test(p),
 }
 
+// Research. Each must match the backend model of the same name.
+export const EXPERIMENT_DESIGNS = ['RCBD', 'Factorial RBD', 'Split plot', 'Non-replicated', 'Survey']
+/** Designs without replications (data is one value per treatment). */
+export const UNREPLICATED_DESIGNS = ['Non-replicated', 'Survey']
+export const EXPERIMENT_STATUSES = ['Draft', 'Active', 'Closed']
+export const TRIAL_STATUSES = ['Setup', 'Running', 'Completed']
+export const SHEET_STATUSES = ['Draft', 'Submitted', 'Returned', 'Approved']
+export const PARAMETER_LEVELS = [['plot', 'Per plot (treatment × replication)'], ['treatment', 'Once per treatment']]
+export const PARAMETER_CATEGORIES = [
+  'Growth', 'Yield', 'Quality', 'Soil chemical', 'Soil physical', 'Soil biological', 'Plant nutrient',
+  'Pest & disease', 'Weed', 'Water', 'Economics', 'Input use', 'Weather', 'Other',
+]
+export const PARAMETER_DATA_TYPES = ['number', 'text', 'date', 'choice']
+/** Largest Excel file the API accepts (src/middlewares/upload.ts). */
+export const MAX_UPLOAD_MB = 5
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 export const ROUTES = {
   home: '/',
   centres: '/centres',
   centre: (id) => `/centres/${id}`,
   accounts: '/accounts',
+  masters: '/masters',
+  experiments: '/experiments',
+  experiment: (id) => `/experiments/${id}`,
+  trial: (id) => `/trials/${id}`,
+  sheets: '/sheets',
+  sheet: (id) => `/sheets/${id}`,
   myAccount: '/account',
 }

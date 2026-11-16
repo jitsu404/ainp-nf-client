@@ -272,3 +272,17 @@ table.entry.ro td { padding: 8px 10px; }
 .error-stack { text-align: left; white-space: pre-wrap; max-height: 180px; overflow: auto; font-size: 11px; background: var(--bg); padding: 8px; border-radius: 6px; }
 .form { align-items: start; }
 .form .field { align-content: start; }
+
+/* Research and masters screens */
+.note.good { background: var(--green-bg); border-color: #b9e0c7; }
+table.entry input.dirty, table.entry select.dirty { background: #fffbea; border-color: #e7cf7a; }
+table.entry input.invalid, table.entry select.invalid { border-color: var(--red); background: var(--red-bg); }
+table.entry td.rowhead { font-weight: 600; white-space: nowrap; background: #fafbfa; }
+table.entry th small { display: block; text-transform: none; letter-spacing: 0; font-weight: 500; }
+table.entry th.req::after { content: ' *'; color: var(--red); }
+.sticky-col { position: sticky; left: 0; z-index: 1; }
+.editor-row { display: grid; gap: 8px; grid-template-columns: 90px 1fr 1fr auto; align-items: center; }
+@media (max-width: 760px) { .editor-row { grid-template-columns: minmax(0, 1fr); } }
+.check-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 14px; max-height: 260px; overflow: auto; padding: 4px; }
+.check-list label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.sig { font-weight: 600; color: var(--green); }

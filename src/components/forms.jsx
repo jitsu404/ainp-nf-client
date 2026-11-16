@@ -25,7 +25,8 @@ export function ErrorNote({ error }) {
  * Modal form that submits to the API and stays open on errors, showing the server's
  * field-level messages under each field.
  *
- * fields: [{ name, label, type: text|email|tel|password|select|textarea, options, required, full, hint, generate }]
+ * fields: [{ name, label, type: text|email|tel|password|number|date|select|textarea, options, required, full,
+ *            hint, generate, clearable, parse }]
  * onSubmit(values) → Promise; resolve to close (or return a value for onDone).
  */
 export function AsyncFormModal({ title, subtitle, fields, initial = {}, onSubmit, onClose, onDone, submitLabel = 'Save', intro }) {
@@ -45,10 +46,17 @@ export function AsyncFormModal({ title, subtitle, fields, initial = {}, onSubmit
     try {
       // Send only filled-in values; the API treats missing optional fields as "not provided".
       // A `clearable` field (on edit forms) that was emptied is sent as null, which clears it.
-      const clearable = new Set(fields.filter((f) => f.clearable).map((f) => f.name))
+      // `number` fields are sent as numbers; a field's own `parse` turns text into what the API
+      // expects (e.g. "a | b" → ['a', 'b']). Values not shown as fields are sent unchanged.
+      const byName = new Map(fields.map((f) => [f.name, f]))
+      const convert = (f, v) => (f?.parse ? f.parse(v) : f?.type === 'number' ? Number(v) : v)
       const body = Object.fromEntries(
         Object.entries(values)
-          .map(([k, v]) => [k, String(v ?? '').trim() === '' ? (clearable.has(k) && initial[k] ? null : undefined) : v])
+          .map(([k, v]) => {
+            const f = byName.get(k)
+            if (String(v ?? '').trim() !== '') return [k, convert(f, v)]
+            return [k, f?.clearable && String(initial[k] ?? '') !== '' ? null : undefined]
+          })
           .filter(([, v]) => v !== undefined),
       )
       const result = await onSubmit(body)
@@ -99,6 +107,51 @@ export function AsyncFormModal({ title, subtitle, fields, initial = {}, onSubmit
           ))}
         </div>
       </form>
+    </Modal>
+  )
+}
+
+/**
+ * Modal for custom editors (lists, grids, checkboxes) that AsyncFormModal's flat fields can't
+ * express. The editor keeps its own state; onSave() → Promise. Stays open and shows the error
+ * (with the server's field messages) if saving fails.
+ */
+export function SaveModal({ title, subtitle, onSave, onClose, children, canSave = true, submitLabel = 'Save', wide = true }) {
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const save = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await onSave()
+      onClose()
+    } catch (err) {
+      setError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const fieldErrors = Object.entries(error?.fieldErrors ?? {})
+  return (
+    <Modal title={title} subtitle={subtitle} wide={wide} onClose={busy ? () => {} : onClose} footer={<>
+      <button type="button" className="btn ghost" onClick={onClose} disabled={busy}>Cancel</button>
+      <button type="button" className="btn" onClick={save} disabled={!canSave || busy}>
+        {busy && <Loader2 size={15} className="spin" />}{submitLabel}
+      </button>
+    </>}>
+      <div className="stack">
+        {error && (
+          <div className="note bad" role="alert">
+            {error.message}
+            {fieldErrors.length > 0 && (
+              <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                {fieldErrors.map(([field, messages]) => <li key={field}>{field}: {messages.join('. ')}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
     </Modal>
   )
 }
