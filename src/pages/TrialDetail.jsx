@@ -245,7 +245,7 @@ export default function TrialDetail() {
                           : "—",
                     },
                     {
-                      label: "Seed rate",
+                      label: "Seed rate (kg/ha)",
                       num: true,
                       render: (s) => s.seedRate ?? "—",
                     },
@@ -505,7 +505,9 @@ function CroppingSystemsModal({ trial, save, onClose }) {
                   <th>Intercrop</th>
                   <th>Variety</th>
                   <th>Row ratio</th>
-                  <th>Seed rate</th>
+                  <th>
+                    Seed rate<small>kg/ha</small>
+                  </th>
                   <th>Sowing</th>
                   <th>Harvest</th>
                   <th />
