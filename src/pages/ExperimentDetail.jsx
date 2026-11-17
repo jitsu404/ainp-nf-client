@@ -12,19 +12,18 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ErrorNote, SaveModal } from "../components/forms";
+import { ExperimentResults } from "../components/ExperimentResults";
 import { ReportingGrid } from "../components/ReportingGrid";
-import { Badge, Card, Page, Select, Table, Tabs } from "../components/ui";
+import { Badge, Card, Page, Table, Tabs } from "../components/ui";
 import { PARAMETER_LEVELS, ROUTES } from "../config/constants";
 import { useCentres } from "../queries/centres";
 import {
-  useFinancialYears,
   useMasterOptions,
   useParameters,
   useUnitLabel,
 } from "../queries/masters";
 import {
   useExperiment,
-  useExperimentSummary,
   useTrials,
   useUpdateExperiment,
 } from "../queries/research";
@@ -333,7 +332,7 @@ export default function ExperimentDetail() {
         {tab === "reporting" && <ReportingGrid experimentId={e.id} />}
 
         {tab === "summary" && (
-          <SummaryTab experiment={e} canSeeUnapproved={config} />
+          <ExperimentResults experiment={e} canSeeUnapproved={config} />
         )}
       </div>
 
@@ -657,141 +656,5 @@ function CentresModal({ experiment, save, onClose }) {
         recorded data are kept and come back if it is assigned again.
       </div>
     </SaveModal>
-  );
-}
-
-const fmt = (x) =>
-  x === null || x === undefined
-    ? "—"
-    : Number(x).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-
-function SummaryTab({ experiment, canSeeUnapproved }) {
-  const unit = useUnitLabel();
-  const years = useFinancialYears();
-  const seasons = useMasterOptions("season");
-  const [fy, setFy] = useState("");
-  const [season, setSeason] = useState("");
-  const [all, setAll] = useState(false);
-  const fyCode = fy || years.data?.find((y) => y.isCurrent)?.code || "";
-  const summary = useExperimentSummary({
-    experimentId: experiment.id,
-    fyCode,
-    seasonCode: season || undefined,
-    includeUnapproved: all || undefined,
-  });
-  const s = summary.data;
-
-  return (
-    <div className="stack">
-      <Card pad={false}>
-        <div className="toolbar">
-          <Select
-            value={fyCode}
-            onChange={setFy}
-            options={(years.data ?? []).map((y) => y.code)}
-          />
-          <Select
-            value={season}
-            onChange={setSeason}
-            options={seasons.options.filter(
-              ([c]) =>
-                !experiment.seasons.length || experiment.seasons.includes(c),
-            )}
-            all="All seasons"
-          />
-          {canSeeUnapproved && (
-            <label className="row small" style={{ gap: 6 }}>
-              <input
-                type="checkbox"
-                checked={all}
-                onChange={(e) => setAll(e.target.checked)}
-              />{" "}
-              Include sheets not yet approved
-            </label>
-          )}
-          <span className="grow" />
-          <span className="muted small">
-            Treatment means per centre{all ? "" : ", from approved sheets"}
-          </span>
-        </div>
-      </Card>
-      <ErrorNote error={summary.error} />
-      {summary.isPending && <p className="muted">Loading…</p>}
-      {s && !s.centres.length && (
-        <div className="empty card">
-          No {all ? "" : "approved "}sheets for {fyCode} yet.
-        </div>
-      )}
-      {s &&
-        s.centres.length > 0 &&
-        s.parameters.map((p) => {
-          const centreMean = (t) => {
-            const xs = s.centres
-              .map((c) => c.means[p.parameterId]?.[t])
-              .filter((x) => x !== null && x !== undefined);
-            return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
-          };
-          return (
-            <Card
-              key={p.parameterId}
-              pad={false}
-              title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}`}
-            >
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Centre</th>
-                      <th>Season</th>
-                      {s.treatments.map((t) => (
-                        <th key={t.code} className="num" title={t.name}>
-                          {t.code}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.centres.map((c) => (
-                      <tr key={c.sheetId}>
-                        <td>
-                          <Link to={ROUTES.sheet(c.sheetId)}>
-                            {c.centre.name}
-                          </Link>
-                          {c.status !== "Approved" && (
-                            <>
-                              {" "}
-                              <Badge>{c.status}</Badge>
-                            </>
-                          )}
-                        </td>
-                        <td>{seasons.nameOf(c.seasonCode)}</td>
-                        {s.treatments.map((t) => (
-                          <td key={t.code} className="num">
-                            {fmt(c.means[p.parameterId]?.[t.code])}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                  {s.centres.length > 1 && (
-                    <tfoot>
-                      <tr>
-                        <td colSpan={2}>
-                          <b>Mean of centres</b>
-                        </td>
-                        {s.treatments.map((t) => (
-                          <td key={t.code} className="num">
-                            <b>{fmt(centreMean(t.code))}</b>
-                          </td>
-                        ))}
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
-            </Card>
-          );
-        })}
-    </div>
   );
 }
