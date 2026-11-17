@@ -286,3 +286,94 @@ table.entry th.req::after { content: ' *'; color: var(--red); }
 .check-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 14px; max-height: 260px; overflow: auto; padding: 4px; }
 .check-list label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
 .sig { font-weight: 600; color: var(--green); }
+
+/* Selectable Pill Buttons / Filter Chips */
+.pill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+.pill-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.pill-option:hover {
+  background: #f4f7f4;
+  border-color: #cbd5ce;
+  transform: translateY(-1px);
+}
+.pill-option input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.pill-option.active {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: var(--green);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(27, 127, 75, 0.18);
+}
+.pill-option.active:hover {
+  background: #d8ecde;
+  border-color: #14633a;
+}
+.pill-option:focus-within {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.pill-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid #a3b2a8;
+  background: transparent;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.pill-option.active .pill-indicator {
+  border-color: var(--green);
+  background: var(--green);
+  color: #ffffff;
+}
+.pill-quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.pill-quick-actions button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--green);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pill-quick-actions button:hover {
+  color: #14633a;
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Plus, Search } from 'lucide-react'
+import { Check, Loader2, Plus, Search } from 'lucide-react'
 import { useAuth } from '../auth'
 import { ErrorNote, SaveModal } from '../components/forms'
 import { Badge, Card, Page, Select, Table } from '../components/ui'
@@ -171,15 +171,61 @@ export function ExperimentDetailsModal({ experiment, save, onClose, onCreated })
             <span className="muted small">Centres can record data only while the experiment is Active.</span>
           </div>
         )}
-        <div className="field full"><label>Seasons</label>
-          <div className="check-list" style={{ maxHeight: 'none' }}>
-            {seasons.options.map(([code, name]) => (
-              <label key={code}>
-                <input type="checkbox" checked={v.seasons.includes(code)}
-                  onChange={(e) => set('seasons', e.target.checked ? [...v.seasons, code] : v.seasons.filter((s) => s !== code))} />
-                {name}
-              </label>
-            ))}
+        <div className="field full">
+          <div className="row spread" style={{ marginBottom: 6 }}>
+            <label style={{ margin: 0, fontWeight: 600 }}>Seasons</label>
+            <span className="muted small">
+              {v.seasons.length === 0
+                ? 'Applies to all seasons (default)'
+                : `${v.seasons.length} of ${seasons.options.length} selected`}
+            </span>
+          </div>
+          <div className="pill-grid">
+            {seasons.options.map(([code, name]) => {
+              const checked = v.seasons.includes(code)
+              return (
+                <label key={code} className={`pill-option ${checked ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) =>
+                      set(
+                        'seasons',
+                        e.target.checked
+                          ? [...v.seasons, code]
+                          : v.seasons.filter((s) => s !== code)
+                      )
+                    }
+                  />
+                  <span className="pill-indicator">
+                    {checked && <Check size={11} strokeWidth={3} />}
+                  </span>
+                  <span>{name}</span>
+                </label>
+              )
+            })}
+          </div>
+          <div className="pill-quick-actions">
+            <span>
+              {v.seasons.length === 0
+                ? 'Leave blank if this experiment runs across any season'
+                : 'Only selected seasons will be allowed for observation sheets'}
+            </span>
+            <div className="row" style={{ gap: 10 }}>
+              {v.seasons.length > 0 && (
+                <button type="button" onClick={() => set('seasons', [])}>
+                  Clear all
+                </button>
+              )}
+              {v.seasons.length < seasons.options.length && (
+                <button
+                  type="button"
+                  onClick={() => set('seasons', seasons.options.map(([c]) => c))}
+                >
+                  Select all
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="field full"><label htmlFor="x-obj">Objectives <span className="muted">(optional, one per line)</span></label>
