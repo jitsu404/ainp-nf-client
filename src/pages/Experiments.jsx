@@ -170,6 +170,7 @@ export function ExperimentDetailsModal({
     seasons: experiment?.seasons ?? [],
     objectives: (experiment?.objectives ?? []).join("\n"),
     status: experiment?.status ?? "Draft",
+    referenceTreatmentCode: experiment?.referenceTreatmentCode ?? "",
   }));
   const set = (k, value) => setV((s) => ({ ...s, [k]: value }));
   const replicated = !UNREPLICATED_DESIGNS.includes(v.design);
@@ -202,8 +203,10 @@ export function ExperimentDetailsModal({
       b.design = v.design;
       b.replications = replicated && reps !== "" ? Number(reps) : null;
     }
-    if (experiment) b.status = v.status;
-    else b.code = v.code.trim();
+    if (experiment) {
+      b.status = v.status;
+      b.referenceTreatmentCode = v.referenceTreatmentCode || null;
+    } else b.code = v.code.trim();
     return b;
   };
 
@@ -349,6 +352,27 @@ export function ExperimentDetailsModal({
             </select>
             <span className="muted small">
               Centres can record data only while the experiment is Active.
+            </span>
+          </div>
+        )}
+        {experiment && experiment.treatments.length > 0 && (
+          <div className="field">
+            <label htmlFor="x-ref">Reference treatment</label>
+            <select
+              id="x-ref"
+              value={v.referenceTreatmentCode}
+              onChange={(e) => set("referenceTreatmentCode", e.target.value)}
+            >
+              <option value="">None</option>
+              {experiment.treatments.map((t) => (
+                <option key={t.code} value={t.code}>
+                  {t.code} · {t.name}
+                </option>
+              ))}
+            </select>
+            <span className="muted small">
+              Results show each treatment as % above or below this one (e.g. the
+              AI-NPOF package).
             </span>
           </div>
         )}

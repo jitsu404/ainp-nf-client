@@ -18,6 +18,7 @@ import { ErrorNote, SaveModal } from "../components/forms";
 import { Badge, Card, Page, Tabs } from "../components/ui";
 import { ROUTES } from "../config/constants";
 import { formatDateTime } from "../hooks";
+import { fmtPct, pctVs } from "../lib/results";
 import { toast } from "../lib/toast";
 import {
   useFinancialYears,
@@ -645,13 +646,36 @@ const fmt = (x, d = 2) =>
 function AnalysisTab({ id, dirty }) {
   const analysis = useSheetAnalysis(id);
   const unit = useUnitLabel();
+  // The experiment's reference treatment by default; "" = no comparison.
+  const [chosenRef, setChosenRef] = useState(null);
   const a = analysis.data;
   if (analysis.error) return <ErrorNote error={analysis.error} />;
   if (!a) return <p className="muted">Loading…</p>;
   const nameOf = (code) =>
     a.treatments.find((t) => t.code === code)?.name ?? code;
+  const ref = chosenRef ?? a.experiment.referenceTreatmentCode ?? "";
   return (
     <div className="stack">
+      <div className="row small" style={{ gap: 8 }}>
+        <label htmlFor="ref-treatment">Compare with</label>
+        <select
+          id="ref-treatment"
+          className="select"
+          value={ref}
+          onChange={(e) => setChosenRef(e.target.value)}
+        >
+          <option value="">No reference</option>
+          {a.treatments.map((t) => (
+            <option key={t.code} value={t.code}>
+              {t.code} · {t.name}
+            </option>
+          ))}
+        </select>
+        <span className="muted">
+          * difference from the reference is larger than the CD (5 %).
+          Treatments sharing a DMRT letter don't differ significantly.
+        </span>
+      </div>
       {dirty && (
         <div className="note warn">
           You have unsaved changes; the analysis uses saved values only.
@@ -680,6 +704,8 @@ function AnalysisTab({ id, dirty }) {
                     <th>Treatment</th>
                     <th className="num">n</th>
                     <th className="num">Mean</th>
+                    {p.anova?.groups && <th>DMRT</th>}
+                    {ref && <th className="num">vs {ref}</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -693,6 +719,44 @@ function AnalysisTab({ id, dirty }) {
                       </td>
                       <td className="num">{m.n}</td>
                       <td className="num">{fmt(m.mean)}</td>
+                      {p.anova?.groups && (
+                        <td className="mono">
+                          {p.anova.groups[m.treatmentCode] ?? ""}
+                        </td>
+                      )}
+                      {ref && (
+                        <td className="num nowrap">
+                          {m.treatmentCode === ref ? (
+                            <span className="muted">reference</span>
+                          ) : (
+                            (() => {
+                              const refMean = p.means.find(
+                                (x) => x.treatmentCode === ref,
+                              )?.mean;
+                              const diff =
+                                m.mean !== null && refMean != null
+                                  ? Math.abs(m.mean - refMean)
+                                  : null;
+                              const significant =
+                                p.anova?.cd5 != null &&
+                                diff !== null &&
+                                diff > p.anova.cd5;
+                              return (
+                                <span
+                                  style={
+                                    significant
+                                      ? { fontWeight: 600 }
+                                      : undefined
+                                  }
+                                >
+                                  {fmtPct(pctVs(m.mean, refMean))}
+                                  {significant && " *"}
+                                </span>
+                              );
+                            })()
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -705,6 +769,8 @@ function AnalysisTab({ id, dirty }) {
                     <td className="num">
                       <b>{fmt(p.grandMean)}</b>
                     </td>
+                    {p.anova?.groups && <td />}
+                    {ref && <td />}
                   </tr>
                 </tfoot>
               </table>

@@ -118,6 +118,14 @@ export default function ExperimentDetail() {
                 <b>{e.startYear}</b>
               </div>
               <div>
+                <span>Reference treatment</span>
+                <b>
+                  {e.referenceTreatmentCode
+                    ? `${e.referenceTreatmentCode} · ${e.treatments.find((t) => t.code === e.referenceTreatmentCode)?.name ?? ""}`
+                    : "—"}
+                </b>
+              </div>
+              <div>
                 <span>Seasons</span>
                 <b>
                   {e.seasons.length
