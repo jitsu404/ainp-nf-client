@@ -223,6 +223,7 @@ export const sheetsApi = {
     api.upload(`/sheets/${id}/import`, file, { dryRun }),
   analysis: (id) => api.get(`/sheets/${id}/analysis`),
   summary: (params) => api.get("/sheets/summary", params),
+  reporting: (experimentId) => api.get("/sheets/reporting", { experimentId }),
 };
 
 // Audit trail (read-only). Centre users get only their own centre's activity.

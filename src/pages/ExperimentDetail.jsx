@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ErrorNote, SaveModal } from "../components/forms";
+import { ReportingGrid } from "../components/ReportingGrid";
 import { Badge, Card, Page, Select, Table, Tabs } from "../components/ui";
 import { PARAMETER_LEVELS, ROUTES } from "../config/constants";
 import { useCentres } from "../queries/centres";
@@ -167,6 +168,7 @@ export default function ExperimentDetail() {
           tabs={[
             ["protocol", "Protocol"],
             ["centres", config ? "Centres" : "My centre", trialRows.length],
+            ["reporting", "Reporting"],
             ["summary", "Results summary"],
           ]}
         />
@@ -309,6 +311,8 @@ export default function ExperimentDetail() {
             />
           </Card>
         )}
+
+        {tab === "reporting" && <ReportingGrid experimentId={e.id} />}
 
         {tab === "summary" && (
           <SummaryTab experiment={e} canSeeUnapproved={config} />

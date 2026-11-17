@@ -70,6 +70,15 @@ export function useExperimentSummary(params) {
   });
 }
 
+/** Centre × year × season grid of sheet statuses for one experiment. */
+export function useReporting(experimentId) {
+  return useQuery({
+    queryKey: queryKeys.research.reporting(experimentId),
+    queryFn: async () => (await sheetsApi.reporting(experimentId)).data,
+    enabled: Boolean(experimentId),
+  });
+}
+
 // Every research change refreshes the whole research tree (see queryKeys.research).
 const useResearchMutation = (mutationFn) => {
   const queryClient = useQueryClient();

@@ -47,5 +47,11 @@ export const queryKeys = {
     sheet: (id) => ["research", "sheets", "detail", id],
     analysis: (id) => ["research", "sheets", "detail", id, "analysis"],
     summary: (filters) => ["research", "sheets", "summary", filters],
+    reporting: (experimentId) => [
+      "research",
+      "sheets",
+      "reporting",
+      experimentId,
+    ],
   },
 };
