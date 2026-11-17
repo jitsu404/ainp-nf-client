@@ -3,5 +3,10 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/((?!assets/|logos/|login-building\\.webp).*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/((?!assets/|logos/|login-building\\.webp).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

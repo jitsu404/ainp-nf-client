@@ -1,6 +1,6 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { auditApi } from '../api'
-import { queryKeys } from '../lib/queryKeys'
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { auditApi } from "../api";
+import { queryKeys } from "../lib/queryKeys";
 
 /**
  * One page of the audit trail. `filters` = { page, limit, search, module, roleId, userId, centreId,
@@ -14,5 +14,5 @@ export function useAudit(filters = {}, { enabled = true } = {}) {
     placeholderData: keepPreviousData,
     staleTime: 0,
     enabled,
-  })
+  });
 }
