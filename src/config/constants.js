@@ -116,6 +116,7 @@ export const AUDIT_MODULES = {
   experiments: "Experiments",
   trials: "Trials",
   sheets: "Observation sheets",
+  "budget-allocation": "Budget allocation",
 };
 export const AUDIT_PAGE_SIZE = 25;
 
@@ -134,6 +135,7 @@ export const ROUTES = {
   trial: (id) => `/trials/${id}`,
   sheets: "/sheets",
   sheet: (id) => `/sheets/${id}`,
+  budgetAllocations: "/budget-allocations",
   audit: "/audit",
   myAccount: "/account",
 };

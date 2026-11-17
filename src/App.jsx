@@ -5,6 +5,7 @@ import { ROUTES } from "./config/constants";
 import { Toaster } from "./lib/toast";
 import Accounts from "./pages/Accounts";
 import Audit from "./pages/Audit";
+import BudgetAllocation from "./pages/BudgetAllocation";
 import AccountPage, { ForcedPasswordChange } from "./pages/ChangePassword";
 import CentreDetail from "./pages/CentreDetail";
 import Centres from "./pages/Centres";
@@ -49,6 +50,12 @@ export default function App() {
           )}
           {allowed.has(ROUTES.audit) && (
             <Route path={ROUTES.audit} element={<Audit />} />
+          )}
+          {allowed.has(ROUTES.budgetAllocations) && (
+            <Route
+              path={ROUTES.budgetAllocations}
+              element={<BudgetAllocation />}
+            />
           )}
           {allowed.has(ROUTES.experiments) && (
             <>

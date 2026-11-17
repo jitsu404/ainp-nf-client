@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PiggyBank,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
@@ -44,6 +45,12 @@ export const navItems = (auth) =>
       label: "Observation sheets",
       icon: ClipboardList,
       show: researchUser(auth),
+    },
+    {
+      to: ROUTES.budgetAllocations,
+      label: "Budget allocation",
+      icon: PiggyBank,
+      show: auth.can("finance.allocation") || auth.can("finance.manage"),
     },
     {
       to: ROUTES.centres,

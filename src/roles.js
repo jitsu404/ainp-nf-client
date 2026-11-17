@@ -105,6 +105,7 @@ const ALL_CAPABILITIES = [
   "research.approve",
   "research.config",
   "finance.manage",
+  "finance.allocation",
   "finance.expenditure",
   "finance.receipt",
   "finance.request",
@@ -159,6 +160,7 @@ export const ROLES = {
       "research.config",
       "aucsoe.approve",
       "finance.manage",
+      "finance.allocation",
       "comm.issue",
       "staff.manage",
       "meetings.manage",
@@ -255,6 +257,7 @@ export const ROLES = {
     can: [
       "research.enter",
       "research.submit",
+      "finance.allocation",
       "finance.expenditure",
       "finance.receipt",
       "finance.request",

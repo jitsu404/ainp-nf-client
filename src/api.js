@@ -136,6 +136,7 @@ export const api = {
   post: (path, body = {}) => request("POST", path, body),
   patch: (path, body) => request("PATCH", path, body),
   put: (path, body) => request("PUT", path, body),
+  delete: (path) => request("DELETE", path),
   download: (path, params, name) => download(`${path}${qs(params)}`, name),
   upload: (path, file, params) => upload(`${path}${qs(params)}`, file),
 };
@@ -228,4 +229,14 @@ export const sheetsApi = {
 export const auditApi = {
   list: (params) => api.get("/audit", params),
   exportFile: (params) => api.download("/audit/export", params),
+};
+
+// Budget Allocations: ICAR sanctions (isTotal) & head-wise allocations.
+export const budgetAllocationsApi = {
+  list: (params) => api.get("/budget-allocations", params),
+  get: (id) => api.get(`/budget-allocations/${id}`),
+  create: (body) => api.post("/budget-allocations", body),
+  bulkSave: (body) => api.post("/budget-allocations/bulk", body),
+  update: (id, body) => api.patch(`/budget-allocations/${id}`, body),
+  remove: (id) => api.delete(`/budget-allocations/${id}`),
 };
