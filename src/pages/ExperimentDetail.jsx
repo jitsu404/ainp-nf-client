@@ -13,6 +13,7 @@ import {
 import { useAuth } from "../auth";
 import { ErrorNote, SaveModal } from "../components/forms";
 import { ExperimentResults } from "../components/ExperimentResults";
+import { ExperimentTrend } from "../components/ExperimentTrend";
 import { ReportingGrid } from "../components/ReportingGrid";
 import { Badge, Card, Page, Table, Tabs } from "../components/ui";
 import { PARAMETER_LEVELS, ROUTES } from "../config/constants";
@@ -177,6 +178,7 @@ export default function ExperimentDetail() {
             ["centres", config ? "Centres" : "My centre", trialRows.length],
             ["reporting", "Reporting"],
             ["summary", "Results summary"],
+            ["trend", "Trend"],
           ]}
         />
 
@@ -330,6 +332,13 @@ export default function ExperimentDetail() {
         )}
 
         {tab === "reporting" && <ReportingGrid experimentId={e.id} />}
+
+        {tab === "trend" && (
+          <ExperimentTrend
+            experiment={e}
+            centres={trialRows.map((t) => t.centreId).filter(Boolean)}
+          />
+        )}
 
         {tab === "summary" && (
           <ExperimentResults experiment={e} canSeeUnapproved={config} />

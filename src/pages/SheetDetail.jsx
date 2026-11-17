@@ -13,6 +13,7 @@ import {
 import { sheetsApi } from "../api";
 import { useAuth } from "../auth";
 import { AuditTable } from "../components/AuditTrail";
+import { BarChart } from "../components/Charts";
 import { ExcelImportModal } from "../components/ExcelImport";
 import { ErrorNote, SaveModal } from "../components/forms";
 import { Badge, Card, Page, Tabs } from "../components/ui";
@@ -675,6 +676,17 @@ function AnalysisTab({ id, dirty }) {
           * difference from the reference is larger than the CD (5 %).
           Treatments sharing a DMRT letter don't differ significantly.
         </span>
+        <span className="grow" />
+        <button
+          className="btn ghost sm"
+          onClick={() =>
+            sheetsApi
+              .exportAnalysis(id)
+              .catch((err) => toast.error(err.message))
+          }
+        >
+          Export to Excel
+        </button>
       </div>
       {dirty && (
         <div className="note warn">
@@ -696,6 +708,15 @@ function AnalysisTab({ id, dirty }) {
             ) : null
           }
         >
+          <BarChart
+            title={p.name}
+            bars={p.means.map((m) => ({
+              label: m.treatmentCode,
+              value: m.mean,
+              letters: p.anova?.groups?.[m.treatmentCode],
+              highlight: m.treatmentCode === ref,
+            }))}
+          />
           <div className="grid g2" style={{ alignItems: "start" }}>
             <div className="table-wrap">
               <table>

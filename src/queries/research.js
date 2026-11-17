@@ -70,6 +70,15 @@ export function useExperimentSummary(params) {
   });
 }
 
+/** Treatment means per year since the start. `params` = { experimentId, seasonCode?, centreId? } */
+export function useTrend(params) {
+  return useQuery({
+    queryKey: queryKeys.research.trend(params),
+    queryFn: async () => (await sheetsApi.trend(params)).data,
+    enabled: Boolean(params.experimentId),
+  });
+}
+
 /** Centre × year × season grid of sheet statuses for one experiment. */
 export function useReporting(experimentId) {
   return useQuery({

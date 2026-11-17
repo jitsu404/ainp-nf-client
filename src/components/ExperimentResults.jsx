@@ -1,6 +1,10 @@
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
+import { Download } from "lucide-react";
+import { sheetsApi } from "../api";
 import { ROUTES } from "../config/constants";
+import { toast } from "../lib/toast";
+import { BarChart } from "./Charts";
 import { fmt, fmtPct, pctVs } from "../lib/results";
 import {
   useFinancialYears,
@@ -91,6 +95,26 @@ export function ExperimentResults({ experiment, canSeeUnapproved }) {
           )}
         </div>
       </Card>
+      {s && s.centres.length > 0 && (
+        <div className="row">
+          <span className="grow" />
+          <button
+            className="btn ghost sm"
+            onClick={() =>
+              sheetsApi
+                .exportSummary({
+                  experimentId: experiment.id,
+                  fyCode,
+                  seasonCode: season || undefined,
+                  includeUnapproved: all || undefined,
+                })
+                .catch((err) => toast.error(err.message))
+            }
+          >
+            <Download size={14} /> Export to Excel
+          </button>
+        </div>
+      )}
       <ErrorNote error={summary.error} />
       {summary.isPending && <p className="muted">Loading…</p>}
       {s && !s.centres.length && (
@@ -223,6 +247,26 @@ function ParameterResults({
             <tfoot>{meanRow("Mean of centres", summary.centres, "all")}</tfoot>
           )}
         </table>
+      </div>
+      <div style={{ padding: "8px 16px" }}>
+        <BarChart
+          title={`${p.name}: ${pooled && !pooled.reason ? "pooled means" : "mean of centres"}`}
+          bars={treatments.map((t) => {
+            const pooledMean =
+              pooled && !pooled.reason
+                ? pooled.means.find((m) => m.treatmentCode === t.code)?.mean
+                : undefined;
+            return {
+              label: t.code,
+              value:
+                pooledMean ??
+                mean(summary.centres.map((c) => valueOf(c, t.code))),
+              letters:
+                pooled && !pooled.reason ? pooled.groups?.[t.code] : undefined,
+              highlight: t.code === reference,
+            };
+          })}
+        />
       </div>
       {pooled && <PooledResults pooled={pooled} reference={reference} />}
     </Card>

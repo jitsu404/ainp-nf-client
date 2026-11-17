@@ -53,5 +53,6 @@ export const queryKeys = {
       "reporting",
       experimentId,
     ],
+    trend: (params) => ["research", "sheets", "trend", params],
   },
 };
