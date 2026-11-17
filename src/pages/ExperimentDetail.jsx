@@ -232,7 +232,17 @@ export default function ExperimentDetail() {
                     render: (p) => (
                       <>
                         {p.name}
-                        {p.required && <span className="muted"> *</span>}
+                        {p.required && !p.formula && (
+                          <span className="muted"> *</span>
+                        )}
+                        {p.formula && (
+                          <div
+                            className="muted small mono"
+                            title="Calculated from other values"
+                          >
+                            = {p.formula}
+                          </div>
+                        )}
                       </>
                     ),
                   },
@@ -240,9 +250,9 @@ export default function ExperimentDetail() {
                   {
                     label: "Recorded",
                     render: (p) =>
-                      p.level === "plot" && e.replications
+                      (p.level === "plot" && e.replications
                         ? "Per plot"
-                        : "Per treatment",
+                        : "Per treatment") + (p.formula ? " · calculated" : ""),
                   },
                 ]}
               />

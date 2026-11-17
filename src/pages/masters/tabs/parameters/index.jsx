@@ -102,6 +102,14 @@ export default function ParametersTab() {
       required: false,
       clearable: true,
     },
+    {
+      name: "formula",
+      label: "Formula (calculated parameters only)",
+      required: false,
+      clearable: true,
+      full: true,
+      hint: "Leave empty for values centres enter. Use parameter codes, numbers, + - * /, brackets and IFEMPTY(x, 0), e.g. NET_RETURNS / COST_CULTIVATION.",
+    },
   ];
 
   const toggle = async (p) => {
@@ -172,9 +180,15 @@ export default function ParametersTab() {
           {
             label: "Type",
             render: (p) =>
-              p.dataType === "choice"
-                ? `choice (${p.choices.join(", ")})`
-                : p.dataType,
+              p.formula ? (
+                <span title={p.formula}>
+                  <Badge tone="blue">Calculated</Badge>
+                </span>
+              ) : p.dataType === "choice" ? (
+                `choice (${p.choices.join(", ")})`
+              ) : (
+                p.dataType
+              ),
           },
           {
             label: "Range",
@@ -245,6 +259,7 @@ export default function ParametersTab() {
             max: modal.max ?? "",
             choices: (modal.choices ?? []).join(" | "),
             method: modal.method ?? "",
+            formula: modal.formula ?? "",
           }}
           onSubmit={(body) => update.mutateAsync({ id: modal.id, ...body })}
           onDone={() => toast.success("Saved")}

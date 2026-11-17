@@ -183,10 +183,13 @@ export default function SheetDetail() {
     }
   };
 
-  const expected = e.parameters.reduce((n, p) => {
-    const reps = p.level === "plot" && replicated ? e.replications : 1;
-    return n + e.treatments.length * reps;
-  }, 0);
+  const expected = e.parameters
+    .filter((p) => !p.formula)
+    .reduce((n, p) => {
+      const reps = p.level === "plot" && replicated ? e.replications : 1;
+      return n + e.treatments.length * reps;
+    }, 0);
+  const recorded = s.values.filter((v) => !v.calculated).length;
 
   const workflow = (
     <>
@@ -264,7 +267,7 @@ export default function SheetDetail() {
             <div>
               <span>Values recorded</span>
               <b>
-                {s.values.length} of {expected}
+                {recorded} of {expected}
               </b>
             </div>
           </div>
@@ -503,8 +506,9 @@ function Grid({
               {params.map((p) => (
                 <th
                   key={p.parameterId}
-                  className={p.required ? "req" : ""}
+                  className={p.required && !p.formula ? "req" : ""}
                   title={[
+                    p.formula ? `Calculated: ${p.formula}` : null,
                     p.section,
                     p.min !== null || p.max !== null
                       ? `Range ${p.min ?? "…"} – ${p.max ?? "…"}`
@@ -515,6 +519,7 @@ function Grid({
                 >
                   {p.name}
                   {p.unitCode && <small>{unit(p.unitCode)}</small>}
+                  {p.formula && <small className="muted">= calculated</small>}
                 </th>
               ))}
             </tr>
@@ -530,8 +535,14 @@ function Grid({
                   {params.map((p) => {
                     const key = cellKey(t.code, r, p.parameterId);
                     return (
-                      <td key={p.parameterId} style={{ minWidth: 100 }}>
-                        {editable ? input(p, key) : show(valueOf(key))}
+                      <td
+                        key={p.parameterId}
+                        style={{ minWidth: 100 }}
+                        className={p.formula ? "calc" : undefined}
+                      >
+                        {editable && !p.formula
+                          ? input(p, key)
+                          : show(valueOf(key))}
                       </td>
                     );
                   })}

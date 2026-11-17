@@ -1381,3 +1381,10 @@ table.entry th.req::after {
 .pill-quick-actions button:hover {
   color: #14633a;
 }
+
+/* Calculated parameter cells: computed, read-only. */
+table.entry td.calc {
+  background: #f6f8fb;
+  color: var(--muted);
+  text-align: right;
+}
