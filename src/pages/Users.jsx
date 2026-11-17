@@ -197,7 +197,7 @@ export default function Users() {
                   {i < FLOW.length - 1 && (
                     <ArrowRight
                       size={16}
-                      color="var(--muted)"
+                      color="var(--text-muted)"
                       style={{ alignSelf: "center", flex: "none" }}
                     />
                   )}

@@ -6,6 +6,9 @@
 @custom-variant dark (&:is(.dark *));
 :root {
   --ink: #1b2420;
+  /* Our secondary text colour. Not called --muted: shadcn/ui uses --muted for a light
+     background (bg-muted), so sharing the name turned all muted text almost white. */
+  --text-muted: #647069;
   --muted: oklch(0.97 0 0);
   --line: #e3e8e4;
   --bg: #f5f7f5;
@@ -93,7 +96,7 @@ textarea {
   color: inherit;
 }
 .muted {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .small {
   font-size: 12px;
@@ -164,7 +167,7 @@ textarea {
 }
 .brand span {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-muted);
   line-height: 1.3;
   display: block;
 }
@@ -177,7 +180,7 @@ textarea {
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-muted);
   font-weight: 600;
 }
 .nav a {
@@ -209,7 +212,7 @@ textarea {
   padding: 12px 16px;
   border-top: 1px solid var(--line);
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .main {
@@ -267,7 +270,7 @@ textarea {
 }
 .user span {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .content {
   padding: 22px;
@@ -301,7 +304,7 @@ textarea {
   letter-spacing: -0.2px;
 }
 .page-head p {
-  color: var(--muted);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 .card {
@@ -349,7 +352,7 @@ textarea {
 }
 .stat .label {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -362,7 +365,7 @@ textarea {
 }
 .stat .hint {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 .stat .ico {
@@ -419,7 +422,7 @@ textarea {
   cursor: pointer;
   padding: 6px;
   border-radius: 7px;
-  color: var(--muted);
+  color: var(--text-muted);
   display: inline-grid;
   place-items: center;
   position: relative;
@@ -497,7 +500,7 @@ textarea {
   background: none;
   padding: 9px 13px;
   cursor: pointer;
-  color: var(--muted);
+  color: var(--text-muted);
   font-weight: 550;
   border-bottom: 2px solid transparent;
   white-space: nowrap;
@@ -531,7 +534,7 @@ textarea {
   padding: 0 9px;
   background: var(--surface);
   min-width: 220px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .search input {
   border: 0;
@@ -559,7 +562,7 @@ th {
   font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: var(--text-muted);
   font-weight: 600;
   padding: 9px 16px;
   border-bottom: 1px solid var(--line);
@@ -591,13 +594,13 @@ tfoot td {
   align-items: center;
   padding: 8px 16px;
   border-top: 1px solid var(--line);
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 12px;
 }
 .empty {
   padding: 28px;
   text-align: center;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 table.entry td {
   padding: 4px 6px;
@@ -704,7 +707,7 @@ table.entry input:focus {
 .kv div span {
   display: block;
   font-size: 11.5px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .kv div b {
   font-weight: 550;
@@ -721,7 +724,7 @@ table.entry input:focus {
   align-items: center;
   gap: 7px;
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--text-muted);
   font-weight: 550;
 }
 .step i {
@@ -840,7 +843,7 @@ table.entry input:focus {
   gap: 14px;
   flex-wrap: wrap;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .legend i {
   display: inline-block;
@@ -1012,7 +1015,7 @@ table.entry input:focus {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .login-card h2 {
   font-size: 26px;
@@ -1176,7 +1179,7 @@ table.entry input:focus {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .login-card form {
   display: grid;
@@ -1197,7 +1200,7 @@ table.entry input:focus {
   font-size: 15px;
 }
 .muted-row td {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .user .avatar {
   color: #fff;
@@ -1401,7 +1404,7 @@ table.entry th.req::after {
   justify-content: space-between;
   margin-top: 6px;
   font-size: 11.5px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .pill-quick-actions button {
   background: none;
@@ -1421,7 +1424,7 @@ table.entry th.req::after {
 /* Calculated parameter cells: computed, read-only. */
 table.entry td.calc {
   background: #f6f8fb;
-  color: var(--muted);
+  color: var(--text-muted);
   text-align: right;
 }
 

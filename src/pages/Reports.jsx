@@ -182,7 +182,7 @@ export default function Reports() {
                       <span className="muted small">{r.desc}</span>
                     </span>
                     <span className="muted small">{r.rows.length} rows</span>
-                    <ChevronRight size={16} color="var(--muted)" />
+                    <ChevronRight size={16} color="var(--text-muted)" />
                   </a>
                 ))}
             </div>

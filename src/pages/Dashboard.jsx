@@ -208,7 +208,7 @@ export default function Dashboard() {
                 <Link className="item" to={d.path} key={d.id}>
                   <CalendarClock
                     size={16}
-                    color="var(--muted)"
+                    color="var(--text-muted)"
                     style={{ marginTop: 2 }}
                   />
                   <span className="grow">

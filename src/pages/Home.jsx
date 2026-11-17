@@ -222,7 +222,7 @@ function CentreDashboard() {
           >
             <CalendarClock
               size={18}
-              color="var(--muted)"
+              color="var(--text-muted)"
               style={{ flex: "none", marginTop: 2 }}
             />
             <p className="muted">
