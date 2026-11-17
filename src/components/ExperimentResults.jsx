@@ -388,9 +388,10 @@ function PooledResults({ pooled, reference }) {
         </div>
       </div>
       <p className="muted small" style={{ margin: 0 }}>
-        Locations: {pooled.locations.join(", ")}. Treatments are tested against
-        the treatments × locations interaction, so the result holds across these
-        sites, not only at one.{" "}
+        Locations: {pooled.locations.join(", ")}.{" "}
+        {pooled.treatmentsTestedAgainst === "interaction"
+          ? "Treatments are tested against the treatments × locations interaction, so the result holds across these sites, not only at one."
+          : "There is no treatments × locations interaction (treatments moved together between sites), so treatments are tested against the pooled error."}{" "}
         {pooled.interactionSignificant &&
           "The interaction is significant: treatments ranked differently at different centres, so look at centre-wise results too. "}
         {!pooled.bartlett.homogeneous &&
