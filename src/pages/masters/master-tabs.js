@@ -117,6 +117,20 @@ export const MASTER_TABS = [
     groupLabel: "Category",
   },
 
+  {
+    id: "zone",
+    label: "Agro-climatic zones",
+    description:
+      "Planning Commission agro-climatic zones; each centre is in one (PCU master table).",
+    kind: "standard",
+    usage: {
+      resource: "centres",
+      label: "Centres",
+      by: "name",
+      extract: (c) => [c.zone],
+    },
+  },
+
   // ── 2. Custom Tabs (Dedicated APIs & Components) ─────────────────────
   {
     id: "fy",

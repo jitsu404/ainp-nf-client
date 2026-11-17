@@ -12,6 +12,7 @@ import ProgrammesTab from "./tabs/programmes";
 import BudgetHeadTab from "./tabs/budgetHead";
 import FundCategoriesTab from "./tabs/fundCategories";
 import StaffPostsTab from "./tabs/staffPosts";
+import ZonesTab from "./tabs/zones";
 import FinancialYearsTab from "./tabs/financialYears";
 import ParametersTab from "./tabs/parameters";
 import RolesTab from "./tabs/roles";
@@ -25,6 +26,7 @@ const TAB_COMPONENTS = {
   budgetHead: BudgetHeadTab,
   fundCategory: FundCategoriesTab,
   staffPost: StaffPostsTab,
+  zone: ZonesTab,
   fy: FinancialYearsTab,
   parameters: ParametersTab,
   roles: RolesTab,
