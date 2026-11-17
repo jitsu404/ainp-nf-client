@@ -184,3 +184,9 @@ export const sheetsApi = {
   analysis: (id) => api.get(`/sheets/${id}/analysis`),
   summary: (params) => api.get('/sheets/summary', params),
 }
+
+// Audit trail (read-only). Centre users get only their own centre's activity.
+export const auditApi = {
+  list: (params) => api.get('/audit', params),
+  exportFile: (params) => api.download('/audit/export', params),
+}

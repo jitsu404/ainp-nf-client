@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Loader2, Save, Send, Undo2 } from 'lucide-react'
 import { sheetsApi } from '../api'
 import { useAuth } from '../auth'
+import { AuditTable } from '../components/AuditTrail'
 import { ExcelImportModal } from '../components/ExcelImport'
 import { ErrorNote, SaveModal } from '../components/forms'
 import { Badge, Card, Page, Tabs } from '../components/ui'
@@ -157,7 +158,7 @@ export default function SheetDetail() {
           {!yearOpen && <div className="note" style={{ marginTop: 12 }}>{s.fyCode} is closed, so this sheet can't be changed.</div>}
         </Card>
 
-        <Tabs value={tab} onChange={setTab} tabs={[['data', 'Data'], ['analysis', 'Analysis'], ['history', 'History', s.history.length]]} />
+        <Tabs value={tab} onChange={setTab} tabs={[['data', 'Data'], ['analysis', 'Analysis'], ['history', 'History', s.history.length], ...(can('audit.view') ? [['activity', 'Changes']] : [])]} />
 
         {tab === 'data' && (
           <>
@@ -188,6 +189,12 @@ export default function SheetDetail() {
         )}
 
         {tab === 'analysis' && <AnalysisTab id={id} dirty={dirty} />}
+
+        {tab === 'activity' && (
+          <Card pad={false} title="Every change to this sheet">
+            <AuditTable filters={{ entityId: id }} compact />
+          </Card>
+        )}
 
         {tab === 'history' && (
           <Card pad={false}>

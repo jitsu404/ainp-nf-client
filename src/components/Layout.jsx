@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { Building2, ClipboardList, Database, FlaskConical, LayoutDashboard, LogOut, Menu, ShieldCheck, UserCog } from 'lucide-react'
+import { Building2, ClipboardList, Database, FlaskConical, History, LayoutDashboard, LogOut, Menu, ShieldCheck, UserCog } from 'lucide-react'
 import { useAuth } from '../auth'
 import { ROUTES } from '../config/constants'
 import { programme } from '../programme/config'
@@ -26,6 +26,7 @@ export const navItems = (auth) => [
     show: auth.assignable.some((r) => r.id === 'pc'),
   },
   { to: ROUTES.masters, label: 'Masters', icon: Database, show: auth.can('masters.edit') },
+  { to: ROUTES.audit, label: 'Audit trail', icon: History, show: auth.can('audit.view') },
   { to: ROUTES.myAccount, label: 'My account', icon: UserCog, show: true },
 ].filter((item) => item.show)
 

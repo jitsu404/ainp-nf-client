@@ -4,6 +4,7 @@ import Layout, { navItems } from './components/Layout'
 import { ROUTES } from './config/constants'
 import { Toaster } from './lib/toast'
 import Accounts from './pages/Accounts'
+import Audit from './pages/Audit'
 import AccountPage, { ForcedPasswordChange } from './pages/ChangePassword'
 import CentreDetail from './pages/CentreDetail'
 import Centres from './pages/Centres'
@@ -37,6 +38,7 @@ export default function App() {
           {allowed.has(ROUTES.centres) && <Route path={ROUTES.centre(':id')} element={<CentreDetail />} />}
           {allowed.has(ROUTES.accounts) && <Route path={ROUTES.accounts} element={<Accounts />} />}
           {allowed.has(ROUTES.masters) && <Route path={ROUTES.masters} element={<Masters />} />}
+          {allowed.has(ROUTES.audit) && <Route path={ROUTES.audit} element={<Audit />} />}
           {allowed.has(ROUTES.experiments) && <>
             <Route path={ROUTES.experiments} element={<Experiments />} />
             <Route path={ROUTES.experiment(':id')} element={<ExperimentDetail />} />

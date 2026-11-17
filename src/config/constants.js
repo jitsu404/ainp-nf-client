@@ -68,6 +68,20 @@ export const PARAMETER_CATEGORIES = [
   'Pest & disease', 'Weed', 'Water', 'Economics', 'Input use', 'Weather', 'Other',
 ]
 export const PARAMETER_DATA_TYPES = ['number', 'text', 'date', 'choice']
+/** Labels for the `module` of audit-trail rows (the backend's MODULE names). */
+export const AUDIT_MODULES = {
+  auth: 'Sign-in',
+  users: 'Users',
+  centres: 'Centres',
+  masters: 'Masters',
+  financialYears: 'Financial years',
+  parameters: 'Parameters',
+  experiments: 'Experiments',
+  trials: 'Trials',
+  sheets: 'Observation sheets',
+}
+export const AUDIT_PAGE_SIZE = 25
+
 /** Largest Excel file the API accepts (src/middlewares/upload.ts). */
 export const MAX_UPLOAD_MB = 5
 
@@ -83,5 +97,6 @@ export const ROUTES = {
   trial: (id) => `/trials/${id}`,
   sheets: '/sheets',
   sheet: (id) => `/sheets/${id}`,
+  audit: '/audit',
   myAccount: '/account',
 }

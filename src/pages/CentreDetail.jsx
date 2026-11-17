@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, KeyRound, Pencil, Power, UserPlus, UserRoundCog } from 'lucide-react'
 import { useAuth } from '../auth'
+import { AuditTable } from '../components/AuditTrail'
 import { AsyncFormModal, CredentialsModal, ErrorNote } from '../components/forms'
 import { Badge, Card, Page, Table } from '../components/ui'
 import { personFields, personValues, temporaryPasswordField } from '../components/personFields'
@@ -130,6 +131,12 @@ export default function CentreDetail() {
             ]}
           />
         </Card>
+
+        {can('audit.view') && (
+          <Card title="Recent activity at this centre" pad={false}>
+            <AuditTable filters={{ centreId: id }} compact />
+          </Card>
+        )}
       </div>
 
       {modal === 'edit' && (
