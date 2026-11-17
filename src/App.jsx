@@ -12,7 +12,7 @@ import ExperimentDetail from "./pages/ExperimentDetail";
 import Experiments from "./pages/Experiments";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Masters from "./pages/Masters";
+import Masters from "./pages/masters";
 import SheetDetail from "./pages/SheetDetail";
 import Sheets from "./pages/Sheets";
 import TrialDetail from "./pages/TrialDetail";
