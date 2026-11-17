@@ -125,6 +125,7 @@ export const centresApi = {
 
 export const usersApi = {
   list: (params) => api.get('/users', params),
+  roles: () => api.get('/users/roles'),
   create: (body) => api.post('/users', body),
   update: (id, body) => api.patch(`/users/${id}`, body),
   deactivate: (id, reason) => api.post(`/users/${id}/deactivate`, { reason }),

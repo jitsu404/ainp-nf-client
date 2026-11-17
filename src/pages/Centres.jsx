@@ -8,9 +8,10 @@ import { HOST_TYPES, ROUTES, TABLE_PAGE_SIZE } from '../config/constants'
 import { useDebounced } from '../hooks'
 import { programme } from '../programme/config'
 import { useCentres, useCreateCentre } from '../queries/centres'
+import { useMasterOptions } from '../queries/masters'
 
-/** Fields shared by "Add centre" and "Edit centre". */
-export const centreFields = (isEdit) => [
+/** Fields shared by "Add centre" and "Edit centre". `zones` = names from the agro-climatic zones master. */
+export const centreFields = (isEdit, zones = []) => [
   { name: 'code', label: 'Centre code', hint: '2–10 letters, unique. Stored in capitals.', required: !isEdit },
   { name: 'name', label: 'Centre (location) name' },
   { name: 'host', label: 'Host institution', full: true },
@@ -19,7 +20,7 @@ export const centreFields = (isEdit) => [
   { name: 'city', label: 'City', required: false },
   { name: 'state', label: 'State' },
   { name: 'pincode', label: 'Pincode', required: false },
-  { name: 'zone', label: 'Agro-climatic zone', required: false },
+  { name: 'zone', label: 'Agro-climatic zone', type: 'select', options: zones, required: false },
   { name: 'type', label: 'Centre type', type: 'select', options: programme.centreTypes },
 ]
 
@@ -33,6 +34,7 @@ export default function Centres() {
 
   const centres = useCentres({ search: q, isActive: status })
   const createCentre = useCreateCentre()
+  const zones = useMasterOptions('zone')
   const rows = centres.data?.data ?? []
 
   return (
@@ -73,7 +75,7 @@ export default function Centres() {
       {adding && (
         <AsyncFormModal
           title="Add centre"
-          fields={centreFields(false)}
+          fields={centreFields(false, zones.options.map(([, name]) => name))}
           initial={{ type: programme.centreTypes[0] }}
           submitLabel="Add centre"
           onSubmit={createCentre.mutateAsync}

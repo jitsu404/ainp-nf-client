@@ -8,6 +8,9 @@ import { Badge, Card, Page, Select, Table, Tabs } from '../components/ui'
 import { PARAMETER_CATEGORIES, PARAMETER_DATA_TYPES, TABLE_PAGE_SIZE } from '../config/constants'
 import { formatDate, useDebounced } from '../hooks'
 import { toast } from '../lib/toast'
+import { useCentres } from '../queries/centres'
+import { useExperiments, useTrials } from '../queries/research'
+import { useRoleSummary } from '../queries/users'
 import {
   useCreateFinancialYear, useCreateMaster, useCreateParameter, useFinancialYears, useImportMasters,
   useImportParameters, useMasterOptions, useMasterTypes, useMasters, useParameters, useUpdateFinancialYear,
@@ -21,20 +24,71 @@ import {
 const importSummary = (r) => `${r.created} new, ${r.updated} updated`
 
 export default function Masters() {
+  const { can } = useAuth()
   const types = useMasterTypes()
   const [tab, setTab] = useState('season')
   const list = types.data ?? []
+  // The roles overview comes from /users/roles, which needs users.manage.
+  const showRoles = can('users.manage')
 
   return (
     <Page title="Masters">
       <ErrorNote error={types.error} />
       <Tabs value={tab} onChange={setTab}
-        tabs={[...list.map((t) => [t.id, t.label]), ['fy', 'Financial years'], ['parameters', 'Parameter library']]} />
+        tabs={[
+          ...list.map((t) => [t.id, t.label]),
+          ['fy', 'Financial years'],
+          ['parameters', 'Parameter library'],
+          ...(showRoles ? [['roles', 'Roles']] : []),
+        ]} />
       {tab === 'fy' ? <FinancialYears />
         : tab === 'parameters' ? <Parameters />
-          : list.find((t) => t.id === tab) && <MasterList key={tab} type={list.find((t) => t.id === tab)} />}
+          : tab === 'roles' && showRoles ? <Roles />
+            : list.find((t) => t.id === tab) && <MasterList key={tab} type={list.find((t) => t.id === tab)} />}
     </Page>
   )
+}
+
+/** Counts how many records refer to each key: keysOf(record) → keys (repeats within a record count once). */
+const tally = (records, keysOf) => {
+  if (!records) return null
+  const counts = new Map()
+  for (const record of records) {
+    for (const key of new Set(keysOf(record))) counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return counts
+}
+
+/**
+ * Where each master item is used, so the PCU can see what is in use before deactivating it.
+ * Returns { label, counts (key → number, null while loading), by: 'code' | 'name' } or null for
+ * lists nothing refers to yet.
+ */
+function useUsage(typeId) {
+  const wants = (...types) => types.includes(typeId)
+  const experiments = useExperiments({}, { enabled: wants('programme', 'season') })
+  const trials = useTrials({}, { enabled: wants('crop') })
+  const parameters = useParameters({}, { enabled: wants('unit') })
+  const centres = useCentres({}, { enabled: wants('zone') })
+  switch (typeId) {
+    case 'programme':
+      return { label: 'Experiments', by: 'code', counts: tally(experiments.data, (e) => [e.programmeCode]) }
+    case 'season':
+      return { label: 'Experiments', by: 'code', counts: tally(experiments.data, (e) => e.seasons) }
+    case 'crop':
+      return {
+        label: 'Trials',
+        by: 'code',
+        counts: tally(trials.data, (t) => t.croppingSystems.flatMap((cs) => cs.seasons.flatMap((s) => [s.mainCropCode, s.intercropCode]))),
+      }
+    case 'unit':
+      return { label: 'Parameters', by: 'code', counts: tally(parameters.data, (p) => [p.unitCode]) }
+    case 'zone':
+      // Centres store their zone by name.
+      return { label: 'Centres', by: 'name', counts: tally(centres.data?.data, (c) => [c.zone]) }
+    default:
+      return null
+  }
 }
 
 function MasterList({ type }) {
@@ -48,6 +102,7 @@ function MasterList({ type }) {
   const create = useCreateMaster(type.id)
   const update = useUpdateMaster(type.id)
   const importer = useImportMasters(type.id)
+  const usage = useUsage(type.id)
   const rows = items.data ?? []
 
   const fields = (isEdit) => [
@@ -87,6 +142,11 @@ function MasterList({ type }) {
           { label: 'Name', render: (m) => <b style={{ fontWeight: 550 }}>{m.name}</b> },
           ...(type.groups ? [{ label: type.groupLabel ?? 'Group', render: (m) => m.group || '—' }] : []),
           { label: 'Description', render: (m) => <span className="muted small">{m.description || '—'}</span> },
+          ...(usage ? [{
+            label: usage.label,
+            num: true,
+            render: (m) => (usage.counts ? usage.counts.get(m[usage.by]) ?? 0 : '…'),
+          }] : []),
           { label: 'Status', render: (m) => <Badge>{m.isActive ? 'Active' : 'Inactive'}</Badge> },
           ...(edit ? [{
             label: ' ',
@@ -260,5 +320,48 @@ function Parameters() {
           onTemplate={() => parametersApi.template()} mutation={importer} describe={importSummary} onClose={() => setModal(null)} />
       )}
     </Card>
+  )
+}
+
+/** Read-only overview of the roles, built by the server from the same definitions it enforces. */
+function Roles() {
+  const roles = useRoleSummary()
+  if (roles.error) return <ErrorNote error={roles.error} />
+  if (!roles.data) return <p className="muted">Loading…</p>
+  return (
+    <div className="stack">
+      <div className="note">
+        What each role can do, exactly as the server enforces it. Roles are part of the application, so changing one is a
+        development change. Some capabilities belong to modules that are not built yet (finance, AUC / SoE, staff, meetings …).
+      </div>
+      <div className="grid g3" style={{ alignItems: 'start' }}>
+        {roles.data.map((r) => {
+          const modules = [...new Set(r.capabilities.map((c) => c.module))]
+          return (
+            <Card key={r.id} title={
+              <span className="row" style={{ gap: 8 }}>
+                {r.label}
+                <Badge tone={r.scope === 'centre' ? 'blue' : 'green'}>{r.scope === 'centre' ? 'Own centre' : 'All centres'}</Badge>
+              </span>
+            }>
+              <div className="stack" style={{ gap: 10 }}>
+                <div className="kv two">
+                  <div><span>Active accounts</span><b>{r.activeUsers}</b></div>
+                  <div><span>Manages accounts of</span><b>{r.manages.length ? r.manages.join(', ') : '—'}</b></div>
+                </div>
+                {modules.map((module) => (
+                  <div key={module}>
+                    <div className="muted small" style={{ fontWeight: 600 }}>{module}</div>
+                    <ul className="small" style={{ margin: '2px 0 0', paddingLeft: 18 }}>
+                      {r.capabilities.filter((c) => c.module === module).map((c) => <li key={c.id}>{c.label}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
   )
 }

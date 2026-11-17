@@ -5,10 +5,11 @@ import { queryKeys } from '../lib/queryKeys'
 // Research data hooks: PCU experiments (protocols) → centre trials → observation sheets.
 // Centre users only ever receive their own centre's trials and sheets (the API scopes them).
 
-export function useExperiments(filters = {}) {
+export function useExperiments(filters = {}, { enabled = true } = {}) {
   return useQuery({
     queryKey: queryKeys.research.experiments(filters),
     queryFn: async () => (await experimentsApi.list(filters)).data,
+    enabled,
   })
 }
 

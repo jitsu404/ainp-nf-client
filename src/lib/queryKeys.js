@@ -12,6 +12,7 @@ export const queryKeys = {
   users: {
     all: ['users'],
     list: (filters) => ['users', 'list', filters],
+    roles: () => ['users', 'roles'],
   },
   masters: {
     all: ['masters'],

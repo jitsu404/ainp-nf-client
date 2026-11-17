@@ -70,11 +70,12 @@ export const useUpdateFinancialYear = () =>
   useInvalidating(async ({ id, ...body }) => (await financialYearsApi.update(id, body)).data, queryKeys.financialYears.all)
 
 /** Parameter library. `filters` = { category, isActive, search }. */
-export function useParameters(filters = {}) {
+export function useParameters(filters = {}, { enabled = true } = {}) {
   return useQuery({
     queryKey: queryKeys.parameters.list(filters),
     queryFn: async () => (await parametersApi.list(filters)).data,
     staleTime: REFERENCE_STALE_TIME_MS,
+    enabled,
   })
 }
 

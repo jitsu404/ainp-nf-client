@@ -9,6 +9,7 @@ import { DEFAULT_PI_DESIGNATION, ROUTES } from '../config/constants'
 import { formatDate, formatDateTime } from '../hooks'
 import { toast } from '../lib/toast'
 import { useAssignCentrePi, useCentre, useCentrePis, useUpdateCentre } from '../queries/centres'
+import { useMasterOptions } from '../queries/masters'
 import { useDeactivateUser, useResetPassword, useUpdateUser } from '../queries/users'
 import { centreFields } from './Centres'
 
@@ -18,6 +19,7 @@ const initials = (name) => name.replace(/^Dr\.?\s*/i, '').split(/\s+/).map((w) =
 export default function CentreDetail() {
   const { id } = useParams()
   const { can } = useAuth()
+  const zones = useMasterOptions('zone')
   const [modal, setModal] = useState(null) // which dialog is open
   const [credentials, setCredentials] = useState(null)
 
@@ -133,7 +135,11 @@ export default function CentreDetail() {
       {modal === 'edit' && (
         <AsyncFormModal
           title={`Edit ${c.name}`}
-          fields={centreFields(true)}
+          fields={centreFields(true, [
+            ...zones.options.map(([, name]) => name),
+            // Keep a zone that isn't in the list (entered before the list existed) visible, so it can be changed.
+            ...(c.zone && !zones.options.some(([, name]) => name === c.zone) ? [c.zone] : []),
+          ])}
           initial={{ code: c.code, name: c.name, host: c.host, hostShort: c.hostShort, hostType: c.hostType, city: c.city, state: c.state, pincode: c.pincode, zone: c.zone, type: c.type }}
           onSubmit={updateCentre.mutateAsync}
           onDone={() => toast.success('Centre updated')}

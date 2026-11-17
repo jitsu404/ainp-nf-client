@@ -7,11 +7,12 @@ import { queryKeys } from '../lib/queryKeys'
 // so caching and cache invalidation stay consistent.
 
 /** Centre list. `filters` = { search, isActive, sort, … } (sent as query parameters). */
-export function useCentres(filters = {}) {
+export function useCentres(filters = {}, { enabled = true } = {}) {
   const params = { limit: MAX_PAGE_SIZE, sort: 'name', ...filters }
   return useQuery({
     queryKey: queryKeys.centres.list(params),
     queryFn: () => centresApi.list(params),
+    enabled,
     // While a new search loads, keep showing the previous results instead of an empty table.
     placeholderData: keepPreviousData,
   })
