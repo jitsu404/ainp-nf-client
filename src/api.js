@@ -239,6 +239,19 @@ export const sheetsApi = {
 };
 
 // Audit trail (read-only). Centre users get only their own centre's activity.
+export const metadataApi = {
+  trial: (trialId) => api.get(`/metadata/trials/${trialId}`),
+  saveTrial: (trialId, body) => api.put(`/metadata/trials/${trialId}`, body),
+  transition: (trialId, action, remark) =>
+    api.post(`/metadata/trials/${trialId}/${action}`, { remark }),
+  experiment: (experimentId) =>
+    api.get(`/metadata/experiments/${experimentId}`),
+  saveCommon: (experimentId, body) =>
+    api.put(`/metadata/experiments/${experimentId}/common`, body),
+  exportExperiment: (experimentId) =>
+    api.download(`/metadata/experiments/${experimentId}/export`),
+};
+
 export const auditApi = {
   list: (params) => api.get("/audit", params),
   exportFile: (params) => api.download("/audit/export", params),

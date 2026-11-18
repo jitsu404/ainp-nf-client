@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth";
 import { AsyncFormModal, ErrorNote, SaveModal } from "../components/forms";
+import { TrialMetadata } from "../components/Metadata";
 import { Badge, Card, Page, Table, Tabs } from "../components/ui";
 import { ROUTES, TRIAL_STATUSES } from "../config/constants";
 import { formatDate, formatDateTime } from "../hooks";
@@ -161,8 +162,11 @@ export default function TrialDetail() {
             ["sheets", "Observation sheets", sheets.data?.length],
             ["systems", "Cropping systems", t.croppingSystems.length],
             ["practices", "Treatment practices"],
+            ["metadata", "Metadata"],
           ]}
         />
+
+        {tab === "metadata" && <TrialMetadata trialId={id} />}
 
         {tab === "sheets" && (
           <Card pad={false}>

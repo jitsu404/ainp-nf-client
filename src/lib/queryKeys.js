@@ -59,5 +59,15 @@ export const queryKeys = {
       experimentId,
     ],
     trend: (params) => ["research", "sheets", "trend", params],
+    // ICAR metadata is partly derived from the protocol, trial and sheets, so it sits in this
+    // tree: any research change refreshes it.
+    metadata: ["research", "metadata"],
+    trialMetadata: (trialId) => ["research", "metadata", "trial", trialId],
+    experimentMetadata: (experimentId) => [
+      "research",
+      "metadata",
+      "experiment",
+      experimentId,
+    ],
   },
 };
