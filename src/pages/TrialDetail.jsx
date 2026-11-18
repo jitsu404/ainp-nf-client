@@ -99,7 +99,17 @@ export default function TrialDetail() {
             </button>
           )}
           {can("research.enter") && (
-            <button className="btn" onClick={() => setModal("sheet")}>
+            // The server only accepts sheets for active experiments; say why instead of failing later.
+            <button
+              className="btn"
+              onClick={() => setModal("sheet")}
+              disabled={e.status !== "Active"}
+              title={
+                e.status !== "Active"
+                  ? `The experiment is ${e.status}. Sheets can be opened once the PCU makes it Active.`
+                  : undefined
+              }
+            >
               <FilePlus2 size={15} /> Open sheet
             </button>
           )}
@@ -713,7 +723,11 @@ function OpenSheetModal({ trial, onClose, onOpened }) {
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
   const create = useCreateSheet();
-  const openYears = (years.data ?? []).filter((y) => y.isOpen);
+  // Open years from the experiment's start year on (year codes sort in time order); the server
+  // refuses earlier years, which the reporting grid and trend would never show.
+  const openYears = (years.data ?? []).filter(
+    (y) => y.isOpen && y.code >= trial.experiment.startYear,
+  );
   const allowedSeasons = seasons.options.filter(
     ([c]) =>
       !trial.experiment.seasons.length || trial.experiment.seasons.includes(c),
@@ -738,7 +752,9 @@ function OpenSheetModal({ trial, onClose, onOpened }) {
           label: "Financial year",
           type: "select",
           options: openYears.map((y) => y.code),
-          hint: "Only open years are listed.",
+          hint: openYears.length
+            ? `Open years from ${trial.experiment.startYear} (the experiment's start) are listed.`
+            : `No open year from ${trial.experiment.startYear} on. Ask the PCU to open or add one.`,
         },
         {
           name: "seasonCode",
