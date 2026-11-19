@@ -10,6 +10,7 @@ import AccountPage, { ForcedPasswordChange } from "./pages/ChangePassword";
 import CentreDetail from "./pages/CentreDetail";
 import Centres from "./pages/Centres";
 import ExperimentDetail from "./pages/experiment-details/index.jsx";
+import ExperimentPis from "./pages/ExperimentPis";
 import Experiments from "./pages/experiments/index.jsx";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -44,6 +45,9 @@ export default function App() {
           )}
           {allowed.has(ROUTES.accounts) && (
             <Route path={ROUTES.accounts} element={<Accounts />} />
+          )}
+          {allowed.has(ROUTES.experimentPis) && (
+            <Route path={ROUTES.experimentPis} element={<ExperimentPis />} />
           )}
           {allowed.has(ROUTES.masters) && (
             <Route path={ROUTES.masters} element={<Masters />} />

@@ -12,6 +12,7 @@ import {
   PiggyBank,
   ShieldCheck,
   UserCog,
+  UserSquare2,
 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ROUTES } from "../config/constants";
@@ -57,6 +58,12 @@ export const navItems = (auth) =>
       label: "Centres & PIs",
       icon: Building2,
       show: auth.can("centres.manage"),
+    },
+    {
+      to: ROUTES.experimentPis,
+      label: "Experiment PIs",
+      icon: UserSquare2,
+      show: auth.can("research.assign") && auth.can("users.manage"),
     },
     {
       to: ROUTES.accounts,

@@ -12,18 +12,21 @@ import { Badge, Card, Page, Stat, Table } from "../components/ui";
 import { ROUTES, TABLE_PAGE_SIZE } from "../config/constants";
 import { formatDate, formatDateTime } from "../hooks";
 import { useCentre, useCentres } from "../queries/centres";
+import { useExperiments } from "../queries/research";
 import { useUsers } from "../queries/users";
 
 /**
  * The dashboard depends on what the signed-in user can do, never on their role name:
  * - can manage centres (Super Admin, PCU) → programme-wide centre coverage
  * - centre-scoped user (Centre PI) → their own centre
+ * - experiment-scoped user (Experiment PI) → the experiment linked to their login
  * - anyone else → a plain welcome until their modules exist
  */
 export default function Home() {
   const auth = useAuth();
   if (auth.can("centres.manage")) return <CoverageDashboard />;
   if (auth.role.scope === "centre") return <CentreDashboard />;
+  if (auth.role.scope === "experiment") return <ExperimentPiDashboard />;
   return (
     <Page title={`Welcome, ${auth.user.name}`}>
       <p className="muted">
@@ -120,6 +123,53 @@ function CoverageDashboard() {
             ]}
           />
         </Card>
+      </div>
+    </Page>
+  );
+}
+
+/** Experiment PI: the experiment(s) their login leads. The API returns only those. */
+function ExperimentPiDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const experiments = useExperiments();
+  const rows = experiments.data ?? [];
+  return (
+    <Page title={`Welcome, ${user.name}`}>
+      <div className="stack">
+        <ErrorNote error={experiments.error} />
+        <Card title="Your experiment" pad={false}>
+          <Table
+            rows={rows}
+            onRow={(e) => navigate(ROUTES.experiment(e.id))}
+            empty={
+              experiments.isPending
+                ? "Loading…"
+                : "No experiment is linked to your PI login yet. The PCU links it."
+            }
+            columns={[
+              {
+                label: "Code",
+                render: (e) => <span className="mono">{e.code}</span>,
+              },
+              {
+                label: "Title",
+                render: (e) => <b style={{ fontWeight: 550 }}>{e.title}</b>,
+              },
+              {
+                label: "Centres",
+                num: true,
+                render: (e) => e.centreIds.length,
+              },
+              { label: "Status", render: (e) => <Badge>{e.status}</Badge> },
+            ]}
+          />
+        </Card>
+        <p className="muted small" style={{ margin: 0 }}>
+          You edit the experiment&apos;s definition: treatments, parameters,
+          seasons and metadata. The PCU assigns centres and approves their data;
+          each centre runs its trial.
+        </p>
       </div>
     </Page>
   );

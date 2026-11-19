@@ -129,6 +129,7 @@ export const ROUTES = {
   centres: "/centres",
   centre: (id) => `/centres/${id}`,
   accounts: "/accounts",
+  experimentPis: "/experiment-pis",
   masters: "/masters",
   experiments: "/experiments",
   experiment: (id) => `/experiments/${id}`,

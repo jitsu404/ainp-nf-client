@@ -26,6 +26,11 @@ export const queryKeys = {
     all: ["parameters"],
     list: (filters) => ["parameters", "list", filters],
   },
+  // Experiment PI seats (pi1.npnf@…). Experiments show their PI, so changes also refresh 'research'.
+  experimentPis: {
+    all: ["experimentPis"],
+    list: () => ["experimentPis", "list"],
+  },
   audit: {
     all: ["audit"],
     list: (filters) => ["audit", "list", filters],

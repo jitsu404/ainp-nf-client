@@ -290,6 +290,7 @@ export function CredentialsModal({
   name,
   email,
   password,
+  mustChange = true,
   onClose,
 }) {
   return (
@@ -305,8 +306,10 @@ export function CredentialsModal({
       <div className="stack">
         <p>
           Share these sign-in details with <b>{name}</b> through a secure
-          channel. They will be asked to choose their own password the first
-          time they sign in.
+          channel.{" "}
+          {mustChange
+            ? "They will be asked to choose their own password the first time they sign in."
+            : "They can change the password later from My account."}
         </p>
         <div className="kv" style={{ gridTemplateColumns: "1fr" }}>
           <div>
@@ -314,12 +317,13 @@ export function CredentialsModal({
             <b>{email}</b>
           </div>
           <div>
-            <span>Temporary password</span>
+            <span>{mustChange ? "Temporary password" : "Password"}</span>
             <b className="mono">{password}</b>
           </div>
         </div>
         <div className="note warn">
-          This password is not shown again. If it is lost, use “Reset password”.
+          This password is not shown again. If it is lost,{" "}
+          {mustChange ? "use “Reset password”." : "set a new one."}
         </div>
       </div>
     </Modal>

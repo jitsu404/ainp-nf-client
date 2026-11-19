@@ -44,7 +44,7 @@ export default function TrialDetail() {
   const update = useUpdateTrial(id);
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
-  const edit = can("research.enter") || can("research.config");
+  const edit = can("research.enter") || can("research.assign");
   const close = () => setModal(null);
 
   if (trial.error) {

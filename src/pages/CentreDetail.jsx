@@ -19,7 +19,7 @@ import { Badge, Card, Page, Table } from "../components/ui";
 import {
   personFields,
   personValues,
-  temporaryPasswordField,
+  seatPasswordField,
 } from "../components/personFields";
 import { DEFAULT_PI_DESIGNATION, ROUTES } from "../config/constants";
 import { formatDate, formatDateTime } from "../hooks";
@@ -63,8 +63,11 @@ export default function CentreDetail() {
   const deactivateUser = useDeactivateUser();
 
   const c = centre.data;
-  const current = (pis.data ?? []).find((p) => p.isActive);
-  const past = (pis.data ?? []).filter((p) => !p.isActive);
+  // The PI is a seat (<code>.pi.npnf@…): the centre's current holder, and everyone before them.
+  const current = c?.currentPi ?? null;
+  const past = (pis.data ?? [])
+    .filter((p) => !p.isCurrent)
+    .map((p, i) => ({ ...p, id: `${p.accountId}-${i}` }));
   const manage = can("centres.manage");
   const close = () => setModal(null);
 
@@ -187,6 +190,10 @@ export default function CentreDetail() {
                       {current.email}
                       {current.mobile && ` · ${current.mobile}`}
                     </div>
+                    <div className="small muted">
+                      Signs in as{" "}
+                      <span className="mono">{current.loginEmail}</span>
+                    </div>
                     {current.organization && (
                       <div className="small muted">{current.organization}</div>
                     )}
@@ -198,16 +205,12 @@ export default function CentreDetail() {
                       </div>
                     )}
                     <div className="small muted">
-                      PI since {formatDate(current.createdAt)} · last sign-in{" "}
-                      {formatDateTime(current.lastLoginAt)}
+                      PI since {formatDate(current.occupiedSince)} · last
+                      sign-in{" "}
+                      {current.lastLoginAt
+                        ? formatDateTime(current.lastLoginAt)
+                        : "never"}
                     </div>
-                    {current.mustChangePassword && (
-                      <div style={{ marginTop: 6 }}>
-                        <Badge tone="amber">
-                          Hasn’t signed in and set a password yet
-                        </Badge>
-                      </div>
-                    )}
                   </div>
                 </div>
                 {manage && (
@@ -222,7 +225,7 @@ export default function CentreDetail() {
                       className="btn ghost sm"
                       onClick={() => setModal("resetPi")}
                     >
-                      <KeyRound size={14} /> Reset password
+                      <KeyRound size={14} /> Set new password
                     </button>
                     <button
                       className="btn danger sm"
@@ -255,20 +258,20 @@ export default function CentreDetail() {
                 render: (p) => <b style={{ fontWeight: 550 }}>{p.name}</b>,
               },
               { label: "Designation", render: (p) => p.designation || "—" },
-              { label: "Email", key: "email" },
+              { label: "Email", render: (p) => p.email || "—" },
               {
                 label: "From",
                 render: (p) => (
-                  <span className="nowrap">{formatDate(p.createdAt)}</span>
+                  <span className="nowrap">{formatDate(p.from)}</span>
                 ),
               },
               {
                 label: "To",
                 render: (p) => (
-                  <span className="nowrap">{formatDate(p.deactivatedAt)}</span>
+                  <span className="nowrap">{formatDate(p.to)}</span>
                 ),
               },
-              { label: "Reason", render: (p) => p.deactivationReason || "—" },
+              { label: "Reason", render: (p) => p.reason || "—" },
             ]}
           />
         </Card>
@@ -341,14 +344,16 @@ export default function CentreDetail() {
           intro={
             current && (
               <div className="note warn">
-                <b>{current.name}</b> will be removed as Centre PI and can no
-                longer sign in. Their past work stays with the centre.
+                <b>{current.name}</b> is signed out and can no longer use the
+                centre&apos;s PI login{" "}
+                <span className="mono">{current.loginEmail}</span>. The login
+                and everything recorded under it stay with the centre.
               </div>
             )
           }
           fields={[
-            ...personFields(),
-            temporaryPasswordField,
+            ...personFields({ seat: true }),
+            seatPasswordField("temporaryPassword"),
             ...(current
               ? [
                   {
@@ -373,6 +378,7 @@ export default function CentreDetail() {
               email: pi.email,
               password: body.temporaryPassword,
               title: "Centre PI assigned",
+              mustChange: false,
             })
           }
           onClose={close}
@@ -382,7 +388,7 @@ export default function CentreDetail() {
       {modal === "editPi" && current && (
         <AsyncFormModal
           title={`Edit ${current.name}`}
-          fields={personFields({ edit: true })}
+          fields={personFields({ edit: true, seat: true })}
           initial={personValues(current)}
           onSubmit={(body) =>
             updateUser.mutateAsync({ id: current.id, ...body })
@@ -397,21 +403,22 @@ export default function CentreDetail() {
           title={`Reset password for ${current.name}`}
           intro={
             <p className="muted">
-              They’ll be signed out everywhere and must choose a new password at
-              their next sign-in.
+              They’ll be signed out everywhere and sign in again with this
+              password. They can change it later.
             </p>
           }
-          fields={[temporaryPasswordField]}
-          submitLabel="Reset password"
+          fields={[seatPasswordField("temporaryPassword")]}
+          submitLabel="Set password"
           onSubmit={(body) =>
             resetPassword.mutateAsync({ id: current.id, ...body })
           }
           onDone={(_r, body) =>
             setCredentials({
               name: current.name,
-              email: current.email,
+              email: current.loginEmail,
               password: body.temporaryPassword,
-              title: "Password reset",
+              title: "Password set",
+              mustChange: false,
             })
           }
           onClose={close}
@@ -423,8 +430,8 @@ export default function CentreDetail() {
           title={`Remove ${current.name} as Centre PI?`}
           intro={
             <div className="note warn">
-              Their account is deactivated and they can no longer sign in. The
-              centre will have no PI until you assign one.
+              The centre&apos;s PI login is closed and they can no longer sign
+              in. Assigning a new PI reopens the same login.
             </div>
           }
           fields={[{ name: "reason", label: "Reason", type: "textarea" }]}
