@@ -29,27 +29,26 @@ export default function Login() {
   return (
     <div className="login">
       <section className="login-hero">
-        <div>
-          <div className="logos">
-            <img src="/logos/icar.png" alt="ICAR logo" />
-            <img src="/logos/iifsr.png" alt="ICAR-IIFSR logo" />
-          </div>
-          <h1>
-            {programme.short}
-            <br />
-            {programme.system}
-          </h1>
-          <p className="scheme">{programme.name}</p>
-        </div>
-        <div className="address">
+        <div className="hero-text">
           <div>
+            <img className="hero-logo" src="/logos/icar.png" alt="ICAR logo" />
+            <h1>{programme.name}</h1>
+            <p className="scheme">
+              ({programme.short}) {programme.system}
+            </p>
+          </div>
+          <div className="address">
             <b>{programme.institute}</b>
             {programme.instituteHi}
             <br />
             {programme.place}
           </div>
-          <div>{programme.unit}</div>
         </div>
+        <img
+          className="hero-map"
+          src="/login-map.jpg"
+          alt="Map of the 20 AINP-NF centres across India"
+        />
       </section>
 
       <section className="login-panel">
