@@ -289,7 +289,16 @@ export function ExportBar({ name = "report", columns, rows }) {
   );
 }
 
-export function Modal({ title, subtitle, onClose, children, footer, wide }) {
+export function Modal({
+  title,
+  subtitle,
+  onClose,
+  children,
+  footer,
+  wide,
+  style,
+  bodyStyle,
+}) {
   return (
     <div
       className="overlay"
@@ -297,10 +306,16 @@ export function Modal({ title, subtitle, onClose, children, footer, wide }) {
     >
       <div
         className={`modal ${wide ? "wide" : ""}`}
+        style={{
+          maxHeight: "90svh",
+          display: "flex",
+          flexDirection: "column",
+          ...style,
+        }}
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-head">
+        <div className="modal-head" style={{ flexShrink: 0 }}>
           <div>
             <h3>{title}</h3>
             {subtitle && <p className="muted small">{subtitle}</p>}
@@ -309,8 +324,17 @@ export function Modal({ title, subtitle, onClose, children, footer, wide }) {
             <X size={18} />
           </button>
         </div>
-        <div className="modal-body">{children}</div>
-        {footer && <div className="modal-foot">{footer}</div>}
+        <div
+          className="modal-body"
+          style={{ flex: 1, overflowY: "auto", ...bodyStyle }}
+        >
+          {children}
+        </div>
+        {footer && (
+          <div className="modal-foot" style={{ flexShrink: 0 }}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

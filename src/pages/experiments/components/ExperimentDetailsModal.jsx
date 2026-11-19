@@ -1,0 +1,439 @@
+import { useEffect, useState } from "react";
+import { SaveModal } from "../../../components/forms";
+import {
+  DESIGN_HINTS,
+  DESIGNS_NEEDING_REPLICATIONS,
+  EXPERIMENT_DESIGNS,
+  EXPERIMENT_STATUSES,
+  UNREPLICATED_DESIGNS,
+} from "../../../config/constants";
+import { toast } from "../../../lib/toast";
+import {
+  useFinancialYears,
+  useMasterOptions,
+  useMasters,
+} from "../../../queries/masters";
+import { useCreateExperiment } from "../../../queries/research";
+import { useUsers } from "../../../queries/users";
+import { ExperimentSeasonsField } from "./ExperimentSeasonsField";
+
+const getAssignedToId = (assignedTo) => {
+  if (!assignedTo) return "";
+  if (typeof assignedTo === "object") {
+    return assignedTo._id || assignedTo.id || "";
+  }
+  return String(assignedTo);
+};
+
+const parseInitialSeasons = (seasonsData) => {
+  if (!seasonsData) return {};
+  if (seasonsData instanceof Map) {
+    const obj = {};
+    for (const [k, v] of seasonsData.entries()) {
+      obj[k] = Array.isArray(v)
+        ? v.map((item) =>
+            typeof item === "object" ? item?._id || item?.id : String(item),
+          )
+        : [];
+    }
+    return obj;
+  }
+  if (Array.isArray(seasonsData)) {
+    return Object.fromEntries(
+      seasonsData.map((s) => [typeof s === "string" ? s : s?.code, []]),
+    );
+  }
+  if (typeof seasonsData === "object") {
+    const obj = {};
+    for (const [k, v] of Object.entries(seasonsData)) {
+      obj[k] = Array.isArray(v)
+        ? v.map((item) =>
+            typeof item === "object" ? item?._id || item?.id : String(item),
+          )
+        : [];
+    }
+    return obj;
+  }
+  return {};
+};
+
+export function ExperimentDetailsModal({
+  experiment,
+  save,
+  onClose,
+  onCreated,
+}) {
+  const create = useCreateExperiment();
+  const programmes = useMasterOptions("programme");
+  const seasons = useMasterOptions("season");
+  const crops = useMasters("crop", { isActive: true });
+  const years = useFinancialYears();
+  const users = useUsers({ isActive: "true" });
+
+  const currentYearCode = years.data?.find((y) => y.isCurrent)?.code ?? "";
+  const defaultYear = currentYearCode
+    ? Number(currentYearCode.slice(0, 4))
+    : new Date().getFullYear();
+
+  const [v, setV] = useState(() => ({
+    title: experiment?.title ?? "",
+    programmeCode: experiment?.programmeCode ?? "",
+    design: experiment?.design ?? "RBD",
+    replications: experiment ? (experiment.replications ?? "") : 3,
+    mainPlotCount: experiment?.mainPlotCount ?? 0,
+    subPlotCount: experiment?.subPlotCount ?? 0,
+    startYear: experiment?.startYear ?? defaultYear,
+    endYear: experiment?.endYear ?? defaultYear + 3,
+    assignedTo: getAssignedToId(experiment?.assignedTo),
+    seasons: parseInitialSeasons(experiment?.seasons),
+    objectives: (experiment?.objectives ?? []).join("\n"),
+    status: experiment?.status ?? "Draft",
+    referenceTreatmentCode: experiment?.referenceTreatmentCode ?? "",
+  }));
+
+  useEffect(() => {
+    if (experiment) {
+      setV({
+        title: experiment.title ?? "",
+        programmeCode: experiment.programmeCode ?? "",
+        design: experiment.design ?? "RBD",
+        replications: experiment.replications ?? "",
+        mainPlotCount: experiment.mainPlotCount ?? 0,
+        subPlotCount: experiment.subPlotCount ?? 0,
+        startYear: experiment.startYear ?? defaultYear,
+        endYear: experiment.endYear ?? defaultYear + 3,
+        assignedTo: getAssignedToId(experiment.assignedTo),
+        seasons: parseInitialSeasons(experiment.seasons),
+        objectives: (experiment.objectives ?? []).join("\n"),
+        status: experiment.status ?? "Draft",
+        referenceTreatmentCode: experiment.referenceTreatmentCode ?? "",
+      });
+    }
+  }, [experiment, defaultYear]);
+
+  const set = (k, value) => setV((s) => ({ ...s, [k]: value }));
+  const replicated = !UNREPLICATED_DESIGNS.includes(v.design);
+  const needsReps = DESIGNS_NEEDING_REPLICATIONS.includes(v.design);
+  const reps = String(v.replications ?? "").trim();
+
+  // Strip plot may be un-replicated (empty); otherwise replicated designs need 2 or more.
+  const repsOk = !replicated
+    ? true
+    : reps === ""
+      ? !needsReps
+      : Number.isInteger(Number(reps)) &&
+        Number(reps) >= 2 &&
+        Number(reps) <= 20;
+
+  const startYearNum = Number(v.startYear);
+  const endYearNum = Number(v.endYear);
+  const yearsOk =
+    Number.isInteger(startYearNum) &&
+    startYearNum >= 1900 &&
+    startYearNum <= 2100 &&
+    Number.isInteger(endYearNum) &&
+    endYearNum >= 1900 &&
+    endYearNum <= 2100 &&
+    endYearNum >= startYearNum;
+
+  const locked = experiment?.dataLocked;
+
+  const body = () => {
+    const b = {
+      title: v.title.trim(),
+      programmeCode: v.programmeCode,
+      startYear: startYearNum,
+      endYear: endYearNum,
+      mainPlotCount:
+        v.design === "Split plot" ? Number(v.mainPlotCount) || 0 : 0,
+      subPlotCount: v.design === "Split plot" ? Number(v.subPlotCount) || 0 : 0,
+      assignedTo: v.assignedTo || null,
+      seasons: v.seasons,
+      objectives: v.objectives
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+    // Once data exists the design and replications are frozen; don't send them unchanged.
+    if (!locked) {
+      b.design = v.design;
+      b.replications = replicated && reps !== "" ? Number(reps) : null;
+    }
+    if (experiment) {
+      b.status = v.status;
+      b.referenceTreatmentCode = v.referenceTreatmentCode || null;
+    }
+    return b;
+  };
+
+  const onSave = async () => {
+    if (experiment) {
+      await save(body());
+      toast.success("Experiment saved");
+    } else {
+      const created = await create.mutateAsync(body());
+      toast.success(`${created.code} created`);
+      onCreated?.(created);
+    }
+  };
+
+  const ready =
+    v.title.trim().length >= 5 && v.programmeCode && yearsOk && repsOk;
+
+  const userList = users.data?.data ?? [];
+
+  return (
+    <SaveModal
+      title={experiment ? `Edit ${experiment.code}` : "New experiment"}
+      subtitle={
+        experiment
+          ? undefined
+          : "Treatments, parameters and settings are configured after creation."
+      }
+      onSave={onSave}
+      onClose={onClose}
+      canSave={Boolean(ready)}
+      submitLabel={experiment ? "Save" : "Create experiment"}
+      bodyStyle={{
+        maxHeight: "85svh",
+        overflowY: "auto",
+        paddingRight: "6px",
+      }}
+    >
+      {locked && (
+        <div className="note warn">
+          Centres have recorded data, so the design and replications can no
+          longer change.
+        </div>
+      )}
+      <div className="form">
+        <div className="field">
+          <label>Experiment Code</label>
+          {experiment ? (
+            <input value={experiment.code} disabled className="mono" />
+          ) : (
+            <div
+              className="note info"
+              style={{ margin: 0, padding: "8px 12px" }}
+            >
+              Autogenerated upon creation (e.g. <code>AINP-NF-EXPT-001</code>)
+            </div>
+          )}
+        </div>
+
+        <div className="field">
+          <label htmlFor="x-prog">Programme</label>
+          <select
+            id="x-prog"
+            value={v.programmeCode}
+            onChange={(e) => set("programmeCode", e.target.value)}
+          >
+            <option value="">Select…</option>
+            {programmes.options.map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field full">
+          <label htmlFor="x-title">Title</label>
+          <input
+            id="x-title"
+            value={v.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Full title of the experiment protocol"
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="x-design">Design</label>
+          <select
+            id="x-design"
+            value={v.design}
+            disabled={locked}
+            onChange={(e) => set("design", e.target.value)}
+          >
+            {EXPERIMENT_DESIGNS.map((d) => (
+              <option key={d}>{d}</option>
+            ))}
+          </select>
+          <span className="muted small">{DESIGN_HINTS[v.design]}</span>
+        </div>
+
+        <div className="field">
+          <label htmlFor="x-reps">Replications</label>
+          <input
+            id="x-reps"
+            type="number"
+            min={2}
+            max={20}
+            value={replicated ? (v.replications ?? "") : ""}
+            disabled={!replicated || locked}
+            onChange={(e) => set("replications", e.target.value)}
+            placeholder={
+              !replicated
+                ? "Not replicated"
+                : needsReps
+                  ? ""
+                  : "None (un-replicated)"
+            }
+          />
+          {replicated && !repsOk && (
+            <span className="field-error">
+              {needsReps
+                ? `${v.design} needs 2–20 replications.`
+                : "Leave empty, or enter 2–20."}
+            </span>
+          )}
+        </div>
+
+        {v.design === "Split plot" && (
+          <>
+            <div className="field">
+              <label htmlFor="x-main-plots">Main Plot Count</label>
+              <input
+                id="x-main-plots"
+                type="number"
+                min={0}
+                value={v.mainPlotCount}
+                onChange={(e) => set("mainPlotCount", e.target.value)}
+                placeholder="Number of main plots"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="x-sub-plots">Sub Plot Count</label>
+              <input
+                id="x-sub-plots"
+                type="number"
+                min={0}
+                value={v.subPlotCount}
+                onChange={(e) => set("subPlotCount", e.target.value)}
+                placeholder="Number of sub plots"
+              />
+            </div>
+          </>
+        )}
+
+        <div className="field">
+          <label htmlFor="x-start-year">Start Year</label>
+          <input
+            id="x-start-year"
+            type="number"
+            min={1900}
+            max={2100}
+            value={v.startYear}
+            onChange={(e) => set("startYear", e.target.value)}
+            placeholder="e.g. 2024"
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="x-end-year">End Year</label>
+          <input
+            id="x-end-year"
+            type="number"
+            min={1900}
+            max={2100}
+            value={v.endYear}
+            onChange={(e) => set("endYear", e.target.value)}
+            placeholder="e.g. 2027"
+          />
+          {startYearNum > endYearNum && (
+            <span className="field-error">
+              End year must be greater than or equal to start year.
+            </span>
+          )}
+        </div>
+
+        <div className="field">
+          <label htmlFor="x-assigned">Assigned To (User)</label>
+          <select
+            id="x-assigned"
+            value={v.assignedTo}
+            onChange={(e) => set("assignedTo", e.target.value)}
+          >
+            <option value="">Unassigned</option>
+            {v.assignedTo &&
+              !userList.some((u) => (u.id || u._id) === v.assignedTo) && (
+                <option value={v.assignedTo}>
+                  {typeof experiment?.assignedTo === "object" &&
+                  experiment?.assignedTo?.name
+                    ? `${experiment.assignedTo.name} (${experiment.assignedTo.designation || experiment.assignedTo.email || "Assigned"})`
+                    : v.assignedTo}
+                </option>
+              )}
+            {userList.map((u) => {
+              const uid = u.id || u._id;
+              return (
+                <option key={uid} value={uid}>
+                  {u.name} ({u.designation || u.email})
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {experiment && (
+          <div className="field">
+            <label htmlFor="x-status">Status</label>
+            <select
+              id="x-status"
+              value={v.status}
+              onChange={(e) => set("status", e.target.value)}
+            >
+              {EXPERIMENT_STATUSES.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+            <span className="muted small">
+              Centres can record data only while the experiment is Active.
+            </span>
+          </div>
+        )}
+
+        {experiment && experiment.treatments.length > 0 && (
+          <div className="field">
+            <label htmlFor="x-ref">Reference treatment</label>
+            <select
+              id="x-ref"
+              value={v.referenceTreatmentCode}
+              onChange={(e) => set("referenceTreatmentCode", e.target.value)}
+            >
+              <option value="">None</option>
+              {experiment.treatments.map((t) => (
+                <option key={t.code} value={t.code}>
+                  {t.code} · {t.name}
+                </option>
+              ))}
+            </select>
+            <span className="muted small">
+              Results show each treatment as % above or below this one.
+            </span>
+          </div>
+        )}
+
+        <ExperimentSeasonsField
+          value={v.seasons}
+          onChange={(newSeasons) => set("seasons", newSeasons)}
+          seasonOptions={seasons.options}
+          cropOptions={crops.data ?? []}
+        />
+
+        <div className="field full">
+          <label htmlFor="x-obj">
+            Objectives <span className="muted">(optional, one per line)</span>
+          </label>
+          <textarea
+            id="x-obj"
+            rows={3}
+            value={v.objectives}
+            onChange={(e) => set("objectives", e.target.value)}
+          />
+        </div>
+      </div>
+    </SaveModal>
+  );
+}

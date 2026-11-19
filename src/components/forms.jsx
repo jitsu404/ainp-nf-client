@@ -215,6 +215,8 @@ export function SaveModal({
   canSave = true,
   submitLabel = "Save",
   wide = true,
+  bodyStyle,
+  style,
 }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -236,6 +238,8 @@ export function SaveModal({
       title={title}
       subtitle={subtitle}
       wide={wide}
+      style={style}
+      bodyStyle={bodyStyle}
       onClose={busy ? () => {} : onClose}
       footer={
         <>

@@ -4,10 +4,20 @@ import { useParameters } from "../../../queries/masters";
 
 /** Counts how many records refer to each key: keysOf(record) → keys (repeats within a record count once). */
 const tally = (records, keysOf) => {
-  if (!records) return null;
+  if (!records || !Array.isArray(records)) return null;
   const counts = new Map();
   for (const record of records) {
-    const keys = keysOf(record) ?? [];
+    const rawKeys = keysOf(record);
+    let keys = [];
+    if (Array.isArray(rawKeys)) {
+      keys = rawKeys;
+    } else if (rawKeys instanceof Set) {
+      keys = [...rawKeys];
+    } else if (rawKeys instanceof Map) {
+      keys = [...rawKeys.keys()];
+    } else if (typeof rawKeys === "object" && rawKeys !== null) {
+      keys = Object.keys(rawKeys);
+    }
     for (const key of new Set(keys)) {
       if (key !== undefined && key !== null && key !== "") {
         counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -42,7 +52,13 @@ export function useMasterUsage(typeId) {
       return {
         label: "Experiments",
         by: "code",
-        counts: tally(experiments.data, (e) => e.seasons),
+        counts: tally(experiments.data, (e) => {
+          if (!e?.seasons) return [];
+          if (Array.isArray(e.seasons)) return e.seasons;
+          if (e.seasons instanceof Map) return [...e.seasons.keys()];
+          if (typeof e.seasons === "object") return Object.keys(e.seasons);
+          return [];
+        }),
       };
     case "crop":
       return {

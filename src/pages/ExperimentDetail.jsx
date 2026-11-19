@@ -6,6 +6,7 @@ import {
   Building2,
   FlaskConical,
   ListChecks,
+  Loader2,
   Pencil,
   Plus,
   Trash2,
@@ -28,7 +29,7 @@ import {
   useTrials,
   useUpdateExperiment,
 } from "../queries/research";
-import { ExperimentDetailsModal } from "./Experiments";
+import { ExperimentDetailsModal } from "./experiments/index.jsx";
 
 export default function ExperimentDetail() {
   const { id } = useParams();
@@ -58,16 +59,47 @@ export default function ExperimentDetail() {
     );
   }
   const e = experiment.data;
-  if (!e)
+  if (experiment.isPending || experiment.isLoading || !e) {
     return (
-      <Page title="Experiment">
-        <p className="muted">Loading…</p>
+      <Page
+        title={
+          <div className="row" style={{ gap: 10, alignItems: "center" }}>
+            <span>Experiment</span>
+            <Loader2 size={18} className="spin text-muted" />
+          </div>
+        }
+      >
+        <Card pad={false}>
+          <div
+            style={{
+              padding: "72px 24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+            }}
+          >
+            <Loader2
+              size={36}
+              className="spin"
+              style={{ color: "var(--green, #1b7f4b)" }}
+            />
+            <div
+              className="muted"
+              style={{ fontSize: "0.95rem", fontWeight: 500 }}
+            >
+              Loading experiment details…
+            </div>
+          </div>
+        </Card>
       </Page>
     );
+  }
   // A trial stays (with its data) when its centre is unassigned; list only assigned centres.
-  const trialRows = (trials.data ?? []).filter((t) =>
-    e.centreIds.includes(t.centreId?.id),
-  );
+  const trialRows = Array.isArray(e.centreIds)
+    ? (trials.data ?? []).filter((t) => e.centreIds.includes(t.centreId?.id))
+    : (trials.data ?? []);
   // A Centre PI sees only their own centre's trial: offer a direct link.
   const myTrial = !config && trialRows.length === 1 ? trialRows[0] : null;
   const save = (body) => update.mutateAsync(body);
@@ -115,7 +147,10 @@ export default function ExperimentDetail() {
               </div>
               <div>
                 <span>Since</span>
-                <b>{e.startYear}</b>
+                <b>
+                  {e.startYear}
+                  {e.endYear ? ` – ${e.endYear}` : ""}
+                </b>
               </div>
               <div>
                 <span>Reference treatment</span>
@@ -128,20 +163,65 @@ export default function ExperimentDetail() {
               <div>
                 <span>Seasons</span>
                 <b>
-                  {e.seasons.length
-                    ? e.seasons.map(seasons.nameOf).join(", ")
-                    : "Any"}
+                  {(() => {
+                    const seasonsMap =
+                      e.seasons instanceof Map
+                        ? e.seasons
+                        : typeof e.seasons === "object" &&
+                            !Array.isArray(e.seasons)
+                          ? new Map(Object.entries(e.seasons || {}))
+                          : new Map();
+                    if (seasonsMap.size === 0) {
+                      return Array.isArray(e.seasons) && e.seasons.length
+                        ? e.seasons.map(seasons.nameOf).join(", ")
+                        : "Any";
+                    }
+                    const parts = [];
+                    for (const [sCode, cropList] of seasonsMap.entries()) {
+                      const sName = seasons.nameOf(sCode);
+                      const cropNames = Array.isArray(cropList)
+                        ? cropList
+                            .map((c) => (typeof c === "object" ? c.name : c))
+                            .filter(Boolean)
+                        : [];
+                      parts.push(
+                        cropNames.length > 0
+                          ? `${sName} (${cropNames.join(", ")})`
+                          : sName,
+                      );
+                    }
+                    return parts.join("; ");
+                  })()}
                 </b>
               </div>
               <div>
+                <span>Assigned to</span>
+                <b>
+                  {typeof e.assignedTo === "object" && e.assignedTo
+                    ? `${e.assignedTo.name}${e.assignedTo.designation ? ` · ${e.assignedTo.designation}` : ""}`
+                    : e.assignedTo || "—"}
+                </b>
+              </div>
+              {(e.mainPlotCount > 0 || e.subPlotCount > 0) && (
+                <div>
+                  <span>Plot counts</span>
+                  <b>
+                    {e.mainPlotCount > 0 ? `Main: ${e.mainPlotCount}` : ""}
+                    {e.mainPlotCount > 0 && e.subPlotCount > 0 ? " · " : ""}
+                    {e.subPlotCount > 0 ? `Sub: ${e.subPlotCount}` : ""}
+                  </b>
+                </div>
+              )}
+              <div>
                 <span>Treatments / parameters</span>
                 <b>
-                  {e.treatments.length} / {e.parameters.length}
+                  {e.treatments.length} /{" "}
+                  {(e.defaultParameters ?? e.parameters ?? []).length}
                 </b>
               </div>
               <div>
                 <span>Centres</span>
-                <b>{e.centreIds.length}</b>
+                <b>{(e.centreIds ?? trialRows).length}</b>
               </div>
             </div>
             {e.objectives.length > 0 && (
@@ -231,7 +311,10 @@ export default function ExperimentDetail() {
               }
             >
               <Table
-                rows={e.parameters.map((p) => ({ ...p, id: p.parameterId }))}
+                rows={(e.defaultParameters ?? e.parameters ?? []).map((p) => ({
+                  ...p,
+                  id: p.parameterId,
+                }))}
                 pageSize={30}
                 empty="No parameters yet."
                 columns={[
@@ -458,17 +541,18 @@ function TreatmentsModal({ experiment, save, onClose }) {
 function ParametersModal({ experiment, save, onClose }) {
   const library = useParameters({ isActive: true });
   const unit = useUnitLabel();
+  const expParams = experiment.defaultParameters ?? experiment.parameters ?? [];
   const [selected, setSelected] = useState(
     () =>
       new Map(
-        experiment.parameters.map((p) => [
+        expParams.map((p) => [
           p.parameterId,
           { section: p.section, level: p.level, required: p.required },
         ]),
       ),
   );
   const [filter, setFilter] = useState("");
-  const original = new Set(experiment.parameters.map((p) => p.parameterId));
+  const original = new Set(expParams.map((p) => p.parameterId));
   const frozen = (pid) => experiment.dataLocked && original.has(pid);
 
   const toggle = (p, on) =>
@@ -497,7 +581,7 @@ function ParametersModal({ experiment, save, onClose }) {
   }, [library.data, filter]);
   const nameOf = (pid) =>
     library.data?.find((p) => p.id === pid)?.name ??
-    experiment.parameters.find((p) => p.parameterId === pid)?.name ??
+    expParams.find((p) => p.parameterId === pid)?.name ??
     pid;
 
   return (
@@ -506,7 +590,7 @@ function ParametersModal({ experiment, save, onClose }) {
       subtitle="Pick from the parameter library, then set how each is recorded."
       onSave={() =>
         save({
-          parameters: [...selected].map(([parameterId, p]) => ({
+          defaultParameters: [...selected].map(([parameterId, p]) => ({
             parameterId,
             section: p.section.trim() || "Observations",
             level: p.level,
