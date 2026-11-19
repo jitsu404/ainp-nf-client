@@ -9,7 +9,7 @@ import BudgetAllocation from "./pages/BudgetAllocation";
 import AccountPage, { ForcedPasswordChange } from "./pages/ChangePassword";
 import CentreDetail from "./pages/CentreDetail";
 import Centres from "./pages/Centres";
-import ExperimentDetail from "./pages/ExperimentDetail";
+import ExperimentDetail from "./pages/experiment-details/index.jsx";
 import Experiments from "./pages/experiments/index.jsx";
 import Home from "./pages/Home";
 import Login from "./pages/Login";

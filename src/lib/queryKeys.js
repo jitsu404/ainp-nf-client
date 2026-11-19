@@ -35,6 +35,11 @@ export const queryKeys = {
     list: (filters) => ["budgetAllocations", "list", filters],
     detail: (id) => ["budgetAllocations", "detail", id],
   },
+  assignments: {
+    all: ["assignments"],
+    list: (filters) => ["assignments", "list", filters],
+    detail: (id) => ["assignments", "detail", id],
+  },
   // Research data. A sheet carries its protocol and a trial its experiment, so research mutations
   // invalidate the whole 'research' tree.
   research: {

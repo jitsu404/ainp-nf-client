@@ -1,6 +1,6 @@
 import Select from "react-select";
 
-const customSelectStyles = {
+export const customSelectStyles = {
   control: (base, state) => ({
     ...base,
     backgroundColor: state.isDisabled
