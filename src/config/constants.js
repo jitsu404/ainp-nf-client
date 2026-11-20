@@ -4,12 +4,17 @@
 
 // ── API ──────────────────────────────────────────────────────────────────────
 /**
- * Base URL of the REST API. Default '/api/v1' is same-origin: in development Vite proxies it to
- * the backend; in production the API must be served from the same site, because the session
- * cookie is SameSite=Strict.
+ * Base URL of the REST API. Production builds always use '/api/v1' on the app's own domain:
+ * vercel.json forwards it to the backend on Render, so the SameSite=Strict session cookie belongs
+ * to this site. Calling the Render URL directly would be cross-site and the browser would drop the
+ * cookie, so a VITE_API_BASE_URL set in the hosting dashboard is ignored on purpose.
+ * In development, '/api/v1' goes through the Vite proxy (vite.config.js); VITE_API_BASE_URL can
+ * point it elsewhere there.
  */
 export const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ?? "/api/v1"
+  import.meta.env.PROD
+    ? "/api/v1"
+    : (import.meta.env.VITE_API_BASE_URL ?? "/api/v1")
 ).replace(/\/$/, "");
 
 /** API error codes that mean "the session is no longer usable". */
