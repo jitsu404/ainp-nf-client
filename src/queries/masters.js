@@ -24,6 +24,31 @@ export function useMasters(type, filters = {}) {
   });
 }
 
+const cropId = (c) => String(c.id ?? c._id);
+const cropOption = (c) => ({
+  value: cropId(c),
+  label: `${c.name}${c.code ? ` (${c.code})` : ""}${c.isActive === false ? " · inactive" : ""}`,
+});
+
+/**
+ * Crop options for react-select: the active crops, plus any crop in `selectedIds` that has been
+ * deactivated since it was chosen (marked "inactive"), so editing never drops it silently.
+ * `optionOf(id)` finds the option of any crop, active or not.
+ */
+export function useCropOptions(selectedIds = []) {
+  const query = useMasters("crop");
+  const all = query.data ?? [];
+  const chosen = new Set(selectedIds.map(String));
+  const byId = new Map(all.map((c) => [cropId(c), cropOption(c)]));
+  return {
+    ...query,
+    options: all
+      .filter((c) => c.isActive !== false || chosen.has(cropId(c)))
+      .map(cropOption),
+    optionOf: (id) => byId.get(String(id)),
+  };
+}
+
 /** Active items of a type as select options [code, name], plus a code → name lookup. */
 export function useMasterOptions(type) {
   const query = useMasters(type, { isActive: true });

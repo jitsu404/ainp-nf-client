@@ -11,7 +11,7 @@ import {
   seasonMap,
 } from "../../../lib/seasonCrops";
 import { useCentres } from "../../../queries/centres";
-import { useMasterOptions, useMasters } from "../../../queries/masters";
+import { useCropOptions, useMasterOptions } from "../../../queries/masters";
 import { useAssignCentres } from "../../../queries/research";
 import { customSelectStyles } from "../../experiments/components/ExperimentSeasonsField";
 
@@ -24,7 +24,6 @@ import { customSelectStyles } from "../../experiments/components/ExperimentSeaso
 export function CentresModal({ experiment, trials = [], onClose }) {
   const centres = useCentres({ isActive: "true" });
   const seasons = useMasterOptions("season");
-  const cropsQuery = useMasters("crop", { isActive: true });
   const assign = useAssignCentres(experiment.id);
 
   const defaults = useMemo(
@@ -42,18 +41,13 @@ export function CentresModal({ experiment, trials = [], onClose }) {
     [experiment.centreIds],
   );
 
-  const cropOptions = useMemo(
-    () =>
-      (cropsQuery.data ?? []).map((c) => ({
-        value: String(c.id ?? c._id),
-        label: `${c.name}${c.code ? ` (${c.code})` : ""}`,
-      })),
-    [cropsQuery.data],
-  );
-  const cropOption = useMemo(
-    () => new Map(cropOptions.map((o) => [o.value, o])),
-    [cropOptions],
-  );
+  // Crops already in use here (experiment defaults and each centre's own) stay selectable even
+  // if deactivated since.
+  const inUse = [
+    ...Object.values(defaults).flat(),
+    ...trials.flatMap((t) => Object.values(seasonMap(t.seasonCrops)).flat()),
+  ];
+  const { options: cropOptions, optionOf } = useCropOptions(inUse);
 
   // { [centreId]: { selected, crops: { [season]: ids } } }, starting from each trial's crops.
   const [configs, setConfigs] = useState({});
@@ -300,7 +294,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
                           placeholder={`Crops for ${seasons.nameOf(code)}…`}
                           options={cropOptions}
                           value={(cfg.crops[code] ?? [])
-                            .map((id) => cropOption.get(id))
+                            .map((id) => optionOf(id))
                             .filter(Boolean)}
                           onChange={(opts) =>
                             update(c.id, (cur) => ({

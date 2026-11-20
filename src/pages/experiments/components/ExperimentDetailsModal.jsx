@@ -59,7 +59,8 @@ export function ExperimentDetailsModal({
   const create = useCreateExperiment();
   const programmes = useMasterOptions("programme");
   const seasons = useMasterOptions("season");
-  const crops = useMasters("crop", { isActive: true });
+  // Every crop: the seasons field offers inactive ones only where already chosen.
+  const crops = useMasters("crop");
   const years = useFinancialYears();
   // Only the PCU links the Experiment PI (research.assign), and here only when creating; later
   // it is Assign / Change PI on the experiment page.

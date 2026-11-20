@@ -150,10 +150,15 @@ export function ExperimentSeasonsField({
     });
   };
 
-  const cropSelectOptions = cropOptions.map((c) => ({
-    value: String(c._id || c.id),
-    label: `${c.name}${c.code ? ` (${c.code})` : ""}`,
-  }));
+  // cropOptions holds every crop; a deactivated one is offered only where it is already chosen
+  // (marked), so editing the experiment never drops it silently.
+  const chosen = new Set(Object.values(seasonsMap).flat().map(String));
+  const cropSelectOptions = cropOptions
+    .filter((c) => c.isActive !== false || chosen.has(String(c._id || c.id)))
+    .map((c) => ({
+      value: String(c._id || c.id),
+      label: `${c.name}${c.code ? ` (${c.code})` : ""}${c.isActive === false ? " · inactive" : ""}`,
+    }));
 
   return (
     <div className="field full">

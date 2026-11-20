@@ -1,6 +1,6 @@
 import { useCentres } from "../../../queries/centres";
 import { useExperiments, useTrials } from "../../../queries/research";
-import { useParameters } from "../../../queries/masters";
+import { useMasters, useParameters } from "../../../queries/masters";
 
 /** Counts how many records refer to each key: keysOf(record) → keys (repeats within a record count once). */
 const tally = (records, keysOf) => {
@@ -35,8 +35,10 @@ export function useMasterUsage(typeId) {
   const wants = (...types) => types.includes(typeId);
   const experiments = useExperiments(
     {},
-    { enabled: wants("programme", "season") },
+    { enabled: wants("programme", "season", "crop") },
   );
+  // Experiments and a centre's own crops store crop ids; cropping systems store codes.
+  const crops = useMasters(wants("crop") ? "crop" : null);
   const trials = useTrials({}, { enabled: wants("crop") });
   const parameters = useParameters({}, { enabled: wants("unit") });
   const centres = useCentres({}, { enabled: wants("zone") });
@@ -60,16 +62,36 @@ export function useMasterUsage(typeId) {
           return [];
         }),
       };
-    case "crop":
-      return {
-        label: "Trials",
-        by: "code",
-        counts: tally(trials.data, (t) =>
-          t.croppingSystems?.flatMap((cs) =>
-            cs.seasons?.flatMap((s) => [s.mainCropCode, s.intercropCode]),
-          ),
+    case "crop": {
+      // A crop is in use when an experiment's seasons list it (its default for every centre), a
+      // centre chose it as its own crop, or a trial's cropping system grows it. Counted per
+      // experiment and per trial, by code.
+      if (!crops.data)
+        return { label: "Experiments & trials", by: "code", counts: null };
+      const codeOf = new Map(
+        crops.data.map((c) => [String(c.id ?? c._id), c.code]),
+      );
+      const codes = (seasons) =>
+        Object.values(seasons ?? {})
+          .flat()
+          .map((id) => codeOf.get(String(id?.id ?? id?._id ?? id)));
+      const fromExperiments = tally(experiments.data, (e) =>
+        Array.isArray(e.seasons) ? [] : codes(e.seasons),
+      );
+      const fromTrials = tally(trials.data, (t) => [
+        ...codes(t.seasonCrops),
+        ...(t.croppingSystems ?? []).flatMap((cs) =>
+          (cs.seasons ?? []).flatMap((s) => [s.mainCropCode, s.intercropCode]),
         ),
-      };
+      ]);
+      if (!fromExperiments || !fromTrials) {
+        return { label: "Experiments & trials", by: "code", counts: null };
+      }
+      const counts = new Map(fromExperiments);
+      for (const [code, n] of fromTrials)
+        counts.set(code, (counts.get(code) ?? 0) + n);
+      return { label: "Experiments & trials", by: "code", counts };
+    }
     case "unit":
       return {
         label: "Parameters",

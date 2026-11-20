@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Select from "react-select";
 import { RotateCcw, Wheat } from "lucide-react";
 import { customSelectStyles } from "../pages/experiments/components/ExperimentSeasonsField";
 import { toast } from "../lib/toast";
 import { sameCrops, seasonCropsPatch } from "../lib/seasonCrops";
-import { useMasterOptions, useMasters } from "../queries/masters";
+import { useCropOptions, useMasterOptions } from "../queries/masters";
 import { SaveModal } from "./forms";
 import { Badge, Card, Table } from "./ui";
 
@@ -77,19 +77,10 @@ export function SeasonCropsCard({ trial, edit, save }) {
 
 function SeasonCropsModal({ trial, save, onClose }) {
   const seasons = useMasterOptions("season");
-  const crops = useMasters("crop", { isActive: true });
   const rows = trial.cropsBySeason ?? [];
-  const options = useMemo(
-    () =>
-      (crops.data ?? []).map((c) => ({
-        value: String(c.id ?? c._id),
-        label: `${c.name}${c.code ? ` (${c.code})` : ""}`,
-      })),
-    [crops.data],
-  );
-  const option = useMemo(
-    () => new Map(options.map((o) => [o.value, o])),
-    [options],
+  // Crops this trial already uses stay selectable even if deactivated since.
+  const { options, optionOf } = useCropOptions(
+    rows.flatMap((r) => [...r.crops, ...r.defaultCrops].map((c) => c.id)),
   );
   const defaults = Object.fromEntries(
     rows.map((r) => [r.seasonCode, r.defaultCrops.map((c) => c.id)]),
@@ -132,7 +123,7 @@ function SeasonCropsModal({ trial, save, onClose }) {
                   isMulti
                   options={options}
                   value={wanted[seasonCode]
-                    .map((id) => option.get(id))
+                    .map((id) => optionOf(id))
                     .filter(Boolean)}
                   onChange={(opts) =>
                     setWanted((w) => ({
