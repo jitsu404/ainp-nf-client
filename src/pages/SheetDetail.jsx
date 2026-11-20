@@ -17,7 +17,13 @@ import { BarChart } from "../components/Charts";
 import { ExcelImportModal } from "../components/ExcelImport";
 import { ErrorNote, SaveModal } from "../components/forms";
 import { Badge, Card, Page, Tabs } from "../components/ui";
-import { ROUTES, experimentPlots, plotLabel } from "../config/constants";
+import {
+  ROUTES,
+  experimentPlots,
+  plotLabel,
+  plotNames,
+  plotTitle,
+} from "../config/constants";
 import { formatDateTime } from "../hooks";
 import { fmtPct, pctVs } from "../lib/results";
 import { toast } from "../lib/toast";
@@ -400,6 +406,7 @@ export default function SheetDetail() {
             </Card>
             {plotted && e.parameters.length > 0 && (
               <PlotPicker
+                experiment={e}
                 plots={plots}
                 value={plotIndex}
                 onChange={setPlotIndex}
@@ -408,7 +415,7 @@ export default function SheetDetail() {
             )}
             {plotParams.length > 0 && (
               <Grid
-                title={`${plotted ? `Plot ${plotLabel(plot)}: ` : ""}Plot data (treatment × replication)`}
+                title={`${plotted ? `${plotTitle(e, plot)}: ` : ""}Plot data (treatment × replication)`}
                 plot={plot}
                 params={plotParams}
                 treatments={e.treatments}
@@ -422,7 +429,7 @@ export default function SheetDetail() {
             )}
             {treatmentParams.length > 0 && (
               <Grid
-                title={`${plotted ? `Plot ${plotLabel(plot)}: ` : ""}${
+                title={`${plotted ? `${plotTitle(e, plot)}: ` : ""}${
                   replicated ? "Treatment data (once per treatment)" : "Data"
                 }`}
                 plot={plot}
@@ -490,7 +497,7 @@ export default function SheetDetail() {
  * Split / strip plot: one button per main × sub plot, with how much of it is filled in
  * (✓ complete, ● unsaved changes, ! invalid values).
  */
-function PlotPicker({ plots, value, onChange, progress }) {
+function PlotPicker({ experiment, plots, value, onChange, progress }) {
   return (
     <Card>
       <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
@@ -500,6 +507,7 @@ function PlotPicker({ plots, value, onChange, progress }) {
         {plots.map((pl, i) => {
           const x = progress[i];
           const complete = x.total > 0 && x.done === x.total;
+          const names = plotNames(experiment, pl);
           return (
             <button
               key={plotLabel(pl)}
@@ -507,13 +515,28 @@ function PlotPicker({ plots, value, onChange, progress }) {
               className={`btn sm ${i === value ? "" : "ghost"}`}
               aria-pressed={i === value}
               onClick={() => onChange(i)}
-              title={`${x.done} of ${x.total} values${x.edited ? " · unsaved changes" : ""}`}
+              title={`${plotTitle(experiment, pl)} · ${x.done} of ${x.total} values${x.edited ? " · unsaved changes" : ""}`}
+              style={{
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+              }}
             >
-              {plotLabel(pl)}{" "}
-              <span className="small" style={{ opacity: 0.8 }}>
-                {x.invalid ? "!" : x.edited ? "●" : complete ? "✓" : ""}{" "}
-                {x.done}/{x.total}
+              <span>
+                {plotLabel(pl)}{" "}
+                <span className="small" style={{ opacity: 0.8 }}>
+                  {x.invalid ? "!" : x.edited ? "●" : complete ? "✓" : ""}{" "}
+                  {x.done}/{x.total}
+                </span>
               </span>
+              {(names.main || names.sub) && (
+                <span
+                  className="small"
+                  style={{ opacity: 0.75, fontWeight: 400 }}
+                >
+                  {[names.main, names.sub].filter(Boolean).join(" · ")}
+                </span>
+              )}
             </button>
           );
         })}
@@ -758,7 +781,7 @@ function AnalysisTab({ id, dirty }) {
               <option value="all">All plots (means)</option>
               {plotsOf.map((pl) => (
                 <option key={pl.label} value={pl.label}>
-                  {pl.label}
+                  {pl.title || pl.label}
                 </option>
               ))}
             </select>
@@ -805,7 +828,7 @@ function AnalysisTab({ id, dirty }) {
       {parameters.map((p) => (
         <Card
           key={p.parameterId}
-          title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}${plotChoice === "all" ? "" : ` · ${plotChoice}`}`}
+          title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}${plotChoice === "all" ? "" : ` · ${plotsOf.find((pl) => pl.label === plotChoice)?.title || plotChoice}`}`}
           actions={
             p.anova ? (
               <Badge tone={p.anova.significant ? "green" : "grey"}>

@@ -92,6 +92,29 @@ export const experimentPlots = (e) =>
 /** "M1·S2", or "" for a single-plot design. */
 export const plotLabel = (p) =>
   p?.mainPlot == null ? "" : `M${p.mainPlot}·S${p.subPlot}`;
+/**
+ * The names the protocol gives a plot's main and sub plot (mainPlotData / subPlotData, codes
+ * M1 … / S1 …), or null where none is given.
+ */
+export const plotNames = (e, p) => ({
+  main:
+    p?.mainPlot == null
+      ? null
+      : ((e?.mainPlotData ?? []).find((t) => t.code === `M${p.mainPlot}`)
+          ?.name ?? null),
+  sub:
+    p?.subPlot == null
+      ? null
+      : ((e?.subPlotData ?? []).find((t) => t.code === `S${p.subPlot}`)?.name ??
+        null),
+});
+/** "M1 Conventional tillage · S2 Jeevamrit" (codes alone where unnamed); "" for one plot. */
+export const plotTitle = (e, p) => {
+  if (p?.mainPlot == null) return "";
+  const { main, sub } = plotNames(e, p);
+  const part = (code, name) => (name ? `${code} ${name}` : code);
+  return `${part(`M${p.mainPlot}`, main)} · ${part(`S${p.subPlot}`, sub)}`;
+};
 /** At least 2 replications. */
 export const DESIGNS_NEEDING_REPLICATIONS = ["RBD", "Split plot"];
 /** Never replicated (data is one value per treatment). Strip plot may be either. */
