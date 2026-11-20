@@ -4,6 +4,7 @@ import { useMasterOptions, useUnitLabel } from "../queries/masters";
 import { useTrend } from "../queries/research";
 import { LineChart } from "./Charts";
 import { ErrorNote } from "./forms";
+import { inProtocolSeasons } from "../lib/seasonCrops";
 import { Card, Select } from "./ui";
 
 // Treatment means year by year since the experiment started (approved sheets, mean of centres),
@@ -29,9 +30,8 @@ export function ExperimentTrend({ experiment, centres }) {
           <Select
             value={season}
             onChange={setSeason}
-            options={seasons.options.filter(
-              ([c]) =>
-                !experiment.seasons.length || experiment.seasons.includes(c),
+            options={seasons.options.filter(([c]) =>
+              inProtocolSeasons(experiment.seasons, c),
             )}
             all="All seasons"
           />
@@ -51,7 +51,7 @@ export function ExperimentTrend({ experiment, centres }) {
       {trend.isPending && <p className="muted">Loading…</p>}
       {t &&
         t.parameters.map((p) => {
-          const xLabels = t.years.map((y) => y.fyCode);
+          const xLabels = t.years.map((y) => String(y.year));
           const series = t.treatments.map((tr) => ({
             name: `${tr.code} ${tr.name}`,
             highlight: tr.code === ref,
@@ -78,8 +78,8 @@ export function ExperimentTrend({ experiment, centres }) {
                         <tr>
                           <th>Treatment</th>
                           {t.years.map((y) => (
-                            <th key={y.fyCode} className="num">
-                              {y.fyCode}
+                            <th key={y.year} className="num">
+                              {y.year}
                               <small>
                                 {y.sheets} sheet{y.sheets === 1 ? "" : "s"}
                               </small>
@@ -101,7 +101,7 @@ export function ExperimentTrend({ experiment, centres }) {
                                 ? y.means[p.parameterId]?.[ref]
                                 : null;
                               return (
-                                <td key={y.fyCode} className="num">
+                                <td key={y.year} className="num">
                                   {fmt(v)}
                                   {ref && tr.code !== ref && v !== null && (
                                     <div className="muted small">

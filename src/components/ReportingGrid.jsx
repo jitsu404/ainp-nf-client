@@ -31,8 +31,9 @@ export function ReportingGrid({ experimentId }) {
   const columns = r.years.flatMap((fy) =>
     seasonCodes.map((season) => ({ fy, season })),
   );
-  const expected = (fy) =>
-    r.experiment.status === "Active" && r.openYears.includes(fy);
+  // A sheet is expected for every season of the years up to now while the experiment is active.
+  const thisYear = new Date().getFullYear();
+  const expected = (fy) => r.experiment.status === "Active" && fy <= thisYear;
 
   // Totals for the header: one count per sheet, plus cells where a sheet is expected but missing.
   const totals = {
@@ -45,7 +46,7 @@ export function ReportingGrid({ experimentId }) {
   for (const c of r.centres) {
     for (const col of columns) {
       const here = c.sheets.filter(
-        (s) => s.fyCode === col.fy && s.seasonCode === col.season,
+        (s) => s.year === col.fy && s.seasonCode === col.season,
       );
       if (here.length) here.forEach((s) => (totals[s.status] += 1));
       else if (expected(col.fy)) totals["Not opened"] += 1;
@@ -84,9 +85,7 @@ export function ReportingGrid({ experimentId }) {
                     style={{ textAlign: "center" }}
                   >
                     {fy}
-                    {!r.openYears.includes(fy) && (
-                      <span className="muted"> (closed)</span>
-                    )}
+                    {fy > thisYear && <span className="muted"> (to come)</span>}
                   </th>
                 ))}
               </tr>
@@ -109,8 +108,7 @@ export function ReportingGrid({ experimentId }) {
                   {columns.map((col) => {
                     const here = c.sheets
                       .filter(
-                        (s) =>
-                          s.fyCode === col.fy && s.seasonCode === col.season,
+                        (s) => s.year === col.fy && s.seasonCode === col.season,
                       )
                       .sort(
                         (a, b) =>

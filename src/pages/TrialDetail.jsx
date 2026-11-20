@@ -13,10 +13,16 @@ import { AsyncFormModal, ErrorNote, SaveModal } from "../components/forms";
 import { TrialMetadata } from "../components/Metadata";
 import { SeasonCropsCard } from "../components/SeasonCrops";
 import { Badge, Card, Page, Table, Tabs } from "../components/ui";
-import { ROUTES, TRIAL_STATUSES } from "../config/constants";
+import {
+  ROUTES,
+  TRIAL_STATUSES,
+  defaultExperimentYear,
+  experimentYears,
+} from "../config/constants";
+import { inProtocolSeasons } from "../lib/seasonCrops";
 import { formatDate, formatDateTime } from "../hooks";
 import { toast } from "../lib/toast";
-import { useFinancialYears, useMasterOptions } from "../queries/masters";
+import { useMasterOptions } from "../queries/masters";
 import {
   useCreateSheet,
   useSheets,
@@ -194,7 +200,7 @@ export default function TrialDetail() {
                     : "No sheets yet. Open one for a year and season to start recording data."
               }
               columns={[
-                { label: "Year", render: (s) => <b>{s.fyCode}</b> },
+                { label: "Year", render: (s) => <b>{s.year}</b> },
                 {
                   label: "Season",
                   render: (s) => seasons.nameOf(s.seasonCode),
@@ -395,9 +401,8 @@ const blankSeason = (seasonCode = "") => ({
 function CroppingSystemsModal({ trial, save, onClose }) {
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
-  const allowedSeasons = seasons.options.filter(
-    ([c]) =>
-      !trial.experiment.seasons.length || trial.experiment.seasons.includes(c),
+  const allowedSeasons = seasons.options.filter(([c]) =>
+    inProtocolSeasons(trial.experiment.seasons, c),
   );
   const [systems, setSystems] = useState(() =>
     trial.croppingSystems.map((cs) => ({
@@ -740,23 +745,17 @@ function PracticesModal({ trial, save, onClose }) {
 }
 
 function OpenSheetModal({ trial, onClose, onOpened }) {
-  const years = useFinancialYears();
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
   const create = useCreateSheet();
-  // Open years from the experiment's start year on (year codes sort in time order); the server
-  // refuses earlier years, which the reporting grid and trend would never show.
-  const openYears = (years.data ?? []).filter(
-    (y) => y.isOpen && y.code >= trial.experiment.startYear,
+  // Every year of the experiment, start to end; the server refuses other years.
+  const yearOptions = experimentYears(trial.experiment);
+  const allowedSeasons = seasons.options.filter(([c]) =>
+    inProtocolSeasons(trial.experiment.seasons, c),
   );
-  const allowedSeasons = seasons.options.filter(
-    ([c]) =>
-      !trial.experiment.seasons.length || trial.experiment.seasons.includes(c),
-  );
-  const current =
-    openYears.find((y) => y.isCurrent)?.code ?? openYears[0]?.code ?? "";
+  const current = defaultExperimentYear(trial.experiment);
   // The form copies `initial` once, so wait for the lists that fill it.
-  if (years.isPending || seasons.isPending) return null;
+  if (seasons.isPending) return null;
   return (
     <AsyncFormModal
       title="Open observation sheet"
@@ -764,18 +763,18 @@ function OpenSheetModal({ trial, onClose, onOpened }) {
       intro={
         <p className="muted small" style={{ margin: 0 }}>
           One sheet per year and season (and cropping system or crop, if you
-          record them separately).
+          record them separately). The year is the one the season starts in:
+          Rabi 2026 runs into 2027 but is recorded as 2026.
         </p>
       }
       fields={[
         {
-          name: "fyCode",
-          label: "Financial year",
+          name: "year",
+          label: "Year",
           type: "select",
-          options: openYears.map((y) => y.code),
-          hint: openYears.length
-            ? `Open years from ${trial.experiment.startYear} (the experiment's start) are listed.`
-            : `No open year from ${trial.experiment.startYear} on. Ask the PCU to open or add one.`,
+          options: yearOptions.map((y) => [String(y), String(y)]),
+          parse: Number,
+          hint: `The years of this experiment (${trial.experiment.startYear}–${trial.experiment.endYear}).`,
         },
         {
           name: "seasonCode",
@@ -802,7 +801,7 @@ function OpenSheetModal({ trial, onClose, onOpened }) {
         },
       ]}
       initial={{
-        fyCode: current,
+        year: current === "" ? "" : String(current),
         seasonCode: allowedSeasons.length === 1 ? allowedSeasons[0][0] : "",
       }}
       onSubmit={(body) => create.mutateAsync({ trialId: trial.id, ...body })}

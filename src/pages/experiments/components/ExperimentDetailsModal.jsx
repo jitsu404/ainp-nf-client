@@ -5,6 +5,8 @@ import { SaveModal } from "../../../components/forms";
 import {
   DESIGN_HINTS,
   DESIGNS_NEEDING_REPLICATIONS,
+  DESIGNS_WITH_PLOTS,
+  MAX_PLOT_COUNT,
   EXPERIMENT_DESIGNS,
   EXPERIMENT_STATUSES,
   UNREPLICATED_DESIGNS,
@@ -122,6 +124,18 @@ export function ExperimentDetailsModal({
         Number(reps) >= 2 &&
         Number(reps) <= 20;
 
+  // Split / strip plot: 1–10 main plots and sub plots; each plot holds every treatment × replication.
+  const plotted = DESIGNS_WITH_PLOTS.includes(v.design);
+  const countOk = (x) =>
+    Number.isInteger(Number(x)) &&
+    Number(x) >= 1 &&
+    Number(x) <= MAX_PLOT_COUNT;
+  const plotsOk =
+    !plotted || (countOk(v.mainPlotCount) && countOk(v.subPlotCount));
+  const plotCount = plotted
+    ? Number(v.mainPlotCount) * Number(v.subPlotCount)
+    : 1;
+
   const startYearNum = Number(v.startYear);
   const endYearNum = Number(v.endYear);
   const yearsOk =
@@ -141,19 +155,18 @@ export function ExperimentDetailsModal({
       programmeCode: v.programmeCode,
       startYear: startYearNum,
       endYear: endYearNum,
-      mainPlotCount:
-        v.design === "Split plot" ? Number(v.mainPlotCount) || 0 : 0,
-      subPlotCount: v.design === "Split plot" ? Number(v.subPlotCount) || 0 : 0,
       seasons: v.seasons,
       objectives: v.objectives
         .split("\n")
         .map((s) => s.trim())
         .filter(Boolean),
     };
-    // Once data exists the design and replications are frozen; don't send them unchanged.
+    // Once data exists the design, replications and plots are frozen; don't send them unchanged.
     if (!locked) {
       b.design = v.design;
       b.replications = replicated && reps !== "" ? Number(reps) : null;
+      b.mainPlotCount = plotted ? Number(v.mainPlotCount) : 0;
+      b.subPlotCount = plotted ? Number(v.subPlotCount) : 0;
     }
     if (experiment) {
       b.status = v.status;
@@ -176,7 +189,11 @@ export function ExperimentDetailsModal({
   };
 
   const ready =
-    v.title.trim().length >= 5 && v.programmeCode && yearsOk && repsOk;
+    v.title.trim().length >= 5 &&
+    v.programmeCode &&
+    yearsOk &&
+    repsOk &&
+    plotsOk;
 
   return (
     <SaveModal
@@ -198,8 +215,8 @@ export function ExperimentDetailsModal({
     >
       {locked && (
         <div className="note warn">
-          Centres have recorded data, so the design and replications can no
-          longer change.
+          Centres have recorded data, so the design, replications and plots can
+          no longer change.
         </div>
       )}
       <div className="form">
@@ -285,30 +302,53 @@ export function ExperimentDetailsModal({
           )}
         </div>
 
-        {v.design === "Split plot" && (
+        {plotted && (
           <>
             <div className="field">
-              <label htmlFor="x-main-plots">Main Plot Count</label>
+              <label htmlFor="x-main-plots">
+                {v.design === "Strip plot" ? "Horizontal strips" : "Main plots"}
+              </label>
               <input
                 id="x-main-plots"
                 type="number"
-                min={0}
-                value={v.mainPlotCount}
+                min={1}
+                max={MAX_PLOT_COUNT}
+                value={v.mainPlotCount || ""}
+                disabled={locked}
                 onChange={(e) => set("mainPlotCount", e.target.value)}
-                placeholder="Number of main plots"
+                placeholder={`1–${MAX_PLOT_COUNT}`}
               />
             </div>
 
             <div className="field">
-              <label htmlFor="x-sub-plots">Sub Plot Count</label>
+              <label htmlFor="x-sub-plots">
+                {v.design === "Strip plot"
+                  ? "Vertical strips"
+                  : "Sub plots per main plot"}
+              </label>
               <input
                 id="x-sub-plots"
                 type="number"
-                min={0}
-                value={v.subPlotCount}
+                min={1}
+                max={MAX_PLOT_COUNT}
+                value={v.subPlotCount || ""}
+                disabled={locked}
                 onChange={(e) => set("subPlotCount", e.target.value)}
-                placeholder="Number of sub plots"
+                placeholder={`1–${MAX_PLOT_COUNT}`}
               />
+            </div>
+            <div className="field full">
+              {plotsOk ? (
+                <span className="muted small">
+                  {plotCount} plot{plotCount === 1 ? "" : "s"}; each plot
+                  records every treatment
+                  {replicated && reps !== "" ? ` × ${reps} replications` : ""}.
+                </span>
+              ) : (
+                <span className="field-error">
+                  Enter 1–{MAX_PLOT_COUNT} main plots and sub plots.
+                </span>
+              )}
             </div>
           </>
         )}

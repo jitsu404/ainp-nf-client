@@ -17,15 +17,11 @@ import { BarChart } from "../components/Charts";
 import { ExcelImportModal } from "../components/ExcelImport";
 import { ErrorNote, SaveModal } from "../components/forms";
 import { Badge, Card, Page, Tabs } from "../components/ui";
-import { ROUTES } from "../config/constants";
+import { ROUTES, experimentPlots, plotLabel } from "../config/constants";
 import { formatDateTime } from "../hooks";
 import { fmtPct, pctVs } from "../lib/results";
 import { toast } from "../lib/toast";
-import {
-  useFinancialYears,
-  useMasterOptions,
-  useUnitLabel,
-} from "../queries/masters";
+import { useMasterOptions, useUnitLabel } from "../queries/masters";
 import {
   useImportSheet,
   useSaveSheetValues,
@@ -39,11 +35,23 @@ import {
 // Excel template), saved in batches, then submitted to the PCU for approval.
 //
 // Plot-level parameters get one value per treatment × replication; treatment-level parameters
-// (and every parameter in unreplicated designs) one value per treatment.
+// (and every parameter in unreplicated designs) one value per treatment. Split and strip plot
+// repeat that in every main × sub plot: the grid shows one plot at a time, picked above it.
 
 const EDITABLE = ["Draft", "Returned"];
-const cellKey = (treatmentCode, replication, parameterId) =>
-  `${treatmentCode}|${replication ?? ""}|${parameterId}`;
+const cellKey = (plot, treatmentCode, replication, parameterId) =>
+  `${plot.mainPlot ?? ""}.${plot.subPlot ?? ""}|${treatmentCode}|${replication ?? ""}|${parameterId}`;
+const parseKey = (key) => {
+  const [plot, treatmentCode, rep, parameterId] = key.split("|");
+  const [main, sub] = plot.split(".");
+  return {
+    mainPlot: main ? Number(main) : null,
+    subPlot: sub ? Number(sub) : null,
+    treatmentCode,
+    replication: rep ? Number(rep) : null,
+    parameterId,
+  };
+};
 
 /** Turns what was typed into the value the API expects (null clears the cell). */
 const toApiValue = (param, raw) => {
@@ -60,11 +68,11 @@ export default function SheetDetail() {
   const { id } = useParams();
   const { can } = useAuth();
   const [tab, setTab] = useState("data");
+  const [plotIndex, setPlotIndex] = useState(0);
   const [modal, setModal] = useState(null); // 'import' | 'submit' | 'return' | 'approve'
   const sheet = useSheet(id);
   const s = sheet.data;
   const trial = useTrial(s?.trialId);
-  const years = useFinancialYears();
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
   const importer = useImportSheet(id);
@@ -89,7 +97,7 @@ export default function SheetDetail() {
     () =>
       new Map(
         (s?.values ?? []).map((v) => [
-          cellKey(v.treatmentCode, v.replication, v.parameterId),
+          cellKey(v, v.treatmentCode, v.replication, v.parameterId),
           v.value,
         ]),
       ),
@@ -116,15 +124,10 @@ export default function SheetDetail() {
     );
 
   const e = s.experiment;
-  const yearOpen =
-    years.data?.find((y) => y.code === s.fyCode)?.isOpen !== false;
   // A withdrawn centre's sheets are read-only (the API refuses every change).
   const withdrawn = trial.data?.assignmentStatus === "Withdrawn";
   const editable =
-    EDITABLE.includes(s.status) &&
-    can("research.enter") &&
-    yearOpen &&
-    !withdrawn;
+    EDITABLE.includes(s.status) && can("research.enter") && !withdrawn;
   const replicated = Boolean(e.replications);
   const plotParams = e.parameters.filter(
     (p) => p.level === "plot" && replicated,
@@ -159,12 +162,10 @@ export default function SheetDetail() {
     const params = new Map(e.parameters.map((p) => [p.parameterId, p]));
     const keys = [...edits.keys()];
     const cells = keys.map((key) => {
-      const [treatmentCode, rep, parameterId] = key.split("|");
+      const cell = parseKey(key);
       return {
-        treatmentCode,
-        replication: rep ? Number(rep) : null,
-        parameterId,
-        value: toApiValue(params.get(parameterId), edits.get(key)),
+        ...cell,
+        value: toApiValue(params.get(cell.parameterId), edits.get(key)),
       };
     });
     try {
@@ -190,12 +191,33 @@ export default function SheetDetail() {
     }
   };
 
-  const expected = e.parameters
-    .filter((p) => !p.formula)
-    .reduce((n, p) => {
-      const reps = p.level === "plot" && replicated ? e.replications : 1;
-      return n + e.treatments.length * reps;
-    }, 0);
+  const plots = experimentPlots(e);
+  const plotted = plots[0].mainPlot !== null;
+  const plot = plots[Math.min(plotIndex, plots.length - 1)];
+  // Every cell to enter in one plot, as keys.
+  const cellsIn = (pl) =>
+    e.parameters
+      .filter((p) => !p.formula)
+      .flatMap((p) => {
+        const reps =
+          p.level === "plot" && replicated
+            ? Array.from({ length: e.replications }, (_, i) => i + 1)
+            : [null];
+        return e.treatments.flatMap((t) =>
+          reps.map((r) => cellKey(pl, t.code, r, p.parameterId)),
+        );
+      });
+  const filled = (key) => String(valueOf(key)).trim() !== "";
+  const progress = plots.map((pl) => {
+    const keys = cellsIn(pl);
+    return {
+      total: keys.length,
+      done: keys.filter(filled).length,
+      edited: keys.some((k) => edits.has(k)),
+      invalid: keys.some((k) => invalid.has(k)),
+    };
+  });
+  const expected = progress.reduce((n, x) => n + x.total, 0);
   const recorded = s.values.filter((v) => !v.calculated).length;
 
   const workflow = (
@@ -229,7 +251,7 @@ export default function SheetDetail() {
     <Page
       title={
         <span className="row" style={{ gap: 10 }}>
-          {e.code} · {s.fyCode} · {seasons.nameOf(s.seasonCode)}{" "}
+          {e.code} · {seasons.nameOf(s.seasonCode)} {s.year}{" "}
           <Badge>{s.status}</Badge>
         </span>
       }
@@ -257,6 +279,9 @@ export default function SheetDetail() {
               <span>Design</span>
               <b>
                 {e.design}
+                {plotted
+                  ? ` · ${e.mainPlotCount} × ${e.subPlotCount} plots`
+                  : ""}
                 {replicated ? ` · ${e.replications} replications` : ""}
               </b>
             </div>
@@ -295,11 +320,6 @@ export default function SheetDetail() {
               returned.
             </div>
           )}
-          {!yearOpen && (
-            <div className="note" style={{ marginTop: 12 }}>
-              {s.fyCode} is closed, so this sheet can't be changed.
-            </div>
-          )}
         </Card>
 
         <Tabs
@@ -307,7 +327,7 @@ export default function SheetDetail() {
           onChange={setTab}
           tabs={[
             ["data", "Data"],
-            ["analysis", "Analysis"],
+            // ["analysis", "Analysis"],
             ["history", "History", s.history.length],
             ...(can("audit.view") ? [["activity", "Changes"]] : []),
           ]}
@@ -378,9 +398,18 @@ export default function SheetDetail() {
                 </div>
               )}
             </Card>
+            {plotted && e.parameters.length > 0 && (
+              <PlotPicker
+                plots={plots}
+                value={plotIndex}
+                onChange={setPlotIndex}
+                progress={progress}
+              />
+            )}
             {plotParams.length > 0 && (
               <Grid
-                title="Plot data (treatment × replication)"
+                title={`${plotted ? `Plot ${plotLabel(plot)}: ` : ""}Plot data (treatment × replication)`}
+                plot={plot}
                 params={plotParams}
                 treatments={e.treatments}
                 reps={Array.from({ length: e.replications }, (_, i) => i + 1)}
@@ -393,9 +422,10 @@ export default function SheetDetail() {
             )}
             {treatmentParams.length > 0 && (
               <Grid
-                title={
+                title={`${plotted ? `Plot ${plotLabel(plot)}: ` : ""}${
                   replicated ? "Treatment data (once per treatment)" : "Data"
-                }
+                }`}
+                plot={plot}
                 params={treatmentParams}
                 treatments={e.treatments}
                 reps={[null]}
@@ -456,8 +486,49 @@ export default function SheetDetail() {
   );
 }
 
+/**
+ * Split / strip plot: one button per main × sub plot, with how much of it is filled in
+ * (✓ complete, ● unsaved changes, ! invalid values).
+ */
+function PlotPicker({ plots, value, onChange, progress }) {
+  return (
+    <Card>
+      <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+        <span className="muted small" style={{ marginRight: 4 }}>
+          Plot
+        </span>
+        {plots.map((pl, i) => {
+          const x = progress[i];
+          const complete = x.total > 0 && x.done === x.total;
+          return (
+            <button
+              key={plotLabel(pl)}
+              type="button"
+              className={`btn sm ${i === value ? "" : "ghost"}`}
+              aria-pressed={i === value}
+              onClick={() => onChange(i)}
+              title={`${x.done} of ${x.total} values${x.edited ? " · unsaved changes" : ""}`}
+            >
+              {plotLabel(pl)}{" "}
+              <span className="small" style={{ opacity: 0.8 }}>
+                {x.invalid ? "!" : x.edited ? "●" : complete ? "✓" : ""}{" "}
+                {x.done}/{x.total}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="muted small" style={{ marginTop: 8 }}>
+        M = main plot, S = sub plot. Each plot records every treatment ×
+        replication; switching plots keeps your unsaved changes.
+      </div>
+    </Card>
+  );
+}
+
 function Grid({
   title,
+  plot,
   params,
   treatments,
   reps,
@@ -469,13 +540,13 @@ function Grid({
 }) {
   const unit = useUnitLabel();
   const replicated = reps[0] !== null;
-  const input = (p, key) => {
+  const input = (p, key, where) => {
     const cls = `${edits.has(key) ? "dirty" : ""} ${invalid.has(key) ? "invalid" : ""}`;
     const common = {
       className: cls,
       value: valueOf(key),
       title: invalid.get(key),
-      "aria-label": `${p.name} ${key.split("|").slice(0, 2).filter(Boolean).join(" R")}`,
+      "aria-label": `${p.name} ${where}`,
       onChange: (ev) => change(key, ev.target.value),
     };
     if (p.dataType === "choice")
@@ -541,7 +612,10 @@ function Grid({
                   </td>
                   {replicated && <td className="muted">R{r}</td>}
                   {params.map((p) => {
-                    const key = cellKey(t.code, r, p.parameterId);
+                    const key = cellKey(plot, t.code, r, p.parameterId);
+                    const where = [plotLabel(plot), t.code, r ? `R${r}` : ""]
+                      .filter(Boolean)
+                      .join(" ");
                     return (
                       <td
                         key={p.parameterId}
@@ -549,7 +623,7 @@ function Grid({
                         className={p.formula ? "calc" : undefined}
                       >
                         {editable && !p.formula
-                          ? input(p, key)
+                          ? input(p, key, where)
                           : show(valueOf(key))}
                       </td>
                     );
@@ -655,15 +729,41 @@ function AnalysisTab({ id, dirty }) {
   const unit = useUnitLabel();
   // The experiment's reference treatment by default; "" = no comparison.
   const [chosenRef, setChosenRef] = useState(null);
+  // Split / strip plot: "all" = means over all plots; otherwise one plot's own analysis.
+  const [plotChoice, setPlotChoice] = useState("all");
   const a = analysis.data;
   if (analysis.error) return <ErrorNote error={analysis.error} />;
   if (!a) return <p className="muted">Loading…</p>;
+  const plotsOf = a.plots ?? [];
+  const parameters =
+    plotChoice === "all"
+      ? a.parameters
+      : (plotsOf.find((pl) => pl.label === plotChoice)?.parameters ??
+        a.parameters);
   const nameOf = (code) =>
     a.treatments.find((t) => t.code === code)?.name ?? code;
   const ref = chosenRef ?? a.experiment.referenceTreatmentCode ?? "";
   return (
     <div className="stack">
       <div className="row small" style={{ gap: 8 }}>
+        {plotsOf.length > 0 && (
+          <>
+            <label htmlFor="analysis-plot">Plot</label>
+            <select
+              id="analysis-plot"
+              className="select"
+              value={plotChoice}
+              onChange={(ev) => setPlotChoice(ev.target.value)}
+            >
+              <option value="all">All plots (means)</option>
+              {plotsOf.map((pl) => (
+                <option key={pl.label} value={pl.label}>
+                  {pl.label}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
         <label htmlFor="ref-treatment">Compare with</label>
         <select
           id="ref-treatment"
@@ -699,13 +799,13 @@ function AnalysisTab({ id, dirty }) {
           You have unsaved changes; the analysis uses saved values only.
         </div>
       )}
-      {!a.parameters.length && (
+      {!parameters.length && (
         <div className="empty card">No numeric parameters to analyse.</div>
       )}
-      {a.parameters.map((p) => (
+      {parameters.map((p) => (
         <Card
           key={p.parameterId}
-          title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}`}
+          title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}${plotChoice === "all" ? "" : ` · ${plotChoice}`}`}
           actions={
             p.anova ? (
               <Badge tone={p.anova.significant ? "green" : "grey"}>

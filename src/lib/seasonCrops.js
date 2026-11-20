@@ -15,6 +15,12 @@ export const seasonMap = (raw) => {
   );
 };
 
+/** Whether a season is one of the experiment's (an experiment without seasons allows any). */
+export const inProtocolSeasons = (experimentSeasons, code) => {
+  const codes = Object.keys(seasonMap(experimentSeasons));
+  return !codes.length || codes.includes(code);
+};
+
 export const sameCrops = (a = [], b = []) =>
   a.length === b.length && [...a].sort().join() === [...b].sort().join();
 

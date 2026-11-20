@@ -84,13 +84,14 @@ export function ExperimentOverviewCard({
             <span>Seasons</span>
             <b>{formatSeasons(e.seasons, seasons, cropName)}</b>
           </div>
-          {(e.mainPlotCount > 0 || e.subPlotCount > 0) && (
+          {e.mainPlotCount > 0 && e.subPlotCount > 0 && (
             <div>
-              <span>Plot counts</span>
+              <span>Plots</span>
               <b>
-                {e.mainPlotCount > 0 ? `Main: ${e.mainPlotCount}` : ""}
-                {e.mainPlotCount > 0 && e.subPlotCount > 0 ? " · " : ""}
-                {e.subPlotCount > 0 ? `Sub: ${e.subPlotCount}` : ""}
+                {e.mainPlotCount} main × {e.subPlotCount} sub ={" "}
+                {e.mainPlotCount * e.subPlotCount} plots
+                {e.treatments.length > 0 &&
+                  ` · ${e.mainPlotCount * e.subPlotCount * e.treatments.length * (e.replications || 1)} rows per parameter`}
               </b>
             </div>
           )}

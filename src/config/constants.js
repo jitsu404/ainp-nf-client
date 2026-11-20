@@ -65,14 +65,33 @@ export const EXPERIMENT_DESIGNS = [
 export const DESIGN_HINTS = {
   RBD: "Randomized (complete) block design. Treatment ANOVA, CD and CV are calculated.",
   "Split plot":
-    "Main plots and sub plots, replicated. Treatment means are shown; ANOVA is not available yet.",
+    "Main plots × sub plots; each plot holds every treatment × replication. ANOVA per plot.",
   "Strip plot":
-    "Replicated or un-replicated. Treatment means are shown; ANOVA is not available yet.",
+    "Horizontal × vertical strips, each holding every treatment (× replication, if replicated). ANOVA per plot when replicated.",
   "Non-replicated": "Large plots, one value per treatment.",
   "Farmer participatory":
     "Validation in farmers’ fields (e.g. SCSP/STC). One value per treatment.",
   Survey: "Characterization survey (e.g. geo-referenced). One value per item.",
 };
+/**
+ * Laid out in main plots × sub plots; each plot is a complete RBD (every treatment × replication).
+ * Must match DESIGNS_WITH_PLOTS and MAX_PLOT_COUNT in the backend.
+ */
+export const DESIGNS_WITH_PLOTS = ["Split plot", "Strip plot"];
+export const MAX_PLOT_COUNT = 10;
+/** Every plot of an experiment's layout, main plot first; one null plot for other designs. */
+export const experimentPlots = (e) =>
+  DESIGNS_WITH_PLOTS.includes(e?.design) && e.mainPlotCount && e.subPlotCount
+    ? Array.from({ length: e.mainPlotCount }, (_, m) =>
+        Array.from({ length: e.subPlotCount }, (_, s) => ({
+          mainPlot: m + 1,
+          subPlot: s + 1,
+        })),
+      ).flat()
+    : [{ mainPlot: null, subPlot: null }];
+/** "M1·S2", or "" for a single-plot design. */
+export const plotLabel = (p) =>
+  p?.mainPlot == null ? "" : `M${p.mainPlot}·S${p.subPlot}`;
 /** At least 2 replications. */
 export const DESIGNS_NEEDING_REPLICATIONS = ["RBD", "Split plot"];
 /** Never replicated (data is one value per treatment). Strip plot may be either. */
@@ -81,6 +100,24 @@ export const UNREPLICATED_DESIGNS = [
   "Farmer participatory",
   "Survey",
 ];
+/**
+ * Sheets are recorded per year: the year the season starts in (Kharif 2026 and Rabi 2026 are
+ * both 2026). The years come only from the experiment: every year from its start to its end.
+ */
+export const experimentYears = (e) =>
+  e?.startYear
+    ? Array.from(
+        { length: Math.max(0, (e.endYear ?? e.startYear) - e.startYear + 1) },
+        (_, i) => e.startYear + i,
+      )
+    : [];
+/** The experiment's year to show first: this year if it runs now, else its nearest year. */
+export const defaultExperimentYear = (e) => {
+  const years = experimentYears(e);
+  const now = new Date().getFullYear();
+  if (!years.length) return "";
+  return Math.min(Math.max(now, years[0]), years.at(-1));
+};
 export const EXPERIMENT_STATUSES = ["Draft", "Active", "Closed"];
 export const TRIAL_STATUSES = ["Setup", "Running", "Completed"];
 export const SHEET_STATUSES = ["Draft", "Submitted", "Returned", "Approved"];

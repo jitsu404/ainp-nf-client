@@ -2,15 +2,16 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { Download } from "lucide-react";
 import { sheetsApi } from "../api";
-import { ROUTES } from "../config/constants";
+import {
+  ROUTES,
+  defaultExperimentYear,
+  experimentYears,
+} from "../config/constants";
+import { inProtocolSeasons } from "../lib/seasonCrops";
 import { toast } from "../lib/toast";
 import { BarChart } from "./Charts";
 import { fmt, fmtPct, pctVs } from "../lib/results";
-import {
-  useFinancialYears,
-  useMasterOptions,
-  useUnitLabel,
-} from "../queries/masters";
+import { useMasterOptions, useUnitLabel } from "../queries/masters";
 import { useExperimentSummary } from "../queries/research";
 import { ErrorNote } from "./forms";
 import { Badge, Card, Select } from "./ui";
@@ -24,17 +25,18 @@ const mean = (xs) => {
 };
 
 export function ExperimentResults({ experiment, canSeeUnapproved }) {
-  const years = useFinancialYears();
   const seasons = useMasterOptions("season");
   const [fy, setFy] = useState("");
   const [season, setSeason] = useState("");
   const [all, setAll] = useState(false);
   const [chosenRef, setChosenRef] = useState(null);
   const [grouped, setGrouped] = useState(false);
-  const fyCode = fy || years.data?.find((y) => y.isCurrent)?.code || "";
+  // The experiment's years, start to end; by default this year (or the nearest one).
+  const yearList = experimentYears(experiment);
+  const year = Number(fy) || defaultExperimentYear(experiment);
   const summary = useExperimentSummary({
     experimentId: experiment.id,
-    fyCode,
+    year,
     seasonCode: season || undefined,
     includeUnapproved: all || undefined,
   });
@@ -46,16 +48,15 @@ export function ExperimentResults({ experiment, canSeeUnapproved }) {
       <Card pad={false}>
         <div className="toolbar" style={{ flexWrap: "wrap" }}>
           <Select
-            value={fyCode}
+            value={String(year)}
             onChange={setFy}
-            options={(years.data ?? []).map((y) => y.code)}
+            options={yearList.map((y) => String(y))}
           />
           <Select
             value={season}
             onChange={setSeason}
-            options={seasons.options.filter(
-              ([c]) =>
-                !experiment.seasons.length || experiment.seasons.includes(c),
+            options={seasons.options.filter(([c]) =>
+              inProtocolSeasons(experiment.seasons, c),
             )}
             all="All seasons"
           />
@@ -104,7 +105,7 @@ export function ExperimentResults({ experiment, canSeeUnapproved }) {
               sheetsApi
                 .exportSummary({
                   experimentId: experiment.id,
-                  fyCode,
+                  year,
                   seasonCode: season || undefined,
                   includeUnapproved: all || undefined,
                 })
@@ -119,7 +120,7 @@ export function ExperimentResults({ experiment, canSeeUnapproved }) {
       {summary.isPending && <p className="muted">Loading…</p>}
       {s && !s.centres.length && (
         <div className="empty card">
-          No {all ? "" : "approved "}sheets for {fyCode} yet.
+          No {all ? "" : "approved "}sheets for {year} yet.
         </div>
       )}
       {s &&

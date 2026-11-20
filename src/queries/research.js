@@ -61,12 +61,12 @@ export function useSheetAnalysis(id, { enabled = true } = {}) {
   });
 }
 
-/** Cross-centre treatment means. `params` = { experimentId, fyCode, seasonCode?, includeUnapproved? } */
+/** Cross-centre treatment means. `params` = { experimentId, year, seasonCode?, includeUnapproved? } */
 export function useExperimentSummary(params) {
   return useQuery({
     queryKey: queryKeys.research.summary(params),
     queryFn: async () => (await sheetsApi.summary(params)).data,
-    enabled: Boolean(params.experimentId && params.fyCode),
+    enabled: Boolean(params.experimentId && params.year),
   });
 }
 

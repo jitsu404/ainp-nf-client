@@ -4,10 +4,15 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ErrorNote } from "../components/forms";
 import { Badge, Card, Page, Select, Table } from "../components/ui";
-import { ROUTES, SHEET_STATUSES, TABLE_PAGE_SIZE } from "../config/constants";
+import {
+  ROUTES,
+  SHEET_STATUSES,
+  TABLE_PAGE_SIZE,
+  experimentYears,
+} from "../config/constants";
 import { formatDateTime } from "../hooks";
-import { useFinancialYears, useMasterOptions } from "../queries/masters";
-import { useSheets } from "../queries/research";
+import { useMasterOptions } from "../queries/masters";
+import { useExperiments, useSheets } from "../queries/research";
 
 // All observation sheets the user can see: for the PCU a review queue across centres (submitted
 // sheets first), for a Centre PI their own centre's sheets (the API scopes the list).
@@ -18,11 +23,17 @@ export default function Sheets() {
   const reviewer = can("research.approve") || can("research.review");
   const [status, setStatus] = useState(reviewer ? "Submitted" : "");
   const [fy, setFy] = useState("");
-  const years = useFinancialYears();
+  // Years to filter by: every year of the experiments the user can see.
+  const experiments = useExperiments();
+  const yearOptions = [
+    ...new Set((experiments.data ?? []).flatMap((e) => experimentYears(e))),
+  ]
+    .sort((a, b) => b - a)
+    .map(String);
   const seasons = useMasterOptions("season");
   const sheets = useSheets({
     status: status || undefined,
-    fyCode: fy || undefined,
+    year: fy || undefined,
   });
   const rows = sheets.data ?? [];
 
@@ -44,7 +55,7 @@ export default function Sheets() {
             <Select
               value={fy}
               onChange={setFy}
-              options={(years.data ?? []).map((y) => y.code)}
+              options={yearOptions}
               all="All years"
             />
             <span className="grow" />
@@ -78,7 +89,7 @@ export default function Sheets() {
               ...(reviewer
                 ? [{ label: "Centre", render: (s) => s.centreId?.name }]
                 : []),
-              { label: "Year", key: "fyCode" },
+              { label: "Year", key: "year" },
               { label: "Season", render: (s) => seasons.nameOf(s.seasonCode) },
               {
                 label: "System / crop",
