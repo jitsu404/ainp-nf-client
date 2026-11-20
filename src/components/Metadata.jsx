@@ -4,6 +4,8 @@ import {
   Download,
   Pencil,
   Plus,
+  RotateCcw,
+  Search,
   Send,
   Trash2,
   Undo2,
@@ -24,31 +26,6 @@ import { Badge, Card, Modal, Table } from "./ui";
 // ICAR research-data metadata (fields 1–38). The field list, values and what the caller may do
 // all come from the API; this file only renders them.
 
-const SOURCE = {
-  common: ["Common", "blue", "Same for every centre; set by the PCU"],
-  auto: [
-    "Automatic",
-    "grey",
-    "Filled in from the protocol, trial, PI and sheets",
-  ],
-  centre: ["Centre", "green", "Entered by the centre"],
-};
-
-const SourceBadge = ({ source }) => (
-  <span title={SOURCE[source][2]}>
-    <Badge tone={SOURCE[source][1]}>{SOURCE[source][0]}</Badge>
-  </span>
-);
-
-const Completeness = ({ c }) =>
-  c.missing.length ? (
-    <Badge tone="amber">
-      {c.filled} of {c.total} required
-    </Badge>
-  ) : (
-    <Badge tone="green">Complete</Badge>
-  );
-
 /** The merged record for one trial, with the actions the caller may take. */
 export function TrialMetadata({ trialId }) {
   const meta = useTrialMetadata(trialId);
@@ -65,11 +42,10 @@ export function TrialMetadata({ trialId }) {
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           <b>{m.centre?.name}</b>
           <Badge>{m.status}</Badge>
-          <Completeness c={m.completeness} />
           <span className="grow" />
           {m.canEdit && (
             <button className="btn ghost sm" onClick={() => setModal("edit")}>
-              <Pencil size={14} /> Edit centre fields
+              <Pencil size={14} /> Edit metadata
             </button>
           )}
           {m.canSubmit && (
@@ -106,11 +82,6 @@ export function TrialMetadata({ trialId }) {
           <div className="note" style={{ marginTop: 12 }}>
             Submitted to the PCU. It can be changed again only if it is
             returned.
-          </div>
-        )}
-        {m.canEdit && m.completeness.missing.length > 0 && (
-          <div className="note warn" style={{ marginTop: 12 }}>
-            Still needed before submitting: {m.completeness.missing.join(", ")}.
           </div>
         )}
       </Card>
@@ -155,9 +126,8 @@ function MetadataFieldsTable({ fields }) {
           <thead>
             <tr>
               <th style={{ width: 40 }}>No.</th>
-              <th style={{ width: "32%" }}>Field</th>
+              <th style={{ width: "36%" }}>Field</th>
               <th>Value</th>
-              <th style={{ width: 110 }}>Source</th>
             </tr>
           </thead>
           <tbody>
@@ -166,18 +136,10 @@ function MetadataFieldsTable({ fields }) {
                 <td className="muted">{f.no ?? ""}</td>
                 <td>
                   {f.label}
-                  {f.required && <span className="muted"> *</span>}
                   {f.hint && <div className="muted small">{f.hint}</div>}
                 </td>
                 <td style={{ whiteSpace: "pre-wrap" }}>
-                  {f.display || (
-                    <span className="muted">
-                      {f.required ? "Required" : "—"}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  <SourceBadge source={f.source} />
+                  {f.display || <span className="muted">—</span>}
                 </td>
               </tr>
             ))}
@@ -189,16 +151,39 @@ function MetadataFieldsTable({ fields }) {
 }
 
 /** One input for a field definition from the API. */
-function FieldInput({ field: f, value, onChange, placeholder }) {
+function FieldInput({
+  field: f,
+  value,
+  onChange,
+  placeholder,
+  onReset,
+  isOverridden,
+}) {
   const id = `meta-${f.key}`;
   const label = (
-    <label htmlFor={id}>
-      {f.no ? `${f.no}. ` : ""}
-      {f.label}
-      {f.required ? " *" : ""}
-    </label>
+    <div
+      className="row spread"
+      style={{ alignItems: "center", width: "100%", marginBottom: 4 }}
+    >
+      <label htmlFor={id} style={{ margin: 0, fontWeight: 550 }}>
+        {f.no ? `${f.no}. ` : ""}
+        {f.label}
+      </label>
+      {onReset && (
+        <button
+          type="button"
+          className="btn ghost xs"
+          title={`Reset to default (${f.defaultDisplay || "Protocol default"})`}
+          onClick={onReset}
+          style={{ padding: "1px 6px", fontSize: "0.75rem", gap: 3 }}
+        >
+          <RotateCcw size={11} /> Reset
+        </button>
+      )}
+    </div>
   );
   const hint = f.hint && <span className="muted small">{f.hint}</span>;
+
   if (f.type === "multiselect") {
     const chosen = value ?? [];
     return (
@@ -226,13 +211,14 @@ function FieldInput({ field: f, value, onChange, placeholder }) {
       </div>
     );
   }
+
   if (f.type === "people") {
     const people = value ?? [];
     const set = (i, key, v) =>
       onChange(people.map((p, j) => (j === i ? { ...p, [key]: v } : p)));
     return (
       <div className="field full">
-        <label>{f.label}</label>
+        {label}
         {hint}
         {people.map((p, i) => (
           <div key={i} className="row" style={{ gap: 6, marginTop: 6 }}>
@@ -280,15 +266,17 @@ function FieldInput({ field: f, value, onChange, placeholder }) {
       </div>
     );
   }
+
   const common = {
     id,
     value: value ?? "",
     onChange: (e) => onChange(e.target.value),
     placeholder: placeholder || undefined,
   };
+
   return (
     <div
-      className={`field ${f.type === "textarea" || f.no === 7 ? "full" : ""}`}
+      className={`field ${f.type === "textarea" || f.no === 7 || f.no === 8 || f.no === 24 || f.no === 25 || f.no === 36 ? "full" : ""}`}
     >
       {label}
       {f.type === "textarea" ? (
@@ -316,12 +304,153 @@ function FieldInput({ field: f, value, onChange, placeholder }) {
   );
 }
 
+const METADATA_SECTIONS = [
+  {
+    id: "all",
+    label: "All fields",
+  },
+  {
+    id: "info",
+    label: "1. Institutional & Project",
+    keys: [
+      "smdName",
+      "instituteName",
+      "unitType",
+      "unitName",
+      "projectTitle",
+      "projectCode",
+    ],
+  },
+  {
+    id: "dataset",
+    label: "2. Dataset & Personnel",
+    keys: [
+      "datasetTitle",
+      "description",
+      "piNames",
+      "piDesignations",
+      "piEmails",
+      "coPis",
+      "custodian",
+    ],
+  },
+  {
+    id: "domain",
+    label: "3. Domain & Design",
+    keys: [
+      "fundingType",
+      "fundingSource",
+      "subject",
+      "keywords",
+      "commodity",
+      "design",
+      "methodology",
+    ],
+  },
+  {
+    id: "specs",
+    label: "4. Specs & Instruments",
+    keys: [
+      "dataCategory",
+      "dataType",
+      "dataScale",
+      "dataFormat",
+      "plotSize",
+      "instruments",
+      "attributes",
+      "language",
+    ],
+  },
+  {
+    id: "coverage",
+    label: "5. Coverage & Access",
+    keys: [
+      "temporalExtent",
+      "seasons",
+      "spatialExtent",
+      "availabilityLocation",
+      "completionDate",
+      "embargoYears",
+      "resource",
+      "source",
+      "relation",
+      "citation",
+    ],
+  },
+];
+
 function TrialMetadataEditor({ record, trialId, onClose }) {
   const save = useSaveTrialMetadata(trialId);
-  const fields = record.fields.filter((f) => f.source === "centre");
-  const [values, setValues] = useState(() =>
-    Object.fromEntries(fields.map((f) => [f.key, f.value])),
-  );
+  const allFields = record.fields;
+  const [section, setSection] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const [values, setValues] = useState(() => {
+    const initial = {};
+    for (const f of allFields) {
+      if (f.type === "multiselect") {
+        initial[f.key] = Array.isArray(f.value)
+          ? f.value
+          : Array.isArray(f.defaultValue)
+            ? f.defaultValue
+            : [];
+      } else if (f.type === "people") {
+        initial[f.key] = Array.isArray(f.value)
+          ? f.value
+          : Array.isArray(f.defaultValue)
+            ? f.defaultValue
+            : [];
+      } else if (f.type === "number") {
+        initial[f.key] = f.value != null ? f.value : (f.defaultValue ?? "");
+      } else {
+        initial[f.key] = f.value ?? f.defaultValue ?? f.display ?? "";
+      }
+    }
+    return initial;
+  });
+
+  const handleResetField = (key) => {
+    const f = allFields.find((item) => item.key === key);
+    if (!f) return;
+    const def =
+      f.defaultValue != null ? f.defaultValue : (f.defaultDisplay ?? "");
+    setValues((s) => ({
+      ...s,
+      [key]: def,
+    }));
+  };
+
+  const handleResetAll = () => {
+    const resetValues = {};
+    for (const f of allFields) {
+      if (f.type === "multiselect" || f.type === "people") {
+        resetValues[f.key] = Array.isArray(f.defaultValue)
+          ? f.defaultValue
+          : [];
+      } else if (f.type === "number") {
+        resetValues[f.key] = f.defaultValue != null ? f.defaultValue : "";
+      } else {
+        resetValues[f.key] = f.defaultValue ?? f.defaultDisplay ?? "";
+      }
+    }
+    setValues(resetValues);
+    toast.info("All fields reset to computed defaults");
+  };
+
+  const activeSectionDef = METADATA_SECTIONS.find((s) => s.id === section);
+  const visibleFields = allFields.filter((f) => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const match =
+        f.label.toLowerCase().includes(q) ||
+        f.key.toLowerCase().includes(q) ||
+        (f.hint && f.hint.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    if (section === "all") return true;
+    return activeSectionDef?.keys?.includes(f.key);
+  });
+
   const onSave = async () => {
     const body = { ...values };
     body.embargoYears =
@@ -329,26 +458,120 @@ function TrialMetadataEditor({ record, trialId, onClose }) {
         ? null
         : Number(values.embargoYears);
     body.coPis = (values.coPis ?? []).filter((p) => p.name?.trim());
+
+    // Clean empty strings to null
+    for (const [k, v] of Object.entries(body)) {
+      if (typeof v === "string" && v.trim() === "") {
+        body[k] = null;
+      }
+    }
+
     await save.mutateAsync(body);
-    toast.success("Metadata saved");
+    toast.success("Trial metadata saved");
   };
+
   return (
     <SaveModal
-      title="Centre metadata"
-      subtitle={`${record.experiment.code} at ${record.centre?.name}. Common and automatic fields are not edited here.`}
+      title="Trial metadata"
+      subtitle={`${record.experiment.code} at ${record.centre?.name}. All 38 ICAR fields are editable and prefilled with defaults.`}
+      wide={true}
+      style={{ maxWidth: 940 }}
       onSave={onSave}
       onClose={onClose}
     >
-      <div className="grid g2">
-        {fields.map((f) => (
-          <FieldInput
-            key={f.key}
-            field={f}
-            value={values[f.key]}
-            placeholder={f.isDefault ? f.display : ""}
-            onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
-          />
-        ))}
+      <div className="stack" style={{ gap: 14 }}>
+        {/* Toolbar: Sections, Search & Reset All */}
+        <div
+          className="row spread"
+          style={{ alignItems: "center", gap: 10, flexWrap: "wrap" }}
+        >
+          <div
+            className="row"
+            style={{ gap: 6, flexWrap: "wrap", alignItems: "center" }}
+          >
+            {METADATA_SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`btn sm ${section === s.id ? "" : "ghost"}`}
+                style={{ padding: "4px 10px", fontSize: "0.82rem" }}
+                onClick={() => setSection(s.id)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="row" style={{ gap: 8, alignItems: "center" }}>
+            <div
+              className="row"
+              style={{
+                alignItems: "center",
+                background: "var(--surface, #ffffff)",
+                border: "1px solid var(--line, #e3e8e4)",
+                borderRadius: "6px",
+                padding: "2px 8px",
+                minWidth: 170,
+              }}
+            >
+              <Search size={13} className="muted" style={{ marginRight: 4 }} />
+              <input
+                type="text"
+                placeholder="Filter fields…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  fontSize: "0.82rem",
+                  width: "100%",
+                }}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="btn ghost sm"
+              style={{ padding: "4px 8px", fontSize: "0.8rem", gap: 4 }}
+              onClick={handleResetAll}
+              title="Reset all fields to protocol & system defaults"
+            >
+              <RotateCcw size={12} /> Reset all
+            </button>
+          </div>
+        </div>
+
+        {/* Fields Grid */}
+        <div
+          style={{
+            maxHeight: "58vh",
+            overflowY: "auto",
+            paddingRight: 6,
+          }}
+        >
+          {visibleFields.length === 0 ? (
+            <div
+              className="muted center"
+              style={{ padding: "32px 0", fontSize: "0.9rem" }}
+            >
+              No fields match your search.
+            </div>
+          ) : (
+            <div className="grid g2" style={{ gap: "14px 16px" }}>
+              {visibleFields.map((f) => (
+                <FieldInput
+                  key={f.key}
+                  field={f}
+                  value={values[f.key]}
+                  placeholder={f.defaultDisplay || f.display || ""}
+                  onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
+                  onReset={() => handleResetField(f.key)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </SaveModal>
   );
@@ -460,10 +683,6 @@ export function ExperimentMetadata({ experimentId }) {
             { label: "State", render: (c) => c.centre?.state },
             { label: "Status", render: (c) => <Badge>{c.status}</Badge> },
             {
-              label: "Required fields",
-              render: (c) => <Completeness c={c.completeness} />,
-            },
-            {
               label: "Last saved",
               render: (c) =>
                 c.updatedAt ? formatDateTime(c.updatedAt) : "Not started",
@@ -526,32 +745,192 @@ export function ExperimentMetadata({ experimentId }) {
 
 function CommonMetadataEditor({ experimentId, fields, onClose }) {
   const save = useSaveCommonMetadata(experimentId);
-  const [values, setValues] = useState(() =>
-    // Only what the PCU set; defaults show as placeholders, so they stay defaults.
-    Object.fromEntries(
-      fields.map((f) => [f.key, f.isDefault ? "" : (f.value ?? "")]),
-    ),
-  );
+  const [section, setSection] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const [values, setValues] = useState(() => {
+    const initial = {};
+    for (const f of fields) {
+      if (f.type === "multiselect" || f.type === "people") {
+        initial[f.key] = Array.isArray(f.value)
+          ? f.value
+          : Array.isArray(f.defaultValue)
+            ? f.defaultValue
+            : [];
+      } else if (f.type === "number") {
+        initial[f.key] = f.value != null ? f.value : (f.defaultValue ?? "");
+      } else {
+        initial[f.key] = f.value ?? f.defaultValue ?? f.display ?? "";
+      }
+    }
+    return initial;
+  });
+
+  const handleResetField = (key) => {
+    const f = fields.find((item) => item.key === key);
+    if (!f) return;
+    const def =
+      f.defaultValue != null ? f.defaultValue : (f.defaultDisplay ?? "");
+    setValues((s) => ({
+      ...s,
+      [key]: def,
+    }));
+  };
+
+  const handleResetAll = () => {
+    const resetValues = {};
+    for (const f of fields) {
+      if (f.type === "multiselect" || f.type === "people") {
+        resetValues[f.key] = Array.isArray(f.defaultValue)
+          ? f.defaultValue
+          : [];
+      } else if (f.type === "number") {
+        resetValues[f.key] = f.defaultValue != null ? f.defaultValue : "";
+      } else {
+        resetValues[f.key] = f.defaultValue ?? f.defaultDisplay ?? "";
+      }
+    }
+    setValues(resetValues);
+    toast.info("All fields reset to computed defaults");
+  };
+
+  const activeSectionDef = METADATA_SECTIONS.find((s) => s.id === section);
+  const visibleFields = fields.filter((f) => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const match =
+        f.label.toLowerCase().includes(q) ||
+        f.key.toLowerCase().includes(q) ||
+        (f.hint && f.hint.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    if (section === "all") return true;
+    return activeSectionDef?.keys?.includes(f.key);
+  });
+
+  const onSave = async () => {
+    const body = { ...values };
+    body.embargoYears =
+      values.embargoYears === "" || values.embargoYears == null
+        ? null
+        : Number(values.embargoYears);
+    if (body.coPis) {
+      body.coPis = (values.coPis ?? []).filter((p) => p.name?.trim());
+    }
+
+    // Clean empty strings to null
+    for (const [k, v] of Object.entries(body)) {
+      if (typeof v === "string" && v.trim() === "") {
+        body[k] = null;
+      }
+    }
+
+    await save.mutateAsync(body);
+    toast.success("Common metadata saved");
+  };
+
   return (
     <SaveModal
       title="Common metadata"
-      subtitle="The same for every centre running this experiment. Clear a field to go back to its default."
-      onSave={async () => {
-        await save.mutateAsync(values);
-        toast.success("Common metadata saved");
-      }}
+      subtitle="Defaults for every centre running this experiment. All 38 ICAR fields can be configured here."
+      wide={true}
+      style={{ maxWidth: 940 }}
+      onSave={onSave}
       onClose={onClose}
     >
-      <div className="grid g2">
-        {fields.map((f) => (
-          <FieldInput
-            key={f.key}
-            field={f}
-            value={values[f.key]}
-            placeholder={f.isDefault ? f.display : ""}
-            onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
-          />
-        ))}
+      <div className="stack" style={{ gap: 14 }}>
+        {/* Toolbar: Sections, Search & Reset All */}
+        <div
+          className="row spread"
+          style={{ alignItems: "center", gap: 10, flexWrap: "wrap" }}
+        >
+          <div
+            className="row"
+            style={{ gap: 6, flexWrap: "wrap", alignItems: "center" }}
+          >
+            {METADATA_SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`btn sm ${section === s.id ? "" : "ghost"}`}
+                style={{ padding: "4px 10px", fontSize: "0.82rem" }}
+                onClick={() => setSection(s.id)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="row" style={{ gap: 8, alignItems: "center" }}>
+            <div
+              className="row"
+              style={{
+                alignItems: "center",
+                background: "var(--surface, #ffffff)",
+                border: "1px solid var(--line, #e3e8e4)",
+                borderRadius: "6px",
+                padding: "2px 8px",
+                minWidth: 170,
+              }}
+            >
+              <Search size={13} className="muted" style={{ marginRight: 4 }} />
+              <input
+                type="text"
+                placeholder="Filter fields…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  fontSize: "0.82rem",
+                  width: "100%",
+                }}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="btn ghost sm"
+              style={{ padding: "4px 8px", fontSize: "0.8rem", gap: 4 }}
+              onClick={handleResetAll}
+              title="Reset all fields to protocol & system defaults"
+            >
+              <RotateCcw size={12} /> Reset all
+            </button>
+          </div>
+        </div>
+
+        {/* Fields Grid */}
+        <div
+          style={{
+            maxHeight: "58vh",
+            overflowY: "auto",
+            paddingRight: 6,
+          }}
+        >
+          {visibleFields.length === 0 ? (
+            <div
+              className="muted center"
+              style={{ padding: "32px 0", fontSize: "0.9rem" }}
+            >
+              No fields match your search.
+            </div>
+          ) : (
+            <div className="grid g2" style={{ gap: "14px 16px" }}>
+              {visibleFields.map((f) => (
+                <FieldInput
+                  key={f.key}
+                  field={f}
+                  value={values[f.key]}
+                  placeholder={f.defaultDisplay || f.display || ""}
+                  onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
+                  onReset={() => handleResetField(f.key)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </SaveModal>
   );

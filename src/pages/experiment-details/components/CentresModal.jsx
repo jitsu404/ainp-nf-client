@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import Select from "react-select";
-import { ChevronDown, ChevronUp, RotateCcw, Search } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { ErrorNote, SaveModal } from "../../../components/forms";
 import { Badge } from "../../../components/ui";
 import { toast } from "../../../lib/toast";
@@ -17,40 +17,51 @@ import { customSelectStyles } from "../../experiments/components/ExperimentSeaso
 
 // The PCU (research.assign) picks the centres that run the experiment. Each assigned centre has a
 // trial: assigning creates it (or brings back a withdrawn one with its data), unticking withdraws
-// it (kept, read-only). The experiment's crops per season are every centre's default; a centre
-// that grows something else gets its own crops for that season on its trial (also editable by the
-// centre on its trial page). Seasons come from the protocol only.
+// it (kept, read-only). The experiment's seasons → crops are the default for every centre; a
+// centre that grows something different gets its own crops for that season on its trial page too.
+// Seasons come from the protocol only — this modal does not change them.
 
 export function CentresModal({ experiment, trials = [], onClose }) {
   const centres = useCentres({ isActive: "true" });
   const seasons = useMasterOptions("season");
   const assign = useAssignCentres(experiment.id);
 
+  // experiment.seasons: { SEASON_CODE: [cropId, …], … } (after seasonMap normalises it)
   const defaults = useMemo(
     () => seasonMap(experiment.seasons),
     [experiment.seasons],
   );
   const seasonCodes = Object.keys(defaults);
+
   const rows = useMemo(() => centres.data?.data ?? [], [centres.data]);
+
   const trialByCentre = useMemo(
     () => new Map(trials.map((t) => [t.centreId?.id, t])),
     [trials],
   );
+
   const assigned = useMemo(
     () => new Set(experiment.centreIds ?? []),
     [experiment.centreIds],
   );
 
-  // Crops already in use here (experiment defaults and each centre's own) stay selectable even
-  // if deactivated since.
-  const inUse = [
-    ...Object.values(defaults).flat(),
-    ...trials.flatMap((t) => Object.values(seasonMap(t.seasonCrops)).flat()),
-  ];
+  // Crop ids already selected anywhere (defaults + per-centre own) stay selectable even if the
+  // crop master has since been deactivated (useCropOptions keeps them, labelled "inactive").
+  const inUse = useMemo(
+    () => [
+      ...Object.values(defaults).flat(),
+      ...trials.flatMap((t) =>
+        Object.values(seasonMap(t.seasonCrops ?? {})).flat(),
+      ),
+    ],
+    [defaults, trials],
+  );
   const { options: cropOptions, optionOf } = useCropOptions(inUse);
 
-  // { [centreId]: { selected, crops: { [season]: ids } } }, starting from each trial's crops.
+  // Per-centre editable config: { [centreId]: { selected: bool, crops: { [seasonCode]: id[] } } }
+  // Starts empty; first access seeds from the existing trial's crops (or the experiment defaults).
   const [configs, setConfigs] = useState({});
+
   const configOf = (centreId) => {
     if (configs[centreId]) return configs[centreId];
     const trial = trialByCentre.get(centreId);
@@ -63,31 +74,47 @@ export function CentresModal({ experiment, trials = [], onClose }) {
       ),
     };
   };
-  const update = (centreId, change) =>
-    setConfigs((prev) => ({
-      ...prev,
-      [centreId]: { ...configOf(centreId), ...change(configOf(centreId)) },
-    }));
+
+  // Update fn always reads prev from the setter to avoid stale-closure issues.
+  const update = (centreId, changeFn) =>
+    setConfigs((prev) => {
+      const current =
+        prev[centreId] ??
+        (() => {
+          const trial = trialByCentre.get(centreId);
+          return {
+            selected: assigned.has(centreId),
+            crops: Object.fromEntries(
+              effectiveSeasonCrops(experiment.seasons, trial?.seasonCrops).map(
+                (s) => [s.seasonCode, s.crops],
+              ),
+            ),
+          };
+        })();
+      return { ...prev, [centreId]: { ...current, ...changeFn(current) } };
+    });
 
   const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState(null);
   const [withdrawReason, setWithdrawReason] = useState("");
 
   const selectedIds = rows
     .map((c) => c.id)
     .filter((id) => configOf(id).selected);
+
   const withdrawing = [...assigned].filter((id) => !selectedIds.includes(id));
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((c) =>
-      [c.name, c.code, c.state].some((x) => x?.toLowerCase().includes(q)),
+      [c.name, c.code, c.state, c.city, c.host].some((x) =>
+        x?.toLowerCase().includes(q),
+      ),
     );
   }, [rows, search]);
 
   const onSave = async () => {
-    const crops = Object.fromEntries(
+    const cropsMap = Object.fromEntries(
       selectedIds.map((id) => [
         id,
         seasonCropsPatch(
@@ -99,8 +126,11 @@ export function CentresModal({ experiment, trials = [], onClose }) {
     );
     await assign.mutateAsync({
       centreIds: selectedIds,
-      withdrawReason: withdrawing.length ? withdrawReason.trim() : undefined,
-      crops,
+      withdrawReason:
+        withdrawing.length && withdrawReason.trim()
+          ? withdrawReason.trim()
+          : undefined,
+      crops: cropsMap,
     });
     toast.success("Centres saved");
   };
@@ -109,7 +139,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
     !withdrawing.length ||
     withdrawReason.trim() === "" ||
     withdrawReason.trim().length >= 3;
-
+  console.log({ filtered });
   return (
     <SaveModal
       title="Assign centres"
@@ -118,13 +148,13 @@ export function CentresModal({ experiment, trials = [], onClose }) {
       onSave={onSave}
       onClose={onClose}
       wide
-      style={{ maxWidth: 860 }}
     >
       <ErrorNote error={centres.error} />
 
+      {/* ── Toolbar ── */}
       <div
         className="row spread"
-        style={{ gap: 12, marginBottom: 12, flexWrap: "wrap" }}
+        style={{ gap: 12, marginBottom: 4, flexWrap: "wrap" }}
       >
         <div className="row" style={{ gap: 8 }}>
           <button
@@ -149,7 +179,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
             {selectedIds.length} of {rows.length} selected
           </span>
         </div>
-        <label className="search" style={{ minWidth: 220 }}>
+        <label className="search">
           <Search size={14} />
           <input
             value={search}
@@ -159,52 +189,77 @@ export function CentresModal({ experiment, trials = [], onClose }) {
         </label>
       </div>
 
+      {/* ── Centre list ── */}
       <div
-        className="stack"
         style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
           maxHeight: "52vh",
           overflowY: "auto",
-          gap: 8,
-          paddingRight: 4,
+          paddingRight: 2,
         }}
       >
-        {filtered.length === 0 && (
-          <div className="muted center" style={{ padding: "32px 0" }}>
-            No centres match your search.
+        {centres.isPending && (
+          <div
+            className="muted"
+            style={{ padding: "32px 0", textAlign: "center" }}
+          >
+            Loading centres…
           </div>
         )}
+
+        {!centres.isPending && filtered.length === 0 && (
+          <div
+            className="muted"
+            style={{ padding: "32px 0", textAlign: "center" }}
+          >
+            {search ? "No centres match your search." : "No centres available."}
+          </div>
+        )}
+
         {filtered.map((c) => {
           const cfg = configOf(c.id);
-          const open = cfg.selected && expanded === c.id;
+          const wasWithdrawn =
+            trialByCentre.get(c.id)?.assignmentStatus === "Withdrawn";
           const own = seasonCodes.filter(
             (code) => !sameCrops(cfg.crops[code] ?? [], defaults[code] ?? []),
           );
-          const wasWithdrawn =
-            trialByCentre.get(c.id)?.assignmentStatus === "Withdrawn";
+
           return (
             <div
               key={c.id}
               style={{
                 border: `1px solid ${cfg.selected ? "var(--green, #1b7f4b)" : "var(--line, #e3e8e4)"}`,
                 borderRadius: 8,
-                overflow: "hidden",
+                // overflow: "hidden",
               }}
             >
+              {/* Centre header row */}
+
               <div
-                className="row spread"
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
                   padding: "10px 14px",
-                  cursor: cfg.selected ? "pointer" : "default",
                   background: cfg.selected
                     ? "rgba(27, 127, 75, 0.04)"
                     : "transparent",
                 }}
-                onClick={() => cfg.selected && setExpanded(open ? null : c.id)}
               >
+                {/* Checkbox + name */}
                 <label
-                  className="row"
-                  style={{ gap: 10, margin: 0, cursor: "pointer" }}
-                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    margin: 0,
+                    cursor: "pointer",
+                    flex: 1,
+                    minWidth: 0,
+                  }}
                 >
                   <input
                     type="checkbox"
@@ -212,86 +267,138 @@ export function CentresModal({ experiment, trials = [], onClose }) {
                     onChange={(e) =>
                       update(c.id, () => ({ selected: e.target.checked }))
                     }
-                    style={{ width: 16, height: 16 }}
+                    style={{ width: 16, height: 16, flexShrink: 0 }}
                   />
-                  <span style={{ fontWeight: 600 }}>
-                    {c.name} <span className="muted">({c.code})</span>
+                  <span style={{ fontSize: "0.9rem", lineHeight: 1.3 }}>
+                    <span style={{ fontWeight: 600 }}>
+                      {c.host || c.code}
+                      asdf
+                    </span>
+                    <span
+                      style={{
+                        color: "var(--text-muted, #647069)",
+                        marginLeft: 6,
+                      }}
+                    >
+                      ({c.code})
+                    </span>
                     {c.state && (
-                      <span className="muted small"> · {c.state}</span>
+                      <span
+                        style={{
+                          color: "var(--text-muted, #647069)",
+                          fontSize: "0.8rem",
+                          marginLeft: 6,
+                        }}
+                      >
+                        · {c.state}
+                      </span>
                     )}
                   </span>
                 </label>
-                <div className="row" style={{ gap: 6 }}>
+
+                {/* Status badges */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 6,
+                    flexShrink: 0,
+                    alignItems: "center",
+                  }}
+                >
                   {wasWithdrawn && !cfg.selected && (
                     <Badge tone="grey">Withdrawn</Badge>
                   )}
                   {wasWithdrawn && cfg.selected && (
-                    <Badge tone="blue">Re-assign (keeps its data)</Badge>
-                  )}
-                  {cfg.selected && seasonCodes.length > 0 && (
-                    <>
-                      {own.length ? (
-                        <Badge tone="amber">
-                          Own crops: {own.map(seasons.nameOf).join(", ")}
-                        </Badge>
-                      ) : (
-                        <Badge tone="green">Experiment crops</Badge>
-                      )}
-                      {open ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      )}
-                    </>
+                    <Badge tone="blue">Re-assign (keeps data)</Badge>
                   )}
                   {!cfg.selected && !wasWithdrawn && assigned.has(c.id) && (
                     <Badge tone="amber">Will be withdrawn</Badge>
                   )}
-                  {!cfg.selected && !wasWithdrawn && !assigned.has(c.id) && (
-                    <span className="muted small">Not assigned</span>
+                  {cfg.selected && own.length > 0 && (
+                    <Badge tone="amber">
+                      Own crops: {own.map(seasons.nameOf).join(", ")}
+                    </Badge>
                   )}
+                  {cfg.selected &&
+                    own.length === 0 &&
+                    seasonCodes.length > 0 && (
+                      <Badge tone="green">Experiment crops</Badge>
+                    )}
                 </div>
               </div>
 
-              {open && (
+              {/* Season-crops section — shown only for checked centres that have seasons */}
+              {cfg.selected && seasonCodes.length > 0 && (
                 <div
-                  className="stack"
                   style={{
+                    display: "flex",
+                    flexDirection: "column",
                     gap: 10,
-                    padding: "12px 14px 14px 38px",
+                    padding: "10px 14px 14px 42px",
                     borderTop: "1px solid var(--line, #e3e8e4)",
+                    background: "var(--bg, #f5f7f5)",
                   }}
                 >
-                  <div className="row spread">
-                    <span className="small" style={{ fontWeight: 600 }}>
-                      Crops at {c.name}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn ghost xs"
-                      onClick={() =>
-                        update(c.id, () => ({ crops: { ...defaults } }))
-                      }
+                  {/* Section header */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        color: "var(--text-muted, #647069)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
                     >
-                      <RotateCcw size={12} /> Use the experiment's crops
-                    </button>
+                      Crops per season
+                    </span>
+                    {own.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn ghost xs"
+                        onClick={() =>
+                          update(c.id, () => ({ crops: { ...defaults } }))
+                        }
+                      >
+                        <RotateCcw size={11} /> Reset to experiment defaults
+                      </button>
+                    )}
                   </div>
+
+                  {/* One row per experiment season */}
                   {seasonCodes.map((code) => (
                     <div
                       key={code}
-                      className="row"
-                      style={{ gap: 12, alignItems: "center" }}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                      }}
                     >
-                      <span style={{ minWidth: 120, fontWeight: 550 }}>
+                      <span
+                        style={{
+                          minWidth: 100,
+                          fontWeight: 550,
+                          fontSize: "0.875rem",
+                          paddingTop: 6,
+                          flexShrink: 0,
+                          color: own.includes(code)
+                            ? "var(--amber, #a86200)"
+                            : "inherit",
+                        }}
+                      >
                         {seasons.nameOf(code)}
-                        {own.includes(code) && (
-                          <span className="muted small"> · own</span>
-                        )}
                       </span>
-                      <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <Select
                           isMulti
-                          placeholder={`Crops for ${seasons.nameOf(code)}…`}
+                          placeholder={`Select crops for ${seasons.nameOf(code)}…`}
                           options={cropOptions}
                           value={(cfg.crops[code] ?? [])
                             .map((id) => optionOf(id))
@@ -318,15 +425,17 @@ export function CentresModal({ experiment, trials = [], onClose }) {
         })}
       </div>
 
-      {seasonCodes.length === 0 && (
-        <div className="note" style={{ marginTop: 12 }}>
-          The experiment has no seasons yet, so there are no crops to set per
-          centre. Add seasons and crops in Edit details.
+      {/* No-seasons notice */}
+      {seasonCodes.length === 0 && selectedIds.length > 0 && (
+        <div className="note" style={{ marginTop: 4 }}>
+          The experiment has no seasons configured yet — crop customisation per
+          centre is not available. Add seasons in <b>Edit details</b>.
         </div>
       )}
 
+      {/* Withdraw reason */}
       {withdrawing.length > 0 && (
-        <div className="field" style={{ marginTop: 12 }}>
+        <div className="field">
           <label htmlFor="withdraw-reason">
             Reason for withdrawing {withdrawing.length} centre
             {withdrawing.length === 1 ? "" : "s"}{" "}
@@ -344,7 +453,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
         </div>
       )}
 
-      <div className="note" style={{ marginTop: 12 }}>
+      <div className="note">
         Each assigned centre gets its own trial. A withdrawn centre keeps its
         trial and data, read-only; assigning it again brings them back.
       </div>
