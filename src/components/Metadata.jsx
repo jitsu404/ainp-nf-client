@@ -863,7 +863,7 @@ function CommonMetadataEditor({ experimentId, fields, onClose }) {
 
           <div className="row" style={{ gap: 8, alignItems: "center" }}>
             <div
-              className="row"
+              className="row "
               style={{
                 alignItems: "center",
                 background: "var(--surface, #ffffff)",
@@ -903,11 +903,11 @@ function CommonMetadataEditor({ experimentId, fields, onClose }) {
 
         {/* Fields Grid */}
         <div
-          style={{
-            maxHeight: "58vh",
-            overflowY: "auto",
-            paddingRight: 6,
-          }}
+        // style={{
+        //   maxHeight: "58vh",
+        //   overflowY: "auto",
+        //   paddingRight: 6,
+        // }}
         >
           {visibleFields.length === 0 ? (
             <div

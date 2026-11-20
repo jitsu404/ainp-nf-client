@@ -34,7 +34,7 @@ export default function ExperimentDetail() {
   const { can } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("protocol");
-  const [modal, setModal] = useState(null); // 'details' | 'treatments' | 'parameters' | 'centres' | 'pi'
+  const [modal, setModal] = useState(null); // 'details' | 'treatments' | 'parameters' | 'centres' | 'pi' | 'mainPlot' | 'subPlot'
   const experiment = useExperiment(id);
   const trials = useTrials({ experimentId: id });
   const update = useUpdateExperiment(id);
@@ -157,6 +157,9 @@ export default function ExperimentDetail() {
             unit={unit}
             onEditTreatments={() => setModal("treatments")}
             onEditParameters={() => setModal("parameters")}
+            onEditMainPlot={() => setModal("mainPlot")}
+            onEditSubPlot={() => setModal("subPlot")}
+            onEditDetails={() => setModal("details")}
           />
         )}
 
@@ -186,7 +189,28 @@ export default function ExperimentDetail() {
         <ExperimentDetailsModal experiment={e} save={save} onClose={close} />
       )}
       {modal === "treatments" && (
-        <TreatmentsModal experiment={e} save={save} onClose={close} />
+        <TreatmentsModal
+          experiment={e}
+          type="treatments"
+          save={save}
+          onClose={close}
+        />
+      )}
+      {modal === "mainPlot" && (
+        <TreatmentsModal
+          experiment={e}
+          type="mainPlot"
+          save={save}
+          onClose={close}
+        />
+      )}
+      {modal === "subPlot" && (
+        <TreatmentsModal
+          experiment={e}
+          type="subPlot"
+          save={save}
+          onClose={close}
+        />
       )}
       {modal === "parameters" && (
         <ParametersModal experiment={e} save={save} onClose={close} />
