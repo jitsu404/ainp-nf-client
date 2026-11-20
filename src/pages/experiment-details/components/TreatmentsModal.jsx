@@ -129,9 +129,16 @@ export function TreatmentsModal({
             <input
               aria-label="Code"
               value={r.code}
-              disabled={frozen(r)}
-              onChange={(e) => set(i, "code", e.target.value)}
+              disabled
+              readOnly
               className="select"
+              style={{
+                width: 70,
+                cursor: "not-allowed",
+                backgroundColor: "var(--surface-muted, #f3f5f3)",
+                color: "var(--text-muted, #556056)",
+                fontWeight: 600,
+              }}
             />
             <input
               aria-label={
