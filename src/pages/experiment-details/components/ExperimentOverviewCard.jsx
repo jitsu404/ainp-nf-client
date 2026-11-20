@@ -1,6 +1,11 @@
+import { UserSquare2 } from "lucide-react";
+import { PiCard } from "../../../components/ExperimentPis";
+import { useMemo } from "react";
 import { Card } from "../../../components/ui";
+import { useMasters } from "../../../queries/masters";
 
-export function formatSeasons(seasonsData, seasonsMaster) {
+/** "Kharif (Rice, Maize); Rabi (Wheat)". The API returns crop ids; `cropName` turns one into a name. */
+export function formatSeasons(seasonsData, seasonsMaster, cropName = (c) => c) {
   const seasonsMap =
     seasonsData instanceof Map
       ? seasonsData
@@ -19,7 +24,7 @@ export function formatSeasons(seasonsData, seasonsMaster) {
     const sName = seasonsMaster.nameOf(sCode);
     const cropNames = Array.isArray(cropList)
       ? cropList
-          .map((c) => (typeof c === "object" ? c.name : c))
+          .map((c) => (typeof c === "object" ? c.name : cropName(c)))
           .filter(Boolean)
       : [];
     parts.push(
@@ -34,7 +39,16 @@ export function ExperimentOverviewCard({
   programmes,
   seasons,
   trialRows = [],
+  assign = false,
+  onAssignPi,
 }) {
+  const crops = useMasters("crop");
+  const cropName = useMemo(() => {
+    const names = new Map(
+      (crops.data ?? []).map((c) => [String(c.id ?? c._id), c.name]),
+    );
+    return (id) => names.get(String(id)) ?? "…";
+  }, [crops.data]);
   return (
     <Card>
       <div className="stack" style={{ gap: 12 }}>
@@ -68,15 +82,7 @@ export function ExperimentOverviewCard({
           </div>
           <div>
             <span>Seasons</span>
-            <b>{formatSeasons(e.seasons, seasons)}</b>
-          </div>
-          <div>
-            <span>Assigned to</span>
-            <b>
-              {typeof e.assignedTo === "object" && e.assignedTo
-                ? `${e.assignedTo.name}${e.assignedTo.designation ? ` · ${e.assignedTo.designation}` : ""}`
-                : e.assignedTo || "—"}
-            </b>
+            <b>{formatSeasons(e.seasons, seasons, cropName)}</b>
           </div>
           {(e.mainPlotCount > 0 || e.subPlotCount > 0) && (
             <div>
@@ -99,6 +105,24 @@ export function ExperimentOverviewCard({
             <span>Centres</span>
             <b>{(e.centreIds ?? trialRows).length}</b>
           </div>
+        </div>
+        <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
+          <div className="grow">
+            <span className="muted small">Experiment PI</span>
+            {e.pi ? (
+              <PiCard pi={e.pi} compact={!assign} />
+            ) : (
+              <div className="muted">
+                Not assigned yet
+                {assign && ". The PI edits this experiment's definition."}
+              </div>
+            )}
+          </div>
+          {assign && (
+            <button className="btn ghost sm" onClick={onAssignPi}>
+              <UserSquare2 size={14} /> {e.pi ? "Change PI" : "Assign PI"}
+            </button>
+          )}
         </div>
         {e.objectives.length > 0 && (
           <div>

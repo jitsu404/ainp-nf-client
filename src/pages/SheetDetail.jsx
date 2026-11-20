@@ -118,8 +118,13 @@ export default function SheetDetail() {
   const e = s.experiment;
   const yearOpen =
     years.data?.find((y) => y.code === s.fyCode)?.isOpen !== false;
+  // A withdrawn centre's sheets are read-only (the API refuses every change).
+  const withdrawn = trial.data?.assignmentStatus === "Withdrawn";
   const editable =
-    EDITABLE.includes(s.status) && can("research.enter") && yearOpen;
+    EDITABLE.includes(s.status) &&
+    can("research.enter") &&
+    yearOpen &&
+    !withdrawn;
   const replicated = Boolean(e.replications);
   const plotParams = e.parameters.filter(
     (p) => p.level === "plot" && replicated,
@@ -206,12 +211,13 @@ export default function SheetDetail() {
         </button>
       )}
       {s.status === "Submitted" &&
+        !withdrawn &&
         (can("research.review") || can("research.approve")) && (
           <button className="btn danger" onClick={() => setModal("return")}>
             <Undo2 size={15} /> Return
           </button>
         )}
-      {s.status === "Submitted" && can("research.approve") && (
+      {s.status === "Submitted" && !withdrawn && can("research.approve") && (
         <button className="btn" onClick={() => setModal("approve")}>
           <CheckCircle2 size={15} /> Approve
         </button>

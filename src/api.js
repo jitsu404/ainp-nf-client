@@ -204,15 +204,6 @@ export const experimentsApi = {
   update: (id, body) => api.patch(`/experiments/${id}`, body),
 };
 
-export const experimentAssignmentsApi = {
-  list: (params) => api.get("/experiments-assignment", params),
-  get: (id) => api.get(`/experiments-assignment/${id}`),
-  create: (body) => api.post("/experiments-assignment", body),
-  update: (id, body) => api.patch(`/experiments-assignment/${id}`, body),
-  bulkAssign: (body) => api.post("/experiments-assignment/bulk", body),
-  remove: (id) => api.delete(`/experiments-assignment/${id}`),
-};
-
 export const trialsApi = {
   list: (params) => api.get("/trials", params),
   get: (id) => api.get(`/trials/${id}`),

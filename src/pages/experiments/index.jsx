@@ -32,12 +32,22 @@ export default function Experiments() {
   });
   const rows = experiments.data ?? [];
   const config = can("research.config");
+  const assign = can("research.assign");
 
+  // The PCU (research.assign) creates experiments, assigns centres and links an Experiment PI,
+  // who then edits the definition (research.config). A Centre PI sees the experiments their
+  // centre has a trial in; an Experiment PI only their own (the API scopes the list).
   return (
     <Page
-      title={config ? "Experiments" : "Experiments at my centre"}
+      title={
+        assign
+          ? "Experiments"
+          : config
+            ? "My experiment"
+            : "Experiments at my centre"
+      }
       actions={
-        config && (
+        assign && (
           <button className="btn" onClick={() => setAdding(true)}>
             <Plus size={15} /> New experiment
           </button>
@@ -64,6 +74,7 @@ export default function Experiments() {
             onRowClick={(e) => navigate(ROUTES.experiment(e.id || e._id))}
             isPending={experiments.isPending}
             config={config}
+            assign={assign}
             programmes={programmes}
           />
         </Card>

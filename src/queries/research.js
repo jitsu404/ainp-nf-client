@@ -105,6 +105,31 @@ export const useUpdateExperiment = (id) =>
   useResearchMutation(
     async (body) => (await experimentsApi.update(id, body)).data,
   );
+/**
+ * Assigns the experiment's centres (PCU, research.assign) and records each centre's own crops.
+ * The experiment PATCH creates, reactivates or withdraws the trials; then each trial whose crops
+ * change gets its `seasonCrops`. `crops`: { [centreId]: seasonCrops patch }.
+ */
+export const useAssignCentres = (experimentId) =>
+  useResearchMutation(async ({ centreIds, withdrawReason, crops = {} }) => {
+    const experiment = (
+      await experimentsApi.update(experimentId, {
+        centreIds,
+        ...(withdrawReason ? { withdrawReason } : {}),
+      })
+    ).data;
+    const changed = Object.entries(crops).filter(([, patch]) => patch);
+    if (changed.length) {
+      const trials = (await trialsApi.list({ experimentId })).data;
+      const byCentre = new Map(trials.map((t) => [t.centreId?.id, t.id]));
+      for (const [centreId, seasonCrops] of changed) {
+        const trialId = byCentre.get(centreId);
+        if (trialId) await trialsApi.update(trialId, { seasonCrops });
+      }
+    }
+    return experiment;
+  });
+
 export const useUpdateTrial = (id) =>
   useResearchMutation(async (body) => (await trialsApi.update(id, body)).data);
 export const useCreateSheet = () =>

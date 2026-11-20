@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Loader2, Pencil } from "lucide-react";
 import { useAuth } from "../../auth";
+import { LinkExperimentPiModal } from "../../components/ExperimentPis";
 import { ErrorNote } from "../../components/forms";
+import { ExperimentMetadata } from "../../components/Metadata";
 import { Badge, Card, Page, Tabs } from "../../components/ui";
 import { ROUTES } from "../../config/constants";
 import { useMasterOptions, useUnitLabel } from "../../queries/masters";
@@ -32,14 +34,17 @@ export default function ExperimentDetail() {
   const { can } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("protocol");
-  const [modal, setModal] = useState(null); // 'details' | 'treatments' | 'parameters' | 'centres'
+  const [modal, setModal] = useState(null); // 'details' | 'treatments' | 'parameters' | 'centres' | 'pi'
   const experiment = useExperiment(id);
   const trials = useTrials({ experimentId: id });
   const update = useUpdateExperiment(id);
   const programmes = useMasterOptions("programme");
   const seasons = useMasterOptions("season");
   const unit = useUnitLabel();
+  // research.config edits the definition (PCU, or the experiment's own PI); research.assign
+  // (PCU only) assigns centres and the PI.
   const config = can("research.config");
+  const assign = can("research.assign");
   const close = () => setModal(null);
 
   if (experiment.error) {
@@ -94,12 +99,14 @@ export default function ExperimentDetail() {
     );
   }
 
-  // A trial stays (with its data) when its centre is unassigned; list only assigned centres.
-  const trialRows = Array.isArray(e.centreIds)
-    ? (trials.data ?? []).filter((t) => e.centreIds.includes(t.centreId?.id))
-    : (trials.data ?? []);
-  // A Centre PI sees only their own centre's trial: offer a direct link.
-  const myTrial = !config && trialRows.length === 1 ? trialRows[0] : null;
+  // A withdrawn centre keeps its trial (and data, read-only); it is listed apart.
+  const allTrials = trials.data ?? [];
+  const trialRows = allTrials.filter((t) => t.assignmentStatus !== "Withdrawn");
+  const withdrawnRows = allTrials.filter(
+    (t) => t.assignmentStatus === "Withdrawn",
+  );
+  // A Centre PI sees only their own centre's trial (withdrawn too): offer a direct link.
+  const myTrial = !config && allTrials.length === 1 ? allTrials[0] : null;
   const save = (body) => update.mutateAsync(body);
 
   return (
@@ -133,6 +140,8 @@ export default function ExperimentDetail() {
           programmes={programmes}
           seasons={seasons}
           trialRows={trialRows}
+          assign={assign}
+          onAssignPi={() => setModal("pi")}
         />
 
         <Tabs
@@ -153,14 +162,18 @@ export default function ExperimentDetail() {
 
         {tab === "centres" && (
           <CentresTab
+            experiment={e}
             trialRows={trialRows}
-            config={config}
+            withdrawnRows={withdrawnRows}
+            assign={assign}
             isPending={trials.isPending}
             onAssignCentres={() => setModal("centres")}
           />
         )}
 
         {tab === "reporting" && <ReportingTab experimentId={e.id} />}
+
+        {tab === "metadata" && <ExperimentMetadata experimentId={e.id} />}
 
         {tab === "trend" && <TrendTab experiment={e} trialRows={trialRows} />}
 
@@ -178,8 +191,11 @@ export default function ExperimentDetail() {
       {modal === "parameters" && (
         <ParametersModal experiment={e} save={save} onClose={close} />
       )}
+      {modal === "pi" && (
+        <LinkExperimentPiModal experiment={e} save={save} onClose={close} />
+      )}
       {modal === "centres" && (
-        <CentresModal experiment={e} save={save} onClose={close} />
+        <CentresModal experiment={e} trials={allTrials} onClose={close} />
       )}
     </Page>
   );

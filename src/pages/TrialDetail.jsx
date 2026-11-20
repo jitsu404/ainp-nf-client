@@ -11,6 +11,7 @@ import {
 import { useAuth } from "../auth";
 import { AsyncFormModal, ErrorNote, SaveModal } from "../components/forms";
 import { TrialMetadata } from "../components/Metadata";
+import { SeasonCropsCard } from "../components/SeasonCrops";
 import { Badge, Card, Page, Table, Tabs } from "../components/ui";
 import { ROUTES, TRIAL_STATUSES } from "../config/constants";
 import { formatDate, formatDateTime } from "../hooks";
@@ -44,7 +45,6 @@ export default function TrialDetail() {
   const update = useUpdateTrial(id);
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
-  const edit = can("research.enter") || can("research.assign");
   const close = () => setModal(null);
 
   if (trial.error) {
@@ -67,6 +67,9 @@ export default function TrialDetail() {
       </Page>
     );
   const e = t.experiment;
+  // A withdrawn centre keeps its trial and data, read-only (the API refuses changes).
+  const withdrawn = t.assignmentStatus === "Withdrawn";
+  const edit = (can("research.enter") || can("research.assign")) && !withdrawn;
   const save = (body) => update.mutateAsync(body);
   const practiceOf = (code) =>
     t.practices.find((p) => p.treatmentCode === code) ?? {};
@@ -99,7 +102,7 @@ export default function TrialDetail() {
               <Pencil size={15} /> Status & notes
             </button>
           )}
-          {can("research.enter") && (
+          {can("research.enter") && !withdrawn && (
             // The server only accepts sheets for active experiments; say why instead of failing later.
             <button
               className="btn"
@@ -146,7 +149,15 @@ export default function TrialDetail() {
                 <div style={{ whiteSpace: "pre-wrap" }}>{t.layoutNotes}</div>
               </div>
             )}
-            {e.status !== "Active" && (
+            {withdrawn && (
+              <div className="note warn">
+                This centre was withdrawn from the experiment
+                {t.withdrawnAt ? ` on ${formatDate(t.withdrawnAt)}` : ""}
+                {t.withdrawReason ? ` (${t.withdrawReason})` : ""}. Its trial
+                and data are kept, read-only.
+              </div>
+            )}
+            {!withdrawn && e.status !== "Active" && (
               <div className="note">
                 The experiment is {e.status}. Sheets can be opened once the PCU
                 makes it Active.
@@ -160,7 +171,7 @@ export default function TrialDetail() {
           onChange={setTab}
           tabs={[
             ["sheets", "Observation sheets", sheets.data?.length],
-            ["systems", "Cropping systems", t.croppingSystems.length],
+            ["systems", "Crops & cropping systems", t.croppingSystems.length],
             ["practices", "Treatment practices"],
             ["metadata", "Metadata"],
           ]}
@@ -178,7 +189,9 @@ export default function TrialDetail() {
               empty={
                 sheets.isPending
                   ? "Loading…"
-                  : "No sheets yet. Open one for a year and season to start recording data."
+                  : withdrawn
+                    ? "No sheets were recorded before the centre was withdrawn."
+                    : "No sheets yet. Open one for a year and season to start recording data."
               }
               columns={[
                 { label: "Year", render: (s) => <b>{s.fyCode}</b> },
@@ -207,6 +220,10 @@ export default function TrialDetail() {
               ]}
             />
           </Card>
+        )}
+
+        {tab === "systems" && (
+          <SeasonCropsCard trial={t} edit={edit} save={save} />
         )}
 
         {tab === "systems" && (

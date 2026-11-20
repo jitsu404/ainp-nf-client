@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../../auth";
+import { ExperimentPiPicker } from "../../../components/ExperimentPis";
 import { SaveModal } from "../../../components/forms";
 import {
   DESIGN_HINTS,
@@ -14,16 +16,7 @@ import {
   useMasters,
 } from "../../../queries/masters";
 import { useCreateExperiment } from "../../../queries/research";
-import { useUsers } from "../../../queries/users";
 import { ExperimentSeasonsField } from "./ExperimentSeasonsField";
-
-const getAssignedToId = (assignedTo) => {
-  if (!assignedTo) return "";
-  if (typeof assignedTo === "object") {
-    return assignedTo._id || assignedTo.id || "";
-  }
-  return String(assignedTo);
-};
 
 const parseInitialSeasons = (seasonsData) => {
   if (!seasonsData) return {};
@@ -68,7 +61,10 @@ export function ExperimentDetailsModal({
   const seasons = useMasterOptions("season");
   const crops = useMasters("crop", { isActive: true });
   const years = useFinancialYears();
-  const users = useUsers({ isActive: "true" });
+  // Only the PCU links the Experiment PI (research.assign), and here only when creating; later
+  // it is Assign / Change PI on the experiment page.
+  const { can } = useAuth();
+  const pickPi = !experiment && can("research.assign");
 
   const currentYearCode = years.data?.find((y) => y.isCurrent)?.code ?? "";
   const defaultYear = currentYearCode
@@ -84,7 +80,7 @@ export function ExperimentDetailsModal({
     subPlotCount: experiment?.subPlotCount ?? 0,
     startYear: experiment?.startYear ?? defaultYear,
     endYear: experiment?.endYear ?? defaultYear + 3,
-    assignedTo: getAssignedToId(experiment?.assignedTo),
+    piUserId: null,
     seasons: parseInitialSeasons(experiment?.seasons),
     objectives: (experiment?.objectives ?? []).join("\n"),
     status: experiment?.status ?? "Draft",
@@ -102,7 +98,7 @@ export function ExperimentDetailsModal({
         subPlotCount: experiment.subPlotCount ?? 0,
         startYear: experiment.startYear ?? defaultYear,
         endYear: experiment.endYear ?? defaultYear + 3,
-        assignedTo: getAssignedToId(experiment.assignedTo),
+        piUserId: null,
         seasons: parseInitialSeasons(experiment.seasons),
         objectives: (experiment.objectives ?? []).join("\n"),
         status: experiment.status ?? "Draft",
@@ -147,7 +143,6 @@ export function ExperimentDetailsModal({
       mainPlotCount:
         v.design === "Split plot" ? Number(v.mainPlotCount) || 0 : 0,
       subPlotCount: v.design === "Split plot" ? Number(v.subPlotCount) || 0 : 0,
-      assignedTo: v.assignedTo || null,
       seasons: v.seasons,
       objectives: v.objectives
         .split("\n")
@@ -162,6 +157,8 @@ export function ExperimentDetailsModal({
     if (experiment) {
       b.status = v.status;
       b.referenceTreatmentCode = v.referenceTreatmentCode || null;
+    } else if (pickPi && v.piUserId) {
+      b.piUserId = v.piUserId;
     }
     return b;
   };
@@ -180,15 +177,13 @@ export function ExperimentDetailsModal({
   const ready =
     v.title.trim().length >= 5 && v.programmeCode && yearsOk && repsOk;
 
-  const userList = users.data?.data ?? [];
-
   return (
     <SaveModal
       title={experiment ? `Edit ${experiment.code}` : "New experiment"}
       subtitle={
         experiment
           ? undefined
-          : "Treatments, parameters and settings are configured after creation."
+          : "Treatments, parameters and centres are added after creation. The PI is optional and can be assigned later."
       }
       onSave={onSave}
       onClose={onClose}
@@ -348,33 +343,12 @@ export function ExperimentDetailsModal({
           )}
         </div>
 
-        <div className="field">
-          <label htmlFor="x-assigned">Assigned To (User)</label>
-          <select
-            id="x-assigned"
-            value={v.assignedTo}
-            onChange={(e) => set("assignedTo", e.target.value)}
-          >
-            <option value="">Unassigned</option>
-            {v.assignedTo &&
-              !userList.some((u) => (u.id || u._id) === v.assignedTo) && (
-                <option value={v.assignedTo}>
-                  {typeof experiment?.assignedTo === "object" &&
-                  experiment?.assignedTo?.name
-                    ? `${experiment.assignedTo.name} (${experiment.assignedTo.designation || experiment.assignedTo.email || "Assigned"})`
-                    : v.assignedTo}
-                </option>
-              )}
-            {userList.map((u) => {
-              const uid = u.id || u._id;
-              return (
-                <option key={uid} value={uid}>
-                  {u.name} ({u.designation || u.email})
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        {pickPi && (
+          <ExperimentPiPicker
+            value={v.piUserId}
+            onChange={(id) => set("piUserId", id)}
+          />
+        )}
 
         {experiment && (
           <div className="field">

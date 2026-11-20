@@ -7,6 +7,7 @@ export function ExperimentTable({
   onRowClick,
   isPending,
   config,
+  assign,
   programmes,
 }) {
   return (
@@ -17,9 +18,11 @@ export function ExperimentTable({
       empty={
         isPending
           ? "Loading…"
-          : config
+          : assign
             ? "No experiments yet. Create one to get started."
-            : "No experiments are assigned to your centre yet."
+            : config
+              ? "No experiment is linked to your PI login yet."
+              : "No experiments are assigned to your centre yet."
       }
       columns={[
         {
@@ -49,10 +52,20 @@ export function ExperimentTable({
           num: true,
           render: (e) => (e.defaultParameters ?? e.parameters ?? []).length,
         },
-        {
-          label: "Assigned To",
-          render: (e) => e.assignedTo?.name || "—",
-        },
+        ...(assign
+          ? [
+              {
+                label: "PI",
+                render: (e) =>
+                  e.pi ? e.pi.name : <Badge tone="amber">Not assigned</Badge>,
+              },
+              {
+                label: "Centres",
+                num: true,
+                render: (e) => (e.centreIds ?? []).length,
+              },
+            ]
+          : []),
         {
           label: "Years",
           render: (e) => `${e.startYear}${e.endYear ? ` – ${e.endYear}` : ""}`,
