@@ -2,6 +2,7 @@ import { UserSquare2 } from "lucide-react";
 import { PiCard } from "../../../components/ExperimentPis";
 import { useMemo } from "react";
 import { Card } from "../../../components/ui";
+import { experimentFactors } from "../../../config/constants";
 import { useMasters } from "../../../queries/masters";
 
 /** "Kharif (Rice, Maize); Rabi (Wheat)". The API returns crop ids; `cropName` turns one into a name. */
@@ -89,14 +90,24 @@ export function ExperimentOverviewCard({
             <b>{e.replications || 0}</b>
           </div>
 
-          {e.mainPlotCount > 0 && e.subPlotCount > 0 && (
+          {experimentFactors(e).length > 0 && (
             <div>
-              <span>Plots</span>
+              {/* Each treatment is one combination of the factor levels; data is treatment × replication. */}
+              <span>
+                {e.design === "Factorial" ? "Factors" : "Plot layout"}
+              </span>
               <b>
-                {e.mainPlotCount} main × {e.subPlotCount} sub ={" "}
-                {e.mainPlotCount * e.subPlotCount} plots
+                {experimentFactors(e)
+                  .map(
+                    (f) =>
+                      `${f.levels.length} ${f.key && e.design === "Factorial" ? f.label : f.label.toLowerCase()}`,
+                  )
+                  .join(" × ")}{" "}
+                ={" "}
+                {experimentFactors(e).reduce((n, f) => n * f.levels.length, 1)}{" "}
+                treatment combinations
                 {e.treatments.length > 0 &&
-                  ` · ${e.mainPlotCount * e.subPlotCount * e.treatments.length * (e.replications || 1)} rows per parameter`}
+                  ` · ${e.treatments.length * (e.replications || 1)} rows per parameter`}
               </b>
             </div>
           )}

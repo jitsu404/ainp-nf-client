@@ -126,22 +126,30 @@ export function ExperimentDetailsModal({
         Number(reps) >= 2 &&
         Number(reps) <= 20;
 
-  // Split / strip / split-split plot: 1–10 main plots and sub plots; each plot holds every treatment × replication.
-  const plotted = DESIGNS_WITH_PLOTS.includes(v.design);
+  // Split / strip / split-split plot: 1–10 main plots, sub plots (and sub-sub plots). Factorial:
+  // 2–10 levels of factors A and B, and optionally of a factor C. Treatments are the combinations.
+  const isFactorial = v.design === "Factorial";
+  const plotted = DESIGNS_WITH_PLOTS.includes(v.design) || isFactorial;
   const isSplitSplit = v.design === "Split-split plot";
-  const countOk = (x) =>
+  const countOk = (x, min = 1) =>
     Number.isInteger(Number(x)) &&
-    Number(x) >= 1 &&
+    Number(x) >= min &&
     Number(x) <= MAX_PLOT_COUNT;
   const plotsOk =
     !plotted ||
-    (countOk(v.mainPlotCount) &&
-      countOk(v.subPlotCount) &&
-      (!isSplitSplit || countOk(v.subSubPlotCount)));
+    (isFactorial
+      ? countOk(v.mainPlotCount, 2) &&
+        countOk(v.subPlotCount, 2) &&
+        (!Number(v.subSubPlotCount) || countOk(v.subSubPlotCount, 2))
+      : countOk(v.mainPlotCount) &&
+        countOk(v.subPlotCount) &&
+        (!isSplitSplit || countOk(v.subSubPlotCount)));
   const plotCount = plotted
     ? Number(v.mainPlotCount) *
       Number(v.subPlotCount) *
-      (isSplitSplit ? Number(v.subSubPlotCount) : 1)
+      (isSplitSplit || (isFactorial && Number(v.subSubPlotCount))
+        ? Number(v.subSubPlotCount)
+        : 1)
     : 1;
 
   const startYearNum = Number(v.startYear);
@@ -175,7 +183,8 @@ export function ExperimentDetailsModal({
       b.replications = replicated && reps !== "" ? Number(reps) : null;
       b.mainPlotCount = plotted ? Number(v.mainPlotCount) : 0;
       b.subPlotCount = plotted ? Number(v.subPlotCount) : 0;
-      b.subSubPlotCount = isSplitSplit ? Number(v.subSubPlotCount) : 0;
+      b.subSubPlotCount =
+        isSplitSplit || isFactorial ? Number(v.subSubPlotCount) || 0 : 0;
     }
     if (experiment) {
       b.status = v.status;
@@ -315,7 +324,11 @@ export function ExperimentDetailsModal({
           <>
             <div className="field">
               <label htmlFor="x-main-plots">
-                {v.design === "Strip plot" ? "Horizontal strips" : "Main plots"}
+                {v.design === "Strip plot"
+                  ? "Horizontal strips"
+                  : isFactorial
+                    ? "Factor A levels"
+                    : "Main plots"}
               </label>
               <input
                 id="x-main-plots"
@@ -333,7 +346,9 @@ export function ExperimentDetailsModal({
               <label htmlFor="x-sub-plots">
                 {v.design === "Strip plot"
                   ? "Vertical strips"
-                  : "Sub plots per main plot"}
+                  : isFactorial
+                    ? "Factor B levels"
+                    : "Sub plots per main plot"}
               </label>
               <input
                 id="x-sub-plots"
@@ -347,10 +362,12 @@ export function ExperimentDetailsModal({
               />
             </div>
 
-            {isSplitSplit && (
+            {(isSplitSplit || isFactorial) && (
               <div className="field">
                 <label htmlFor="x-sub-sub-plots">
-                  Sub-sub plots per sub plot
+                  {isFactorial
+                    ? "Factor C levels (optional)"
+                    : "Sub-sub plots per sub plot"}
                 </label>
                 <input
                   id="x-sub-sub-plots"
@@ -368,15 +385,20 @@ export function ExperimentDetailsModal({
             <div className="field full">
               {plotsOk ? (
                 <span className="muted small">
-                  {plotCount} plot{plotCount === 1 ? "" : "s"}
+                  {plotCount}{" "}
+                  {isFactorial
+                    ? `treatment combination${plotCount === 1 ? "" : "s"}`
+                    : `plot${plotCount === 1 ? "" : "s"}`}
                   {/* records every treatment
                   {replicated && reps !== "" ? ` × ${reps} replications` : ""}. */}
                 </span>
               ) : (
                 <span className="field-error">
-                  {isSplitSplit
-                    ? `Enter 1–${MAX_PLOT_COUNT} main plots, sub plots, and sub-sub plots.`
-                    : `Enter 1–${MAX_PLOT_COUNT} main plots and sub plots.`}
+                  {isFactorial
+                    ? `Enter 2–${MAX_PLOT_COUNT} levels of factors A and B (and of C, if used).`
+                    : isSplitSplit
+                      ? `Enter 1–${MAX_PLOT_COUNT} main plots, sub plots, and sub-sub plots.`
+                      : `Enter 1–${MAX_PLOT_COUNT} main plots and sub plots.`}
                 </span>
               )}
             </div>

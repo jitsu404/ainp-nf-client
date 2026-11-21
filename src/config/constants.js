@@ -98,41 +98,47 @@ export const DESIGNS_WITH_PLOTS = [
   "Split-split plot",
 ];
 export const MAX_PLOT_COUNT = 10;
-/** Every plot of an experiment's layout, main plot first; one null plot for other designs. */
-export const experimentPlots = (e) =>
-  DESIGNS_WITH_PLOTS.includes(e?.design) && e.mainPlotCount && e.subPlotCount
-    ? Array.from({ length: e.mainPlotCount }, (_, m) =>
-        Array.from({ length: e.subPlotCount }, (_, s) => ({
-          mainPlot: m + 1,
-          subPlot: s + 1,
-        })),
-      ).flat()
-    : [{ mainPlot: null, subPlot: null }];
-/** "M1·S2", or "" for a single-plot design. */
-export const plotLabel = (p) =>
-  p?.mainPlot == null ? "" : `M${p.mainPlot}·S${p.subPlot}`;
+/** Designs whose treatments are combinations of factor levels. Must match the backend. */
+export const DESIGNS_WITH_FACTORS = [
+  "Split plot",
+  "Split-split plot",
+  "Factorial",
+];
 /**
- * The names the protocol gives a plot's main and sub plot (mainPlotData / subPlotData, codes
- * M1 … / S1 …), or null where none is given.
+ * The experiment's factors (as the backend's experimentFactors): split / split-split plot → main,
+ * sub, sub-sub plot; factorial → factors A, B, C. Each has the treatment field holding its level
+ * (`mainPlotCode` …) and its levels (M1 … / S1 … / SS1 …, with names where given). [] otherwise.
  */
-export const plotNames = (e, p) => ({
-  main:
-    p?.mainPlot == null
-      ? null
-      : ((e?.mainPlotData ?? []).find((t) => t.code === `M${p.mainPlot}`)
-          ?.name ?? null),
-  sub:
-    p?.subPlot == null
-      ? null
-      : ((e?.subPlotData ?? []).find((t) => t.code === `S${p.subPlot}`)?.name ??
-        null),
-});
-/** "M1 Conventional tillage · S2 Jeevamrit" (codes alone where unnamed); "" for one plot. */
-export const plotTitle = (e, p) => {
-  if (p?.mainPlot == null) return "";
-  const { main, sub } = plotNames(e, p);
-  const part = (code, name) => (name ? `${code} ${name}` : code);
-  return `${part(`M${p.mainPlot}`, main)} · ${part(`S${p.subPlot}`, sub)}`;
+export const experimentFactors = (e) => {
+  if (!DESIGNS_WITH_FACTORS.includes(e?.design)) return [];
+  const factorial = e.design === "Factorial";
+  const levels = (prefix, count, data) =>
+    Array.from({ length: count ?? 0 }, (_, i) => {
+      const code = `${prefix}${i + 1}`;
+      return { code, name: data?.find((d) => d.code === code)?.name || null };
+    });
+  return [
+    {
+      key: "A",
+      label: factorial ? "Factor A" : "Main plot",
+      field: "mainPlotCode",
+      levels: levels("M", e.mainPlotCount, e.mainPlotData),
+    },
+    {
+      key: "B",
+      label: factorial ? "Factor B" : "Sub plot",
+      field: "subPlotCode",
+      levels: levels("S", e.subPlotCount, e.subPlotData),
+    },
+    {
+      key: "C",
+      label: factorial ? "Factor C" : "Sub-sub plot",
+      field: "subSubPlotCode",
+      levels: levels("SS", e.subSubPlotCount, e.subSubPlotData),
+    },
+  ].filter(
+    (f) => f.levels.length && (f.key !== "C" || e.design !== "Split plot"),
+  );
 };
 /** At least 2 replications. */
 export const DESIGNS_NEEDING_REPLICATIONS = [

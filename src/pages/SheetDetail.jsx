@@ -17,13 +17,7 @@ import { BarChart } from "../components/Charts";
 import { ExcelImportModal } from "../components/ExcelImport";
 import { ErrorNote, SaveModal } from "../components/forms";
 import { Badge, Card, Page, Tabs } from "../components/ui";
-import {
-  ROUTES,
-  experimentPlots,
-  plotLabel,
-  plotNames,
-  plotTitle,
-} from "../config/constants";
+import { ROUTES, experimentFactors } from "../config/constants";
 import { formatDateTime } from "../hooks";
 import { fmtPct, pctVs } from "../lib/results";
 import { toast } from "../lib/toast";
@@ -41,22 +35,16 @@ import {
 // Excel template), saved in batches, then submitted to the PCU for approval.
 //
 // Plot-level parameters get one value per treatment × replication; treatment-level parameters
-// (and every parameter in unreplicated designs) one value per treatment. Split and strip plot
-// repeat that in every main × sub plot: the grid shows one plot at a time, picked above it.
+// (and every parameter in unreplicated designs) one value per treatment. In split / split-split
+// plot and factorial designs each treatment is one combination of factor levels, shown beside it
+// (Main plot M1 · Sub plot S2 …), so the treatment also says which plot it is.
 
 const EDITABLE = ["Draft", "Returned"];
-const cellKey = (plot, treatmentCode, replication, parameterId) =>
-  `${plot.mainPlot ?? ""}.${plot.subPlot ?? ""}|${treatmentCode}|${replication ?? ""}|${parameterId}`;
+const cellKey = (treatmentCode, replication, parameterId) =>
+  `${treatmentCode}|${replication ?? ""}|${parameterId}`;
 const parseKey = (key) => {
-  const [plot, treatmentCode, rep, parameterId] = key.split("|");
-  const [main, sub] = plot.split(".");
-  return {
-    mainPlot: main ? Number(main) : null,
-    subPlot: sub ? Number(sub) : null,
-    treatmentCode,
-    replication: rep ? Number(rep) : null,
-    parameterId,
-  };
+  const [treatmentCode, rep, parameterId] = key.split("|");
+  return { treatmentCode, replication: rep ? Number(rep) : null, parameterId };
 };
 
 /** Turns what was typed into the value the API expects (null clears the cell). */
@@ -74,7 +62,6 @@ export default function SheetDetail() {
   const { id } = useParams();
   const { can } = useAuth();
   const [tab, setTab] = useState("data");
-  const [plotIndex, setPlotIndex] = useState(0);
   const [modal, setModal] = useState(null); // 'import' | 'submit' | 'return' | 'approve'
   const sheet = useSheet(id);
   const s = sheet.data;
@@ -103,7 +90,7 @@ export default function SheetDetail() {
     () =>
       new Map(
         (s?.values ?? []).map((v) => [
-          cellKey(v, v.treatmentCode, v.replication, v.parameterId),
+          cellKey(v.treatmentCode, v.replication, v.parameterId),
           v.value,
         ]),
       ),
@@ -197,33 +184,16 @@ export default function SheetDetail() {
     }
   };
 
-  const plots = experimentPlots(e);
-  const plotted = plots[0].mainPlot !== null;
-  const plot = plots[Math.min(plotIndex, plots.length - 1)];
-  // Every cell to enter in one plot, as keys.
-  const cellsIn = (pl) =>
-    e.parameters
-      .filter((p) => !p.formula)
-      .flatMap((p) => {
-        const reps =
-          p.level === "plot" && replicated
-            ? Array.from({ length: e.replications }, (_, i) => i + 1)
-            : [null];
-        return e.treatments.flatMap((t) =>
-          reps.map((r) => cellKey(pl, t.code, r, p.parameterId)),
-        );
-      });
-  const filled = (key) => String(valueOf(key)).trim() !== "";
-  const progress = plots.map((pl) => {
-    const keys = cellsIn(pl);
-    return {
-      total: keys.length,
-      done: keys.filter(filled).length,
-      edited: keys.some((k) => edits.has(k)),
-      invalid: keys.some((k) => invalid.has(k)),
-    };
-  });
-  const expected = progress.reduce((n, x) => n + x.total, 0);
+  const factors = experimentFactors(e);
+  const expected = e.parameters
+    .filter((p) => !p.formula)
+    .reduce(
+      (n, p) =>
+        n +
+        e.treatments.length *
+          (p.level === "plot" && replicated ? e.replications : 1),
+      0,
+    );
   const recorded = s.values.filter((v) => !v.calculated).length;
 
   const workflow = (
@@ -285,8 +255,8 @@ export default function SheetDetail() {
               <span>Design</span>
               <b>
                 {e.design}
-                {plotted
-                  ? ` · ${e.mainPlotCount} × ${e.subPlotCount} plots`
+                {factors.length
+                  ? ` · ${factors.map((f) => f.levels.length).join(" × ")} ${factors.map((f) => f.label.toLowerCase()).join(" × ")}`
                   : ""}
                 {replicated ? ` · ${e.replications} replications` : ""}
               </b>
@@ -404,19 +374,10 @@ export default function SheetDetail() {
                 </div>
               )}
             </Card>
-            {plotted && e.parameters.length > 0 && (
-              <PlotPicker
-                experiment={e}
-                plots={plots}
-                value={plotIndex}
-                onChange={setPlotIndex}
-                progress={progress}
-              />
-            )}
             {plotParams.length > 0 && (
               <Grid
-                title={`${plotted ? `${plotTitle(e, plot)}: ` : ""}Plot data (treatment × replication)`}
-                plot={plot}
+                title="Plot data (treatment × replication)"
+                factors={factors}
                 params={plotParams}
                 treatments={e.treatments}
                 reps={Array.from({ length: e.replications }, (_, i) => i + 1)}
@@ -429,10 +390,10 @@ export default function SheetDetail() {
             )}
             {treatmentParams.length > 0 && (
               <Grid
-                title={`${plotted ? `${plotTitle(e, plot)}: ` : ""}${
+                title={
                   replicated ? "Treatment data (once per treatment)" : "Data"
-                }`}
-                plot={plot}
+                }
+                factors={factors}
                 params={treatmentParams}
                 treatments={e.treatments}
                 reps={[null]}
@@ -493,65 +454,9 @@ export default function SheetDetail() {
   );
 }
 
-/**
- * Split / strip plot: one button per main × sub plot, with how much of it is filled in
- * (✓ complete, ● unsaved changes, ! invalid values).
- */
-function PlotPicker({ experiment, plots, value, onChange, progress }) {
-  return (
-    <Card>
-      <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-        <span className="muted small" style={{ marginRight: 4 }}>
-          Plot
-        </span>
-        {plots.map((pl, i) => {
-          const x = progress[i];
-          const complete = x.total > 0 && x.done === x.total;
-          const names = plotNames(experiment, pl);
-          return (
-            <button
-              key={plotLabel(pl)}
-              type="button"
-              className={`btn sm ${i === value ? "" : "ghost"}`}
-              aria-pressed={i === value}
-              onClick={() => onChange(i)}
-              title={`${plotTitle(experiment, pl)} · ${x.done} of ${x.total} values${x.edited ? " · unsaved changes" : ""}`}
-              style={{
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: 2,
-              }}
-            >
-              <span>
-                {plotLabel(pl)}{" "}
-                <span className="small" style={{ opacity: 0.8 }}>
-                  {x.invalid ? "!" : x.edited ? "●" : complete ? "✓" : ""}{" "}
-                  {x.done}/{x.total}
-                </span>
-              </span>
-              {(names.main || names.sub) && (
-                <span
-                  className="small"
-                  style={{ opacity: 0.75, fontWeight: 400 }}
-                >
-                  {[names.main, names.sub].filter(Boolean).join(" · ")}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      <div className="muted small" style={{ marginTop: 8 }}>
-        M = main plot, S = sub plot. Each plot records every treatment ×
-        replication; switching plots keeps your unsaved changes.
-      </div>
-    </Card>
-  );
-}
-
 function Grid({
   title,
-  plot,
+  factors = [],
   params,
   treatments,
   reps,
@@ -604,6 +509,9 @@ function Grid({
           <thead>
             <tr>
               <th className="sticky-col">Treatment</th>
+              {factors.map((f) => (
+                <th key={f.key}>{f.label}</th>
+              ))}
               {replicated && <th>Rep</th>}
               {params.map((p) => (
                 <th
@@ -633,10 +541,22 @@ function Grid({
                   <td className="rowhead sticky-col" title={t.name}>
                     {r === null || r === 1 ? t.code : ""}
                   </td>
+                  {factors.map((f) => {
+                    const level = f.levels.find((l) => l.code === t[f.field]);
+                    return (
+                      <td
+                        key={f.key}
+                        className="muted small nowrap"
+                        title={level?.name ?? undefined}
+                      >
+                        {r === null || r === 1 ? (t[f.field] ?? "—") : ""}
+                      </td>
+                    );
+                  })}
                   {replicated && <td className="muted">R{r}</td>}
                   {params.map((p) => {
-                    const key = cellKey(plot, t.code, r, p.parameterId);
-                    const where = [plotLabel(plot), t.code, r ? `R${r}` : ""]
+                    const key = cellKey(t.code, r, p.parameterId);
+                    const where = [t.code, r ? `R${r}` : ""]
                       .filter(Boolean)
                       .join(" ");
                     return (
@@ -752,41 +672,16 @@ function AnalysisTab({ id, dirty }) {
   const unit = useUnitLabel();
   // The experiment's reference treatment by default; "" = no comparison.
   const [chosenRef, setChosenRef] = useState(null);
-  // Split / strip plot: "all" = means over all plots; otherwise one plot's own analysis.
-  const [plotChoice, setPlotChoice] = useState("all");
   const a = analysis.data;
   if (analysis.error) return <ErrorNote error={analysis.error} />;
   if (!a) return <p className="muted">Loading…</p>;
-  const plotsOf = a.plots ?? [];
-  const parameters =
-    plotChoice === "all"
-      ? a.parameters
-      : (plotsOf.find((pl) => pl.label === plotChoice)?.parameters ??
-        a.parameters);
+  const parameters = a.parameters;
   const nameOf = (code) =>
     a.treatments.find((t) => t.code === code)?.name ?? code;
   const ref = chosenRef ?? a.experiment.referenceTreatmentCode ?? "";
   return (
     <div className="stack">
       <div className="row small" style={{ gap: 8 }}>
-        {plotsOf.length > 0 && (
-          <>
-            <label htmlFor="analysis-plot">Plot</label>
-            <select
-              id="analysis-plot"
-              className="select"
-              value={plotChoice}
-              onChange={(ev) => setPlotChoice(ev.target.value)}
-            >
-              <option value="all">All plots (means)</option>
-              {plotsOf.map((pl) => (
-                <option key={pl.label} value={pl.label}>
-                  {pl.title || pl.label}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
         <label htmlFor="ref-treatment">Compare with</label>
         <select
           id="ref-treatment"
@@ -828,11 +723,15 @@ function AnalysisTab({ id, dirty }) {
       {parameters.map((p) => (
         <Card
           key={p.parameterId}
-          title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}${plotChoice === "all" ? "" : ` · ${plotsOf.find((pl) => pl.label === plotChoice)?.title || plotChoice}`}`}
+          title={`${p.name}${p.unitCode ? ` (${unit(p.unitCode)})` : ""}`}
           actions={
-            p.anova ? (
-              <Badge tone={p.anova.significant ? "green" : "grey"}>
-                {p.anova.significant ? "Significant at 5 %" : "Not significant"}
+            p.anova || p.factorial ? (
+              <Badge
+                tone={(p.anova ?? p.factorial).significant ? "green" : "grey"}
+              >
+                {(p.anova ?? p.factorial).significant
+                  ? "Significant at 5 %"
+                  : "Not significant"}
               </Badge>
             ) : null
           }
@@ -978,13 +877,110 @@ function AnalysisTab({ id, dirty }) {
                   </div>
                 </div>
               </div>
+            ) : p.factorial ? (
+              <FactorialResult factorial={p.factorial} />
             ) : (
               <div className="note">
                 {p.reason ?? "No analysis of variance for this parameter."}
               </div>
             )}
           </div>
+          {p.factorial && <FactorMeans factorial={p.factorial} />}
         </Card>
+      ))}
+    </div>
+  );
+}
+
+const pText = (p) => (p === null ? "—" : p < 0.001 ? "<0.001" : fmt(p, 3));
+
+/**
+ * Split / split-split plot and factorial ANOVA: every factor and interaction, each tested against
+ * its own error term (Error (a), (b), (c) in split designs), with the CV of each error term.
+ */
+function FactorialResult({ factorial }) {
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th className="num">df</th>
+              <th className="num">SS</th>
+              <th className="num">MS</th>
+              <th className="num">F</th>
+              <th className="num">p</th>
+            </tr>
+          </thead>
+          <tbody>
+            {factorial.table.map((r) => (
+              <tr
+                key={r.source}
+                className={r.source.startsWith("Error") ? "muted" : undefined}
+              >
+                <td>
+                  {r.source}
+                  {r.p !== null && r.p < 0.05 && " *"}
+                </td>
+                <td className="num">{r.df}</td>
+                <td className="num">{fmt(r.ss, 3)}</td>
+                <td className="num">{fmt(r.ms, 3)}</td>
+                <td className="num">{fmt(r.f, 3)}</td>
+                <td className="num">{pText(r.p)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="kv">
+        {factorial.cv.map((c) => (
+          <div key={c.error}>
+            <span>
+              CV {c.error === "Error" ? "" : c.error.replace("Error ", "")} (%)
+            </span>
+            <b>{fmt(c.value)}</b>
+          </div>
+        ))}
+      </div>
+      <div className="muted small">* significant at 5 %</div>
+    </div>
+  );
+}
+
+/** The mean of every level of every factor (main / sub / sub-sub plot, or factor A / B / C). */
+function FactorMeans({ factorial }) {
+  return (
+    <div
+      className="grid"
+      style={{
+        gridTemplateColumns: `repeat(${factorial.factorMeans.length}, minmax(0, 1fr))`,
+        gap: 12,
+        marginTop: 14,
+      }}
+    >
+      {factorial.factorMeans.map((f) => (
+        <div key={f.key} className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{f.label}</th>
+                <th className="num">Mean</th>
+              </tr>
+            </thead>
+            <tbody>
+              {f.levels.map((l) => (
+                <tr key={l.code}>
+                  <td>
+                    <b>{l.code}</b>{" "}
+                    {l.name && <span className="muted small">{l.name}</span>}
+                  </td>
+                  <td className="num">{fmt(l.mean)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ))}
     </div>
   );

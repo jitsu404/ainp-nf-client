@@ -15,11 +15,21 @@ export function TreatmentsModal({
 
   const isSplitPlot = experiment?.design === "Split plot";
   const isSplitSplitPlot = experiment?.design === "Split-split plot";
-  const isDerivedTreatments = !isPlot && (isSplitPlot || isSplitSplitPlot);
+  // Factorial: the three level lists are factors A, B and (optional) C, and the treatments are their
+  // combinations, generated like split-plot treatments.
+  const isFactorial = experiment?.design === "Factorial";
+  const isDerivedTreatments =
+    !isPlot && (isSplitPlot || isSplitSplitPlot || isFactorial);
 
   const mCount = experiment?.mainPlotCount ?? 0;
   const sCount = experiment?.subPlotCount ?? 0;
-  const ssCount = isSplitSplitPlot ? (experiment?.subSubPlotCount ?? 0) : 0;
+  const ssCount =
+    isSplitSplitPlot || isFactorial ? (experiment?.subSubPlotCount ?? 0) : 0;
+  // A third level list in use (split-split plot, or a 3-factor factorial).
+  const hasC = isSplitSplitPlot || (isFactorial && ssCount > 0);
+  const names = isFactorial
+    ? { A: "Factor A", B: "Factor B", C: "Factor C" }
+    : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
 
   const targetCount = isPlot
     ? isMainPlot
@@ -30,7 +40,7 @@ export function TreatmentsModal({
           ? ssCount
           : null
     : isDerivedTreatments
-      ? isSplitSplitPlot
+      ? hasC
         ? mCount * sCount * ssCount
         : mCount * sCount
       : null;
@@ -79,7 +89,7 @@ export function TreatmentsModal({
     let idx = 1;
     for (let m = 1; m <= mCount; m++) {
       for (let s = 1; s <= sCount; s++) {
-        if (isSplitSplitPlot) {
+        if (hasC) {
           for (let ss = 1; ss <= ssCount; ss++) {
             const key = `M${m}|S${s}|SS${ss}`;
             const match = existingMap.get(key) || existing[idx - 1];
@@ -167,11 +177,11 @@ export function TreatmentsModal({
     new Set(codes).size === codes.length;
 
   const title = isMainPlot
-    ? "Main Plot"
+    ? names.A
     : isSubPlot
-      ? "Sub Plot"
+      ? names.B
       : isSubSubPlot
-        ? "Sub-sub Plot"
+        ? names.C
         : "Treatments";
 
   const subtitle = isMainPlot
@@ -181,9 +191,11 @@ export function TreatmentsModal({
       : isSubSubPlot
         ? `The sub-sub plots configured for this Split-split plot experiment (${targetCount} required).`
         : isDerivedTreatments
-          ? isSplitSplitPlot
-            ? `Fixed treatment combinations for Split-split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub × ${ssCount} Sub-sub).`
-            : `Fixed treatment combinations for Split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub).`
+          ? isFactorial
+            ? `Fixed treatment combinations for the factorial (${targetCount} required: ${[mCount, sCount, ssCount].filter(Boolean).join(" × ")} levels of ${hasC ? "factors A, B, C" : "factors A, B"}).`
+            : isSplitSplitPlot
+              ? `Fixed treatment combinations for Split-split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub × ${ssCount} Sub-sub).`
+              : `Fixed treatment combinations for Split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub).`
           : "The common treatments every centre applies (T1, T2 …).";
 
   return (
@@ -209,20 +221,17 @@ export function TreatmentsModal({
     >
       {isPlot && targetCount <= 0 && (
         <div className="note warn">
-          {isMainPlot
-            ? "Main Plot Count"
-            : isSubPlot
-              ? "Sub Plot Count"
-              : "Sub-sub Plot Count"}{" "}
-          is 0. Please set the count in Edit details before saving.
+          {isMainPlot ? names.A : isSubPlot ? names.B : names.C}{" "}
+          {isFactorial ? "levels" : "Count"} is 0. Please set the count in Edit
+          details before saving.
         </div>
       )}
       {isDerivedTreatments && targetCount <= 0 && (
         <div className="note warn">
           Plot counts (
-          {isSplitSplitPlot
-            ? "Main Plot, Sub Plot, Sub-sub Plot"
-            : "Main Plot, Sub Plot"}
+          {hasC
+            ? `${names.A}, ${names.B}, ${names.C}`
+            : `${names.A}, ${names.B}`}
           ) are not configured. Please set plot counts in Edit details before
           configuring treatments.
         </div>
@@ -260,7 +269,7 @@ export function TreatmentsModal({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: isSplitSplitPlot
+            gridTemplateColumns: hasC
               ? "65px 75px 75px 75px 1.2fr 1fr"
               : "65px 85px 85px 1.2fr 1fr",
             gap: 8,
@@ -273,9 +282,9 @@ export function TreatmentsModal({
           }}
         >
           <div>Code</div>
-          <div>Main Plot</div>
-          <div>Sub Plot</div>
-          {isSplitSplitPlot && <div>Sub-sub Plot</div>}
+          <div>{names.A}</div>
+          <div>{names.B}</div>
+          {hasC && <div>{names.C}</div>}
           <div>Name *</div>
           <div>Description</div>
         </div>
@@ -290,7 +299,7 @@ export function TreatmentsModal({
               isDerivedTreatments
                 ? {
                     display: "grid",
-                    gridTemplateColumns: isSplitSplitPlot
+                    gridTemplateColumns: hasC
                       ? "65px 75px 75px 75px 1.2fr 1fr"
                       : "65px 85px 85px 1.2fr 1fr",
                     gap: 8,
@@ -347,7 +356,7 @@ export function TreatmentsModal({
                 >
                   {r.subPlotCode}
                 </div>
-                {isSplitSplitPlot && (
+                {hasC && (
                   <div
                     className="select"
                     title={subSubPlotName(r.subSubPlotCode)}

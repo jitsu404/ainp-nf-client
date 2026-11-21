@@ -22,8 +22,15 @@ export function ProtocolTab({
 }) {
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
-  const hasPlots = isSplitPlot || isSplitSplitPlot;
-  const isDerivedTreatments = isSplitPlot || isSplitSplitPlot;
+  // Factorial: the level lists are factors A, B and (optional) C; treatments are their combinations.
+  const isFactorial = e.design === "Factorial";
+  const hasPlots = isSplitPlot || isSplitSplitPlot || isFactorial;
+  const isDerivedTreatments = hasPlots;
+  const names = isFactorial
+    ? { A: "Factor A", B: "Factor B", C: "Factor C" }
+    : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
+  // "Main Plot" → "main plot" in sentences; "Factor A" keeps its capitals.
+  const lower = (label) => (isFactorial ? label : label.toLowerCase());
 
   const mainCount = e.mainPlotCount ?? 0;
   const subCount = e.subPlotCount ?? 0;
@@ -31,9 +38,11 @@ export function ProtocolTab({
   const mainData = e.mainPlotData ?? [];
   const subData = e.subPlotData ?? [];
   const subSubData = e.subSubPlotData ?? [];
+  // A third level list in use (split-split plot, or a 3-factor factorial).
+  const hasC = isSplitSplitPlot || (isFactorial && subSubCount > 0);
 
   const expectedTreatments = isDerivedTreatments
-    ? isSplitSplitPlot
+    ? hasC
       ? mainCount * subCount * subSubCount
       : mainCount * subCount
     : null;
@@ -50,19 +59,19 @@ export function ProtocolTab({
   return (
     <div className="stack" style={{ gap: 16 }}>
       {hasPlots && (
-        <div className={isSplitSplitPlot ? "grid g3" : "grid g2"}>
+        <div className={hasC ? "grid g3" : "grid g2"}>
           <Card
             title={
               mainCount > 0
-                ? `Main Plot (${mainData.length} of ${mainCount})`
-                : "Main Plot"
+                ? `${names.A} (${mainData.length} of ${mainCount})`
+                : names.A
             }
             pad={mainCount <= 0}
             actions={
               config &&
               mainCount > 0 && (
                 <button className="btn ghost sm" onClick={onEditMainPlot}>
-                  <ListChecks size={14} /> Edit main plots
+                  <ListChecks size={14} /> Edit {lower(names.A)}
                 </button>
               )
             }
@@ -80,8 +89,8 @@ export function ProtocolTab({
                 <div className="row" style={{ gap: 8, alignItems: "center" }}>
                   <AlertCircle size={18} style={{ flexShrink: 0 }} />
                   <span>
-                    Main Plot Count is currently 0. Please set the Main Plot
-                    Count in experiment details before configuring main plots.
+                    {names.A} count is currently 0. Please set it in experiment
+                    details first.
                   </span>
                 </div>
                 {config && onEditDetails && (
@@ -98,10 +107,10 @@ export function ProtocolTab({
               <Table
                 rows={mainData.map((t) => ({ ...t, id: t.code }))}
                 pageSize={30}
-                empty="No main plots configured yet. Click 'Edit main plots' to add."
+                empty={`No ${lower(names.A)} levels yet.`}
                 columns={[
                   { label: "Code", render: (t) => <b>{t.code}</b> },
-                  { label: "Main Plot", key: "name" },
+                  { label: names.A, key: "name" },
                   {
                     label: "Details",
                     render: (t) => (
@@ -118,15 +127,15 @@ export function ProtocolTab({
           <Card
             title={
               subCount > 0
-                ? `Sub Plot (${subData.length} of ${subCount})`
-                : "Sub Plot"
+                ? `${names.B} (${subData.length} of ${subCount})`
+                : names.B
             }
             pad={subCount <= 0}
             actions={
               config &&
               subCount > 0 && (
                 <button className="btn ghost sm" onClick={onEditSubPlot}>
-                  <ListChecks size={14} /> Edit sub plots
+                  <ListChecks size={14} /> Edit {lower(names.B)}
                 </button>
               )
             }
@@ -144,8 +153,8 @@ export function ProtocolTab({
                 <div className="row" style={{ gap: 8, alignItems: "center" }}>
                   <AlertCircle size={18} style={{ flexShrink: 0 }} />
                   <span>
-                    Sub Plot Count is currently 0. Please set the Sub Plot Count
-                    in experiment details before configuring sub plots.
+                    {names.B} count is currently 0. Please set it in experiment
+                    details first.
                   </span>
                 </div>
                 {config && onEditDetails && (
@@ -162,10 +171,10 @@ export function ProtocolTab({
               <Table
                 rows={subData.map((t) => ({ ...t, id: t.code }))}
                 pageSize={30}
-                empty="No sub plots configured yet. Click 'Edit sub plots' to add."
+                empty={`No ${lower(names.B)} levels yet.`}
                 columns={[
                   { label: "Code", render: (t) => <b>{t.code}</b> },
-                  { label: "Sub Plot", key: "name" },
+                  { label: names.B, key: "name" },
                   {
                     label: "Details",
                     render: (t) => (
@@ -179,19 +188,19 @@ export function ProtocolTab({
             )}
           </Card>
 
-          {isSplitSplitPlot && (
+          {hasC && (
             <Card
               title={
                 subSubCount > 0
-                  ? `Sub-sub Plot (${subSubData.length} of ${subSubCount})`
-                  : "Sub-sub Plot"
+                  ? `${names.C} (${subSubData.length} of ${subSubCount})`
+                  : names.C
               }
               pad={subSubCount <= 0}
               actions={
                 config &&
                 subSubCount > 0 && (
                   <button className="btn ghost sm" onClick={onEditSubSubPlot}>
-                    <ListChecks size={14} /> Edit sub-sub plots
+                    <ListChecks size={14} /> Edit {lower(names.C)}
                   </button>
                 )
               }
@@ -209,9 +218,8 @@ export function ProtocolTab({
                   <div className="row" style={{ gap: 8, alignItems: "center" }}>
                     <AlertCircle size={18} style={{ flexShrink: 0 }} />
                     <span>
-                      Sub-sub Plot Count is currently 0. Please set the Sub-sub
-                      Plot Count in experiment details before configuring
-                      sub-sub plots.
+                      {names.C} count is currently 0. Please set it in
+                      experiment details first.
                     </span>
                   </div>
                   {config && onEditDetails && (
@@ -228,10 +236,10 @@ export function ProtocolTab({
                 <Table
                   rows={subSubData.map((t) => ({ ...t, id: t.code }))}
                   pageSize={30}
-                  empty="No sub-sub plots configured yet. Click 'Edit sub-sub plots' to add."
+                  empty={`No ${lower(names.C)} levels yet.`}
                   columns={[
                     { label: "Code", render: (t) => <b>{t.code}</b> },
-                    { label: "Sub-sub Plot", key: "name" },
+                    { label: names.C, key: "name" },
                     {
                       label: "Details",
                       render: (t) => (
@@ -283,7 +291,7 @@ export function ProtocolTab({
                 ? [
                     { label: "Code", render: (t) => <b>{t.code}</b> },
                     {
-                      label: "Main Plot",
+                      label: names.A,
                       render: (t) => {
                         const name = mainData.find(
                           (m) => m.code === t.mainPlotCode,
@@ -303,7 +311,7 @@ export function ProtocolTab({
                       },
                     },
                     {
-                      label: "Sub Plot",
+                      label: names.B,
                       render: (t) => {
                         const name = subData.find(
                           (s) => s.code === t.subPlotCode,
@@ -322,10 +330,10 @@ export function ProtocolTab({
                         );
                       },
                     },
-                    ...(isSplitSplitPlot
+                    ...(hasC
                       ? [
                           {
-                            label: "Sub-sub Plot",
+                            label: names.C,
                             render: (t) => {
                               const name = subSubData.find(
                                 (ss) => ss.code === t.subSubPlotCode,
