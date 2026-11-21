@@ -32,7 +32,8 @@ export function ErrorNote({ error }) {
  * field-level messages under each field.
  *
  * fields: [{ name, label, type: text|email|tel|password|number|date|select|textarea, options, required, full,
- *            hint, generate, clearable, parse }]
+ *            hint, generate, clearable, parse, render }]
+ * `render({ id, value, onChange })` draws a custom input for the field (e.g. the formula editor).
  * onSubmit(values) → Promise; resolve to close (or return a value for onDone).
  */
 export function AsyncFormModal({
@@ -137,7 +138,13 @@ export function AsyncFormModal({
                   <span className="muted"> (optional)</span>
                 )}
               </label>
-              {f.type === "select" ? (
+              {f.render ? (
+                f.render({
+                  id: `f-${f.name}`,
+                  value: values[f.name] ?? "",
+                  onChange: (v) => set(f.name, v),
+                })
+              ) : f.type === "select" ? (
                 <select
                   id={`f-${f.name}`}
                   value={values[f.name] ?? ""}

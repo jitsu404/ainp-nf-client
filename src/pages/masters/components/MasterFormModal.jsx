@@ -1,4 +1,5 @@
 import { AsyncFormModal } from "../../../components/forms";
+import { GENERATED_CODES } from "../../../config/constants";
 
 export function MasterFormModal({
   isEdit,
@@ -10,13 +11,19 @@ export function MasterFormModal({
   onDone,
   onClose,
 }) {
+  // Crops and units get their code from the server (CRP-001 …); other lists are given one.
+  const firstCode = GENERATED_CODES[config.id];
   const fields = [
-    {
-      name: "code",
-      label: "Code",
-      hint: "Letters, digits, _ or -. Stored in capitals.",
-      required: !isEdit,
-    },
+    ...(firstCode
+      ? []
+      : [
+          {
+            name: "code",
+            label: "Code",
+            hint: "Letters, digits, _ or -. Stored in capitals.",
+            required: !isEdit,
+          },
+        ]),
     { name: "name", label: "Name" },
     ...(config.groups
       ? [
@@ -77,6 +84,23 @@ export function MasterFormModal({
         isEdit ? `Edit ${item.name}` : `Add to ${config.label.toLowerCase()}`
       }
       fields={isEdit ? fields.filter((f) => f.name !== "code") : fields}
+      intro={
+        firstCode && (
+          <div className="note" style={{ margin: 0 }}>
+            {isEdit ? (
+              <>
+                Code <span className="mono">{item.code}</span> was generated and
+                doesn&apos;t change.
+              </>
+            ) : (
+              <>
+                The code is generated when you save ({firstCode}, then the next
+                number).
+              </>
+            )}
+          </div>
+        )
+      }
       initial={initial}
       onSubmit={onSubmit}
       onDone={onDone}
