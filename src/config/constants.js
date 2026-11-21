@@ -11,10 +11,13 @@
  * In development, '/api/v1' goes through the Vite proxy (vite.config.js); VITE_API_BASE_URL can
  * point it elsewhere there.
  */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(
-  /\/$/,
-  "",
-);
+// Don't simplify to `import.meta.env.VITE_API_BASE_URL.replace(…)`: the variable is unset on Vercel
+// (on purpose), so that crashes the whole app on load in production.
+export const API_BASE_URL = (
+  import.meta.env.PROD
+    ? "/api/v1"
+    : (import.meta.env.VITE_API_BASE_URL ?? "/api/v1")
+).replace(/\/$/, "");
 
 /** API error codes that mean "the session is no longer usable". */
 export const SESSION_ENDED_CODES = [
