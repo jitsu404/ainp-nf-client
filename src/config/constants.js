@@ -146,6 +146,15 @@ export const defaultExperimentYear = (e) => {
   if (!years.length) return "";
   return Math.min(Math.max(now, years[0]), years.at(-1));
 };
+/**
+ * Lists whose codes the server generates (never typed, never changed). Must match CODE_SERIES in
+ * icar-nf-backend/src/modules/counters/counters.service.ts.
+ */
+export const GENERATED_CODES = {
+  crop: "CRP-001",
+  unit: "UNT-001",
+  parameter: "PRM_001",
+};
 export const EXPERIMENT_STATUSES = ["Draft", "Active", "Closed"];
 export const TRIAL_STATUSES = ["Setup", "Running", "Completed"];
 export const SHEET_STATUSES = ["Draft", "Submitted", "Returned", "Approved"];

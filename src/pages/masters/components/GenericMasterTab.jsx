@@ -4,6 +4,7 @@ import { mastersApi } from "../../../api";
 import { useAuth } from "../../../auth";
 import { ExcelImportModal } from "../../../components/ExcelImport";
 import { Card } from "../../../components/ui";
+import { GENERATED_CODES } from "../../../config/constants";
 import { useDebounced } from "../../../hooks";
 import { toast } from "../../../lib/toast";
 import {
@@ -122,7 +123,11 @@ export function GenericMasterTab({ config }) {
       {modal === "import" && (
         <ExcelImportModal
           title={`Import ${config.label.toLowerCase()}`}
-          subtitle="Existing codes are updated; new codes are added."
+          subtitle={
+            GENERATED_CODES[config.id]
+              ? "Leave Code empty to add an item (its code is generated); a row with an existing code updates it."
+              : "Existing codes are updated; new codes are added."
+          }
           onTemplate={() => mastersApi.template(config.id)}
           mutation={importer}
           describe={importSummary}

@@ -140,7 +140,7 @@ export const useImportParameters = () =>
     queryKeys.parameters.all,
   );
 
-/** Display name of a unit code (KG_HA → kg/ha); falls back to the code while units load. */
+/** Display name of a unit code (UNT-001 → kg/ha); falls back to the code while units load. */
 export function useUnitLabel() {
   const units = useMasterOptions("unit");
   return (code) => (code ? units.nameOf(code) : "");

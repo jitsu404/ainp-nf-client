@@ -5,7 +5,7 @@ import { useAuth } from "../../auth";
 import { LinkExperimentPiModal } from "../../components/ExperimentPis";
 import { ErrorNote } from "../../components/forms";
 import { ExperimentMetadata } from "../../components/Metadata";
-import { Badge, Card, Page, Tabs } from "../../components/ui";
+import { Card, Page, Tabs } from "../../components/ui";
 import { ROUTES } from "../../config/constants";
 import { useMasterOptions, useUnitLabel } from "../../queries/masters";
 import {
@@ -17,6 +17,7 @@ import { ExperimentDetailsModal } from "../experiments";
 import {
   CentresModal,
   ExperimentOverviewCard,
+  ExperimentStatusSwitch,
   ParametersModal,
   TreatmentsModal,
 } from "./components";
@@ -112,8 +113,13 @@ export default function ExperimentDetail() {
   return (
     <Page
       title={
-        <span className="row" style={{ gap: 10 }}>
-          {e.code} <Badge>{e.status}</Badge>
+        <span className="row" style={{ gap: 12, flexWrap: "wrap" }}>
+          {e.code}
+          <ExperimentStatusSwitch
+            experiment={e}
+            canChange={config}
+            save={save}
+          />
         </span>
       }
       actions={

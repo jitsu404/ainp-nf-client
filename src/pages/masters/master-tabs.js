@@ -65,7 +65,7 @@ export const MASTER_TABS = [
   },
   {
     id: "nfInput",
-    label: "NF / organic inputs",
+    label: "Bio Inputs",
     description:
       "Natural farming and organic inputs (Jeevamrit, Ghanjeevamrit, FYM …).",
     kind: "standard",

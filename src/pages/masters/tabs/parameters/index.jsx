@@ -3,6 +3,7 @@ import { FileSpreadsheet, Pencil, Plus, Power, Search } from "lucide-react";
 import { parametersApi } from "../../../../api";
 import { useAuth } from "../../../../auth";
 import { ExcelImportModal } from "../../../../components/ExcelImport";
+import { FormulaField } from "../../../../components/FormulaField";
 import { AsyncFormModal, ErrorNote } from "../../../../components/forms";
 import { Badge, Card, Select, Table } from "../../../../components/ui";
 import {
@@ -39,17 +40,15 @@ export default function ParametersTab() {
     category: category || undefined,
   });
   const units = useMasterOptions("unit");
+  // The whole library (not the filtered list), for the formula field's picker and names.
+  const library = useParameters({});
   const create = useCreateParameter();
   const update = useUpdateParameter();
   const importer = useImportParameters();
 
-  const fields = (isEdit) => [
-    {
-      name: "code",
-      label: "Code",
-      hint: "Letters, digits or _. Stored in capitals.",
-      required: !isEdit,
-    },
+  // The code is generated (PRM_001 …), so it isn't a field; `exceptCode` keeps a parameter's own
+  // code out of its formula picker.
+  const fields = (exceptCode) => [
     { name: "name", label: "Name" },
     {
       name: "category",
@@ -108,7 +107,14 @@ export default function ParametersTab() {
       required: false,
       clearable: true,
       full: true,
-      hint: "Leave empty for values centres enter. Use parameter codes, numbers, + - * /, brackets and IFEMPTY(x, 0), e.g. NET_RETURNS / COST_CULTIVATION.",
+      hint: "Leave empty for values centres enter. Pick parameters from the list (their codes go in the formula), with numbers, + - * /, brackets and IFEMPTY(x, 0).",
+      render: (props) => (
+        <FormulaField
+          {...props}
+          parameters={library.data ?? []}
+          exceptCode={exceptCode}
+        />
+      ),
     },
   ];
 
@@ -238,7 +244,13 @@ export default function ParametersTab() {
       {modal === "add" && (
         <AsyncFormModal
           title="Add parameter"
-          fields={fields(false)}
+          intro={
+            <div className="note" style={{ margin: 0 }}>
+              The code is generated when you save (PRM_001, then the next
+              number).
+            </div>
+          }
+          fields={fields(null)}
           initial={{ dataType: "number" }}
           onSubmit={create.mutateAsync}
           onDone={(p) => toast.success(`${p.name} added`)}
@@ -247,8 +259,8 @@ export default function ParametersTab() {
       )}
       {modal && typeof modal === "object" && (
         <AsyncFormModal
-          title={`Edit ${modal.name}`}
-          fields={fields(true).filter((f) => f.name !== "code")}
+          title={`Edit ${modal.name} (${modal.code})`}
+          fields={fields(modal.code)}
           initial={{
             name: modal.name,
             category: modal.category,
@@ -269,7 +281,7 @@ export default function ParametersTab() {
       {modal === "import" && (
         <ExcelImportModal
           title="Import parameters"
-          subtitle="Existing codes are updated; new codes are added. Units must exist in the Units list."
+          subtitle="Leave Code empty to add a parameter (its code is generated); a row with an existing code updates it. Units must exist in the Units list."
           onTemplate={() => parametersApi.template()}
           mutation={importer}
           describe={importSummary}
