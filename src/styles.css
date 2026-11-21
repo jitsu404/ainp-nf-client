@@ -1580,6 +1580,21 @@ table.entry th.req::after {
 }
 
 /* Calculated parameter cells: computed, read-only. */
+/* A cell switched off in the trial protocol: greyed, hatched, takes no value. */
+table.entry td.off {
+  background: repeating-linear-gradient(
+    -45deg,
+    #f3f4f3,
+    #f3f4f3 6px,
+    #eceeec 6px,
+    #eceeec 12px
+  );
+}
+table.entry td.off input:disabled {
+  background: transparent;
+  border-style: dashed;
+  cursor: not-allowed;
+}
 table.entry td.calc {
   background: #f6f8fb;
   color: var(--text-muted);

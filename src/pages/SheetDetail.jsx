@@ -133,6 +133,12 @@ export default function SheetDetail() {
     (c) => c.code === s.croppingSystemCode,
   );
 
+  // Treatment × parameter cells switched off in the trial protocol for this season take no value.
+  const disabledCells = new Set(
+    (s.disabledCells ?? []).map((d) => `${d.treatmentCode}|${d.parameterId}`),
+  );
+  const isDisabled = (t, p) => disabledCells.has(`${t.code}|${p.parameterId}`);
+
   const valueOf = (key) =>
     edits.has(key) ? edits.get(key) : (stored.get(key) ?? "");
   const change = (key, raw) => {
@@ -386,6 +392,7 @@ export default function SheetDetail() {
                 change={change}
                 edits={edits}
                 invalid={invalid}
+                isDisabled={isDisabled}
               />
             )}
             {treatmentParams.length > 0 && (
@@ -402,6 +409,7 @@ export default function SheetDetail() {
                 change={change}
                 edits={edits}
                 invalid={invalid}
+                isDisabled={isDisabled}
               />
             )}
           </>
@@ -468,6 +476,7 @@ function Grid({
   change,
   edits,
   invalid,
+  isDisabled = () => false,
 }) {
   const unit = useUnitLabel();
   const replicated = reps[0] !== null;
@@ -591,6 +600,30 @@ function Grid({
                     const where = [t.code, r ? `R${r}` : ""]
                       .filter(Boolean)
                       .join(" ");
+                    if (isDisabled(t, p))
+                      return (
+                        <td
+                          key={p.parameterId}
+                          style={{ minWidth: 100 }}
+                          className="off"
+                          title={`Disabled for ${t.code} in the trial protocol for this season`}
+                        >
+                          {editable ? (
+                            <input
+                              disabled
+                              value={valueOf(key)}
+                              style={
+                                p.dataType === "number"
+                                  ? { textAlign: "right" }
+                                  : undefined
+                              }
+                              aria-label={`${p.name} ${where} (disabled)`}
+                            />
+                          ) : (
+                            show(valueOf(key))
+                          )}
+                        </td>
+                      );
                     return (
                       <td
                         key={p.parameterId}
