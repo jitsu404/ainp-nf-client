@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Eye, EyeOff, Loader2, LogIn } from "lucide-react";
+import { PhotoCarousel } from "../components/PhotoCarousel";
+import { ROUTES } from "../config/constants";
 import { useAuth } from "../auth";
 import { ErrorNote } from "../components/forms";
 import { programme } from "../programme/config";
@@ -30,30 +33,36 @@ export default function Login() {
   return (
     <div className="login">
       <section className="login-hero">
-        <div className="hero-text">
+        <header className="hero-head">
+          <img className="hero-logo" src="/logos/icar.png" alt="ICAR logo" />
           <div>
-            <img className="hero-logo" src="/logos/icar.png" alt="ICAR logo" />
             <h1>{programme.name}</h1>
-            <p className="scheme">
-              ({programme.short}) {programme.system}
-            </p>
+            <p className="scheme">{programme.system}</p>
           </div>
-          <div className="address">
-            <b>{programme.institute}</b>
-            {programme.instituteHi}
-            <br />
-            {programme.place}
-          </div>
+        </header>
+        <div className="hero-media">
+          <img
+            className="hero-map"
+            src="/login-map.jpg"
+            alt="Map of the 20 AINP-NF centres across India"
+          />
+          <PhotoCarousel />
         </div>
-        <img
-          className="hero-map"
-          src="/login-map.jpg"
-          alt="Map of the 20 AINP-NF centres across India"
-        />
+        <div className="address">
+          <b>
+            {programme.unit}
+            <br />
+            {programme.instituteShort}
+            {programme.place}
+          </b>
+        </div>
       </section>
 
       <section className="login-panel">
         <div className="login-card">
+          <Link to={ROUTES.landing} className="back-home small">
+            <ArrowLeft size={13} /> Back to the home page
+          </Link>
           <span className="eyebrow">{programme.short}</span>
           <h2>Sign in</h2>
           <form onSubmit={submit} noValidate>

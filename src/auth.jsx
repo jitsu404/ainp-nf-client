@@ -9,6 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { authApi, setSessionErrorHandler } from "./api";
 import { PASSWORD_CHANGE_REQUIRED } from "./config/constants";
+import { queryKeys } from "./lib/queryKeys";
 
 // The signed-in session comes from the API (/auth/me): user, role, capabilities and the roles this
 // user may manage. Nothing about permissions is hardcoded in the client.
@@ -21,6 +22,15 @@ export const useAuth = () => useContext(AuthCtx);
 
 export function AuthProvider({ children }) {
   const queryClient = useQueryClient();
+  // Drops every cached response of the previous user (shared office PCs). Public site data
+  // (queryKeys.public) is the same for everyone, so it stays: clearing it would also strand the
+  // landing page, which is waiting on it while the session is checked.
+  const clearUserData = useCallback(() => {
+    queryClient.removeQueries({
+      predicate: (q) => q.queryKey[0] !== queryKeys.public.all[0],
+    });
+    queryClient.getMutationCache().clear();
+  }, [queryClient]);
   // status: 'loading' | 'anonymous' | 'authenticated'
   const [status, setStatus] = useState("loading");
   const [session, setSession] = useState(null);
@@ -32,12 +42,12 @@ export function AuthProvider({ children }) {
   }, []);
   const signedOut = useCallback(
     (message = "") => {
-      queryClient.clear();
+      clearUserData();
       setSession(null);
       setStatus("anonymous");
       setNotice(message);
     },
-    [queryClient],
+    [clearUserData],
   );
 
   const refresh = useCallback(async () => {
@@ -75,7 +85,7 @@ export function AuthProvider({ children }) {
       assignable: session?.assignableRoles ?? [],
       login: async (email, password) => {
         const { data } = await authApi.login(email, password);
-        queryClient.clear();
+        clearUserData();
         setNotice("");
         signedIn(data);
       },
@@ -91,7 +101,7 @@ export function AuthProvider({ children }) {
         signedIn(data);
       },
     }),
-    [status, session, notice, queryClient, signedIn, signedOut],
+    [status, session, notice, clearUserData, signedIn, signedOut],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

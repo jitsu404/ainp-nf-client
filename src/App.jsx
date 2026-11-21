@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth";
 import Layout, { navItems } from "./components/Layout";
 import { ROUTES } from "./config/constants";
@@ -18,23 +18,76 @@ import Masters from "./pages/masters";
 import SheetDetail from "./pages/SheetDetail";
 import Sheets from "./pages/Sheets";
 import TrialDetail from "./pages/trials/index.jsx";
+import { About, AnnualReports, Publications } from "./pages/public/InfoPage";
+import Landing from "./pages/public/Landing";
+import PublicLayout from "./pages/public/PublicLayout";
 
-// Live app: centres and accounts, masters, and research (experiments → trials → observation
-// sheets), all through the API. The prototype's other screens (Finance, AUC/SoE …) stay in the
-// codebase and are brought back as each module gets its backend.
+// Two parts:
+// - the public website (landing page, About us, Publications, Annual reports) and /login, open to
+//   everyone;
+// - the live app (centres and accounts, masters, research: experiments → trials → observation
+//   sheets) behind sign-in, starting at ROUTES.home (/dashboard). Opening an app address while
+//   signed out goes to /login, which comes back to that address after signing in.
+// The prototype's other screens (Finance, AUC/SoE …) stay in the codebase and are brought back as
+// each module gets its backend.
+
+const publicRoutes = (
+  <Route element={<PublicLayout />}>
+    <Route path={ROUTES.landing} element={<Landing />} />
+    <Route path={ROUTES.about} element={<About />} />
+    <Route path={ROUTES.publications} element={<Publications />} />
+    <Route path={ROUTES.annualReports} element={<AnnualReports />} />
+  </Route>
+);
+
+/** After signing in: back to the page that sent the user to /login, else the dashboard. */
+function AfterLogin() {
+  const from = useLocation().state?.from;
+  const to =
+    from && from.pathname !== ROUTES.login
+      ? `${from.pathname}${from.search ?? ""}`
+      : ROUTES.home;
+  return <Navigate to={to} replace />;
+}
+
+/** Signed out on an app address: go to /login and remember where to come back. */
+function ToLogin() {
+  const location = useLocation();
+  return <Navigate to={ROUTES.login} replace state={{ from: location }} />;
+}
 
 export default function App() {
   const auth = useAuth();
 
   let content;
   if (auth.status === "loading")
-    content = <div className="splash">Loading…</div>;
-  else if (auth.status === "anonymous") content = <Login />;
-  else if (auth.session.mustChangePassword) content = <ForcedPasswordChange />;
+    content = (
+      <Routes>
+        {publicRoutes}
+        <Route path="*" element={<div className="splash">Loading…</div>} />
+      </Routes>
+    );
+  else if (auth.status === "anonymous")
+    content = (
+      <Routes>
+        {publicRoutes}
+        <Route path={ROUTES.login} element={<Login />} />
+        <Route path="*" element={<ToLogin />} />
+      </Routes>
+    );
+  else if (auth.session.mustChangePassword)
+    content = (
+      <Routes>
+        {publicRoutes}
+        <Route path="*" element={<ForcedPasswordChange />} />
+      </Routes>
+    );
   else {
     const allowed = new Set(navItems(auth).map((item) => item.to));
     content = (
       <Routes>
+        {publicRoutes}
+        <Route path={ROUTES.login} element={<AfterLogin />} />
         <Route element={<Layout />}>
           <Route path={ROUTES.home} element={<Home />} />
           {allowed.has(ROUTES.centres) && (

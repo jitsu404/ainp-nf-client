@@ -142,6 +142,11 @@ export const api = {
 };
 
 // ── Endpoints ────────────────────────────────────────────────────────────────
+/** Open to everyone (no sign-in): figures for the public landing page. */
+export const publicApi = {
+  summary: () => api.get("/public/summary"),
+};
+
 export const authApi = {
   me: () => api.get("/auth/me"),
   login: (email, password) => api.post("/auth/login", { email, password }),

@@ -215,7 +215,14 @@ export const MAX_UPLOAD_MB = 5;
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 export const ROUTES = {
-  home: "/",
+  // Public site (anyone, signed in or not).
+  landing: "/",
+  about: "/about",
+  publications: "/publications",
+  annualReports: "/annual-reports",
+  login: "/login",
+  // The signed-in app; `home` is its dashboard.
+  home: "/dashboard",
   centres: "/centres",
   centre: (id) => `/centres/${id}`,
   accounts: "/accounts",

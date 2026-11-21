@@ -3,6 +3,10 @@
 // refreshes centre lists, single centres and PI histories.
 
 export const queryKeys = {
+  public: {
+    all: ["public"],
+    summary: () => ["public", "summary"],
+  },
   centres: {
     all: ["centres"],
     list: (filters) => ["centres", "list", filters],

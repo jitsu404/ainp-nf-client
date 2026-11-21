@@ -925,9 +925,13 @@ table.entry input:focus {
 
 /* Login */
 .login {
-  min-height: calc(100vh - 3px);
+  /* Exactly one screen high (below the 3px brand strip): nothing to scroll on desktop. */
+  height: calc(100vh - 3px);
+  height: calc(100dvh - 3px);
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
+  grid-template-rows: minmax(0, 1fr);
   background: var(--bg);
 }
 .login-hero {
@@ -935,34 +939,136 @@ table.entry input:focus {
   border-radius: 22px;
   overflow: hidden;
   border: 1px solid var(--line);
-  min-height: 440px;
+  min-height: 0;
   background: linear-gradient(165deg, #ffffff 0%, var(--brand-50) 100%);
-  display: grid;
-  grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
-}
-.hero-text {
-  padding: 36px 8px 30px 40px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 24px;
+  gap: clamp(10px, 2vh, 18px);
+  padding: clamp(14px, 3vh, 26px) 30px clamp(12px, 2.5vh, 24px);
+}
+/* Logo and title on one line, the system name under the title. */
+.hero-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 .hero-logo {
-  height: 92px;
+  height: 72px;
   width: auto;
+  flex-shrink: 0;
 }
 .login-hero h1 {
   color: var(--brand);
-  font-size: clamp(26px, 2.8vw, 42px);
-  line-height: 1.1;
-  letter-spacing: -0.9px;
+  font-size: clamp(20px, 1.9vw, 30px);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
   font-weight: 750;
-  margin: 24px 0 12px;
+  margin: 0;
 }
 .login-hero .scheme {
-  font-size: 19px;
+  margin: 4px 0 0;
+  font-size: 15px;
   font-weight: 600;
-  color: #1b2420;
+  color: var(--text-muted);
+}
+/* Map on the left, field photos on the right. */
+.hero-media {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.hero-carousel {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--brand-50);
+  box-shadow: 0 8px 24px rgba(20, 40, 28, 0.12);
+}
+.hero-carousel .slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.hero-carousel .slide.on {
+  opacity: 1;
+}
+.hero-carousel .slide img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.hero-carousel .backdrop {
+  object-fit: cover;
+  filter: blur(22px) saturate(1.1);
+  transform: scale(1.15);
+}
+.hero-carousel .photo {
+  object-fit: contain;
+}
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.carousel-nav.prev {
+  left: 10px;
+}
+.carousel-nav.next {
+  right: 10px;
+}
+.hero-carousel:hover .carousel-nav,
+.carousel-nav:focus-visible {
+  opacity: 1;
+}
+.carousel-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+}
+.carousel-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+.carousel-dots button.on {
+  width: 22px;
+  border-radius: 4px;
+  background: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel .slide,
+  .carousel-dots button {
+    transition: none;
+  }
 }
 .login-hero .address {
   color: var(--text-muted);
@@ -978,15 +1084,17 @@ table.entry input:focus {
 .hero-map {
   width: 100%;
   height: 100%;
-  max-height: calc(100vh - 30px);
+  min-height: 0;
   object-fit: contain;
-  padding: 14px 18px 14px 0;
   mix-blend-mode: multiply;
 }
 .login-panel {
   display: grid;
   place-items: center;
   padding: 24px 28px 24px 16px;
+  /* A very short window scrolls the card alone, never the page. */
+  min-height: 0;
+  overflow-y: auto;
 }
 .login-card {
   background: var(--surface);
@@ -1103,19 +1211,30 @@ table.entry input:focus {
   .login {
     grid-template-columns: minmax(0, 1fr);
   }
-  .login-hero {
-    grid-template-columns: minmax(0, 1fr);
-    margin: 10px;
+  .login {
+    height: auto;
+    min-height: calc(100dvh - 3px);
+    overflow: visible;
+    grid-template-rows: auto;
   }
-  .hero-text {
-    padding: 24px 22px 0;
+  .login-hero {
+    margin: 10px;
+    padding: 20px 18px;
   }
   .hero-logo {
-    height: 64px;
+    height: 52px;
+  }
+  .hero-media {
+    grid-template-columns: minmax(0, 1fr);
   }
   .hero-map {
-    max-height: 420px;
-    padding: 10px;
+    max-height: 360px;
+  }
+  .hero-carousel {
+    min-height: 200px;
+  }
+  .login-panel {
+    overflow: visible;
   }
   .login-panel {
     padding: 6px 10px 24px;
@@ -1507,5 +1626,309 @@ table.entry td.calc {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ── Public website (landing, About us, Publications, Annual reports) ───────── */
+.site {
+  min-height: calc(100vh - 3px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.site-wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+/* Header: logo and programme name on one line, IIFSR logo on the right. */
+.site-top {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.site-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+.site-title img {
+  height: 60px;
+  width: auto;
+  flex-shrink: 0;
+}
+.site-title h1 {
+  margin: 0;
+  color: var(--brand);
+  font-size: clamp(18px, 2.1vw, 28px);
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -0.3px;
+}
+.site-partner {
+  height: 52px;
+  width: auto;
+  flex-shrink: 0;
+}
+/* Menu bar */
+.site-nav {
+  background: var(--brand);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(20, 40, 28, 0.15);
+}
+.site-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+}
+.site-nav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}
+.site-nav ul a {
+  display: block;
+  padding: 13px 16px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.site-nav ul a:hover {
+  background: var(--brand-600);
+}
+.site-nav ul a.active {
+  border-bottom-color: var(--accent);
+  background: var(--brand-600);
+}
+.site-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--brand);
+  font-weight: 650;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-login:hover {
+  background: var(--brand-50);
+}
+.site-menu-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 4px;
+  cursor: pointer;
+}
+.site-main {
+  flex: 1;
+}
+/* Carousel across the page under the menu. */
+.site-hero .site-carousel {
+  border-radius: 0;
+  box-shadow: none;
+  height: clamp(220px, 42vh, 460px);
+  min-height: 0;
+}
+.site-section {
+  padding-top: 28px;
+  padding-bottom: 36px;
+}
+.site-heading {
+  margin: 0 0 16px;
+  font-size: 21px;
+  color: var(--ink);
+}
+.site-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+/* The chart card is as tall as the map beside it; the chart takes the room left under the figures. */
+.site-chart-card {
+  display: flex;
+  flex-direction: column;
+}
+.site-chart {
+  flex: 1;
+  min-height: 360px;
+}
+.site-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(20, 40, 28, 0.05);
+}
+.site-card h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+.site-map {
+  margin: 0;
+}
+.site-map img {
+  width: 100%;
+  height: auto;
+  display: block;
+  mix-blend-mode: multiply;
+}
+.site-map figcaption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.site-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+.site-stats div {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--brand-50);
+  color: var(--brand);
+}
+.site-stats b {
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.site-stats span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.site-page-head {
+  margin-bottom: 16px;
+}
+.site-page-head h2 {
+  margin: 0;
+  font-size: 24px;
+  color: var(--brand);
+}
+.site-page-head p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
+.site-prose {
+  line-height: 1.65;
+  max-width: 860px;
+}
+.site-prose h3 {
+  margin-top: 18px;
+}
+.site-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 36px 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.site-empty p {
+  margin: 0;
+}
+.site-footer {
+  background: var(--ink);
+  color: #dfe6e1;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.site-footer .site-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.site-footer b {
+  color: #fff;
+}
+.chart-tooltip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  max-width: 280px;
+}
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.back-home:hover {
+  color: var(--brand);
+}
+@media (max-width: 860px) {
+  .site-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site-partner {
+    display: none;
+  }
+  .site-title img {
+    height: 46px;
+  }
+  .site-menu-btn {
+    display: inline-flex;
+  }
+  .site-nav-row {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .site-nav ul {
+    display: none;
+    order: 3;
+    flex-basis: 100%;
+    flex-direction: column;
+    padding-bottom: 8px;
+  }
+  .site-nav ul.open {
+    display: flex;
+  }
+  .site-stats b {
+    font-size: 20px;
+  }
+  .site-chart {
+    min-height: 300px;
   }
 }
