@@ -28,7 +28,7 @@ export function TreatmentsModal({
   // A third level list in use (split-split plot, or a 3-factor factorial).
   const hasC = isSplitSplitPlot || (isFactorial && ssCount > 0);
   const names = isFactorial
-    ? { A: "Factor A", B: "Factor B", C: "Factor C" }
+    ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
     : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
 
   const targetCount = isPlot
@@ -192,7 +192,7 @@ export function TreatmentsModal({
         ? `The sub-sub plots configured for this Split-split plot experiment (${targetCount} required).`
         : isDerivedTreatments
           ? isFactorial
-            ? `Fixed treatment combinations for the factorial (${targetCount} required: ${[mCount, sCount, ssCount].filter(Boolean).join(" × ")} levels of ${hasC ? "factors A, B, C" : "factors A, B"}).`
+            ? `Fixed treatment combinations for the factorial (${targetCount} required: ${[mCount, sCount, ssCount].filter(Boolean).join(" × ")} levels of ${hasC ? "factors 1, 2, 3" : "factors 1, 2"}).`
             : isSplitSplitPlot
               ? `Fixed treatment combinations for Split-split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub × ${ssCount} Sub-sub).`
               : `Fixed treatment combinations for Split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub).`

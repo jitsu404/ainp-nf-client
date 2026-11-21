@@ -118,21 +118,22 @@ export function TreatmentParametersModal({ experiment, save, onClose }) {
       (ss) => ss.code === t.subSubPlotCode,
     );
 
+    const isFactorial = experiment?.design === "Factorial";
     const lines = [];
     lines.push(`Treatment: ${t.code} - ${t.name}`);
     if (t.mainPlotCode) {
       lines.push(
-        `Main Plot: ${t.mainPlotCode}${mainPlot?.name ? ` (${mainPlot.name})` : ""}`,
+        `${isFactorial ? "Factor 1" : "Main Plot"}: ${t.mainPlotCode}${mainPlot?.name ? ` (${mainPlot.name})` : ""}`,
       );
     }
     if (t.subPlotCode) {
       lines.push(
-        `Sub Plot: ${t.subPlotCode}${subPlot?.name ? ` (${subPlot.name})` : ""}`,
+        `${isFactorial ? "Factor 2" : "Sub Plot"}: ${t.subPlotCode}${subPlot?.name ? ` (${subPlot.name})` : ""}`,
       );
     }
     if (t.subSubPlotCode) {
       lines.push(
-        `Sub-sub Plot: ${t.subSubPlotCode}${subSubPlot?.name ? ` (${subSubPlot.name})` : ""}`,
+        `${isFactorial ? "Factor 3" : "Sub-sub Plot"}: ${t.subSubPlotCode}${subSubPlot?.name ? ` (${subSubPlot.name})` : ""}`,
       );
     }
     if (t.description) {
@@ -1150,10 +1151,11 @@ export function TreatmentParametersModal({ experiment, save, onClose }) {
                               >
                                 {[
                                   info.mainPlotName &&
-                                    `M: ${info.mainPlotName}`,
-                                  info.subPlotName && `S: ${info.subPlotName}`,
+                                    `${experiment?.design === "Factorial" ? "F1" : "M"}: ${info.mainPlotName}`,
+                                  info.subPlotName &&
+                                    `${experiment?.design === "Factorial" ? "F2" : "S"}: ${info.subPlotName}`,
                                   info.subSubPlotName &&
-                                    `SS: ${info.subSubPlotName}`,
+                                    `${experiment?.design === "Factorial" ? "F3" : "SS"}: ${info.subSubPlotName}`,
                                 ]
                                   .filter(Boolean)
                                   .join(" · ")}

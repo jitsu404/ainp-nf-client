@@ -61,12 +61,17 @@ export function TrialProtocolTab({
   const e = t.experiment ?? {};
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
-  const hasPlots = isSplitPlot || isSplitSplitPlot;
-  const isDerivedTreatments = isSplitPlot || isSplitSplitPlot;
+  const isFactorial = e.design === "Factorial";
+  const hasPlots = isSplitPlot || isSplitSplitPlot || isFactorial;
+  const isDerivedTreatments = hasPlots;
 
   const mainCount = e.mainPlotCount ?? 0;
   const subCount = e.subPlotCount ?? 0;
   const subSubCount = e.subSubPlotCount ?? 0;
+  const hasC = isSplitSplitPlot || (isFactorial && subSubCount > 0);
+  const names = isFactorial
+    ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
+    : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
 
   // Use the trial's own plot data and treatments
   const mainData = t.mainPlotData ?? [];
@@ -76,7 +81,7 @@ export function TrialProtocolTab({
   const locked = t.locked ?? [];
 
   const expectedTreatments = isDerivedTreatments
-    ? isSplitSplitPlot
+    ? hasC
       ? mainCount * subCount * subSubCount
       : mainCount * subCount
     : null;
@@ -88,7 +93,7 @@ export function TrialProtocolTab({
     (hasPlots
       ? locked.includes("mainPlot") && locked.includes("subPlot")
       : true) &&
-    (isSplitSplitPlot ? locked.includes("subSubPlot") : true) &&
+    (hasC ? locked.includes("subSubPlot") : true) &&
     locked.includes("treatments") &&
     locked.includes("parameters");
 
@@ -134,13 +139,13 @@ export function TrialProtocolTab({
 
       {/* Split / Split-split Plots Configuration */}
       {hasPlots && (
-        <div className={isSplitSplitPlot ? "grid g3" : "grid g2"}>
+        <div className={hasC ? "grid g3" : "grid g2"}>
           {/* Main Plot Card */}
           <Card
             title={
               mainCount > 0
-                ? `Main Plot (${mainData.length} of ${mainCount})`
-                : "Main Plot"
+                ? `${names.A} (${mainData.length} of ${mainCount})`
+                : names.A
             }
             pad={mainCount <= 0}
             actions={
@@ -156,17 +161,17 @@ export function TrialProtocolTab({
               <div className="note warn">
                 <AlertCircle size={18} style={{ flexShrink: 0 }} />
                 <span>
-                  Main Plot Count is currently 0 in experiment protocol.
+                  {names.A} Count is currently 0 in experiment protocol.
                 </span>
               </div>
             ) : (
               <Table
                 rows={mainData.map((m) => ({ ...m, id: m.code }))}
                 pageSize={30}
-                empty="No main plots configured."
+                empty={`No ${names.A.toLowerCase()} configured.`}
                 columns={[
                   { label: "Code", render: (m) => <b>{m.code}</b> },
-                  { label: "Main Plot", key: "name" },
+                  { label: names.A, key: "name" },
                   {
                     label: "Details",
                     render: (m) => (
@@ -184,8 +189,8 @@ export function TrialProtocolTab({
           <Card
             title={
               subCount > 0
-                ? `Sub Plot (${subData.length} of ${subCount})`
-                : "Sub Plot"
+                ? `${names.B} (${subData.length} of ${subCount})`
+                : names.B
             }
             pad={subCount <= 0}
             actions={
@@ -201,17 +206,17 @@ export function TrialProtocolTab({
               <div className="note warn">
                 <AlertCircle size={18} style={{ flexShrink: 0 }} />
                 <span>
-                  Sub Plot Count is currently 0 in experiment protocol.
+                  {names.B} Count is currently 0 in experiment protocol.
                 </span>
               </div>
             ) : (
               <Table
                 rows={subData.map((s) => ({ ...s, id: s.code }))}
                 pageSize={30}
-                empty="No sub plots configured."
+                empty={`No ${names.B.toLowerCase()} configured.`}
                 columns={[
                   { label: "Code", render: (s) => <b>{s.code}</b> },
-                  { label: "Sub Plot", key: "name" },
+                  { label: names.B, key: "name" },
                   {
                     label: "Details",
                     render: (s) => (
@@ -226,12 +231,12 @@ export function TrialProtocolTab({
           </Card>
 
           {/* Sub-sub Plot Card */}
-          {isSplitSplitPlot && (
+          {hasC && (
             <Card
               title={
                 subSubCount > 0
-                  ? `Sub-sub Plot (${subSubData.length} of ${subSubCount})`
-                  : "Sub-sub Plot"
+                  ? `${names.C} (${subSubData.length} of ${subSubCount})`
+                  : names.C
               }
               pad={subSubCount <= 0}
               actions={
@@ -247,17 +252,17 @@ export function TrialProtocolTab({
                 <div className="note warn">
                   <AlertCircle size={18} style={{ flexShrink: 0 }} />
                   <span>
-                    Sub-sub Plot Count is currently 0 in experiment protocol.
+                    {names.C} Count is currently 0 in experiment protocol.
                   </span>
                 </div>
               ) : (
                 <Table
                   rows={subSubData.map((ss) => ({ ...ss, id: ss.code }))}
                   pageSize={30}
-                  empty="No sub-sub plots configured."
+                  empty={`No ${names.C.toLowerCase()} configured.`}
                   columns={[
                     { label: "Code", render: (ss) => <b>{ss.code}</b> },
-                    { label: "Sub-sub Plot", key: "name" },
+                    { label: names.C, key: "name" },
                     {
                       label: "Details",
                       render: (ss) => (
@@ -304,7 +309,7 @@ export function TrialProtocolTab({
                 ? [
                     { label: "Code", render: (tr) => <b>{tr.code}</b> },
                     {
-                      label: "Main Plot",
+                      label: names.A,
                       render: (tr) => {
                         const name = mainData.find(
                           (m) => m.code === tr.mainPlotCode,
@@ -324,7 +329,7 @@ export function TrialProtocolTab({
                       },
                     },
                     {
-                      label: "Sub Plot",
+                      label: names.B,
                       render: (tr) => {
                         const name = subData.find(
                           (s) => s.code === tr.subPlotCode,
@@ -343,10 +348,10 @@ export function TrialProtocolTab({
                         );
                       },
                     },
-                    ...(isSplitSplitPlot
+                    ...(hasC
                       ? [
                           {
-                            label: "Sub-sub Plot",
+                            label: names.C,
                             render: (tr) => {
                               const name = subSubData.find(
                                 (ss) => ss.code === tr.subSubPlotCode,

@@ -232,6 +232,7 @@ function PlotStepForm({ label, prefix, rows, onChange }) {
 function TreatmentsStepForm({
   isDerived,
   isSplitSplitPlot,
+  names,
   mainPlotData,
   subPlotData,
   subSubPlotData,
@@ -335,7 +336,7 @@ function TreatmentsStepForm({
                       textAlign: "left",
                     }}
                   >
-                    Main Plot
+                    {names?.A || "Main Plot"}
                   </th>
                   <th
                     style={{
@@ -344,7 +345,7 @@ function TreatmentsStepForm({
                       textAlign: "left",
                     }}
                   >
-                    Sub Plot
+                    {names?.B || "Sub Plot"}
                   </th>
                   {isSplitSplitPlot && (
                     <th
@@ -354,7 +355,7 @@ function TreatmentsStepForm({
                         textAlign: "left",
                       }}
                     >
-                      Sub-sub Plot
+                      {names?.C || "Sub-sub Plot"}
                     </th>
                   )}
                 </>
@@ -733,18 +734,24 @@ function ParametersStepForm({
     );
   };
 
+  const isFactorial = experiment?.design === "Factorial";
+
   const getTreatmentTooltip = (t) => {
     const m = mainPlotData.find((mp) => mp.code === t.mainPlotCode);
     const s = subPlotData.find((sp) => sp.code === t.subPlotCode);
     const ss = subSubPlotData.find((ssp) => ssp.code === t.subSubPlotCode);
     const lines = [`${t.code} - ${t.name}`];
     if (t.mainPlotCode)
-      lines.push(`Main: ${t.mainPlotCode}${m?.name ? ` (${m.name})` : ""}`);
+      lines.push(
+        `${isFactorial ? "Factor 1" : "Main"}: ${t.mainPlotCode}${m?.name ? ` (${m.name})` : ""}`,
+      );
     if (t.subPlotCode)
-      lines.push(`Sub: ${t.subPlotCode}${s?.name ? ` (${s.name})` : ""}`);
+      lines.push(
+        `${isFactorial ? "Factor 2" : "Sub"}: ${t.subPlotCode}${s?.name ? ` (${s.name})` : ""}`,
+      );
     if (t.subSubPlotCode)
       lines.push(
-        `Sub-sub: ${t.subSubPlotCode}${ss?.name ? ` (${ss.name})` : ""}`,
+        `${isFactorial ? "Factor 3" : "Sub-sub"}: ${t.subSubPlotCode}${ss?.name ? ` (${ss.name})` : ""}`,
       );
     if (t.description) lines.push(`Details: ${t.description}`);
     return lines.join("\n");
@@ -1279,19 +1286,25 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
 
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
-  const hasPlots = isSplitPlot || isSplitSplitPlot;
+  const isFactorial = e.design === "Factorial";
+  const hasPlots = isSplitPlot || isSplitSplitPlot || isFactorial;
+  const hasC =
+    isSplitSplitPlot || (isFactorial && (e.subSubPlotCount ?? 0) > 0);
+  const names = isFactorial
+    ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
+    : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
 
   // Active steps dynamically computed based on design and locks
   const steps = useMemo(() => {
     const list = [];
     if (hasPlots && !locked.includes("mainPlot")) {
-      list.push({ key: "mainPlot", label: "Main Plot", stepNum: 1 });
+      list.push({ key: "mainPlot", label: names.A, stepNum: 1 });
     }
     if (hasPlots && !locked.includes("subPlot")) {
-      list.push({ key: "subPlot", label: "Sub Plot", stepNum: 2 });
+      list.push({ key: "subPlot", label: names.B, stepNum: 2 });
     }
-    if (isSplitSplitPlot && !locked.includes("subSubPlot")) {
-      list.push({ key: "subSubPlot", label: "Sub-sub Plot", stepNum: 3 });
+    if (hasC && !locked.includes("subSubPlot")) {
+      list.push({ key: "subSubPlot", label: names.C, stepNum: 3 });
     }
     if (!locked.includes("treatments")) {
       list.push({ key: "treatments", label: "Treatments", stepNum: 4 });
@@ -1300,7 +1313,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
       list.push({ key: "parameters", label: "Set Parameters", stepNum: 5 });
     }
     return list;
-  }, [hasPlots, isSplitSplitPlot, locked]);
+  }, [hasPlots, hasC, locked, names.A, names.B, names.C]);
 
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -1340,7 +1353,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
     let idx = 1;
     for (const m of mainPlotData) {
       for (const s of subPlotData) {
-        if (isSplitSplitPlot) {
+        if (hasC) {
           for (const ss of subSubPlotData) {
             const key = `${m.code}|${s.code}|${ss.code}`;
             const match = existingMap.get(key) || existing[idx - 1];
@@ -1386,22 +1399,22 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
     try {
       if (currentStep.key === "mainPlot") {
         if (mainPlotData.some((m) => !m.name.trim())) {
-          throw new Error("All main plot names are required.");
+          throw new Error(`All ${names.A.toLowerCase()} names are required.`);
         }
         await save({ mainPlotData });
-        toast.success("Main plots updated");
+        toast.success(`${names.A} updated`);
       } else if (currentStep.key === "subPlot") {
         if (subPlotData.some((s) => !s.name.trim())) {
-          throw new Error("All sub plot names are required.");
+          throw new Error(`All ${names.B.toLowerCase()} names are required.`);
         }
         await save({ subPlotData });
-        toast.success("Sub plots updated");
+        toast.success(`${names.B} updated`);
       } else if (currentStep.key === "subSubPlot") {
         if (subSubPlotData.some((ss) => !ss.name.trim())) {
-          throw new Error("All sub-sub plot names are required.");
+          throw new Error(`All ${names.C.toLowerCase()} names are required.`);
         }
         await save({ subSubPlotData });
-        toast.success("Sub-sub plots updated");
+        toast.success(`${names.C} updated`);
       } else if (currentStep.key === "treatments") {
         if (treatments.some((t) => !t.name.trim())) {
           throw new Error("All treatment names are required.");
@@ -1591,7 +1604,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
         {/* Current Step Content */}
         {currentStep?.key === "mainPlot" && (
           <PlotStepForm
-            label="Main Plot"
+            label={names.A}
             prefix="M"
             rows={mainPlotData}
             onChange={setMainPlotData}
@@ -1600,7 +1613,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
 
         {currentStep?.key === "subPlot" && (
           <PlotStepForm
-            label="Sub Plot"
+            label={names.B}
             prefix="S"
             rows={subPlotData}
             onChange={setSubPlotData}
@@ -1609,7 +1622,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
 
         {currentStep?.key === "subSubPlot" && (
           <PlotStepForm
-            label="Sub-sub Plot"
+            label={names.C}
             prefix="SS"
             rows={subSubPlotData}
             onChange={setSubSubPlotData}
@@ -1619,7 +1632,8 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
         {currentStep?.key === "treatments" && (
           <TreatmentsStepForm
             isDerived={hasPlots}
-            isSplitSplitPlot={isSplitSplitPlot}
+            isSplitSplitPlot={hasC}
+            names={names}
             mainPlotData={mainPlotData}
             subPlotData={subPlotData}
             subSubPlotData={subSubPlotData}

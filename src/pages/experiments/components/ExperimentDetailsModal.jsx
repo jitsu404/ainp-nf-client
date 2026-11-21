@@ -327,7 +327,7 @@ export function ExperimentDetailsModal({
                 {v.design === "Strip plot"
                   ? "Horizontal strips"
                   : isFactorial
-                    ? "Factor A levels"
+                    ? "Factor 1 levels"
                     : "Main plots"}
               </label>
               <input
@@ -347,7 +347,7 @@ export function ExperimentDetailsModal({
                 {v.design === "Strip plot"
                   ? "Vertical strips"
                   : isFactorial
-                    ? "Factor B levels"
+                    ? "Factor 2 levels"
                     : "Sub plots per main plot"}
               </label>
               <input
@@ -366,7 +366,7 @@ export function ExperimentDetailsModal({
               <div className="field">
                 <label htmlFor="x-sub-sub-plots">
                   {isFactorial
-                    ? "Factor C levels (optional)"
+                    ? "Factor 3 levels (optional)"
                     : "Sub-sub plots per sub plot"}
                 </label>
                 <input
@@ -395,7 +395,7 @@ export function ExperimentDetailsModal({
               ) : (
                 <span className="field-error">
                   {isFactorial
-                    ? `Enter 2–${MAX_PLOT_COUNT} levels of factors A and B (and of C, if used).`
+                    ? `Enter 2–${MAX_PLOT_COUNT} levels of factors 1 and 2 (and of 3, if used).`
                     : isSplitSplit
                       ? `Enter 1–${MAX_PLOT_COUNT} main plots, sub plots, and sub-sub plots.`
                       : `Enter 1–${MAX_PLOT_COUNT} main plots and sub plots.`}

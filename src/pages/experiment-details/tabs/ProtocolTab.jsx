@@ -27,7 +27,7 @@ export function ProtocolTab({
   const hasPlots = isSplitPlot || isSplitSplitPlot || isFactorial;
   const isDerivedTreatments = hasPlots;
   const names = isFactorial
-    ? { A: "Factor A", B: "Factor B", C: "Factor C" }
+    ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
     : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
   // "Main Plot" → "main plot" in sentences; "Factor A" keeps its capitals.
   const lower = (label) => (isFactorial ? label : label.toLowerCase());

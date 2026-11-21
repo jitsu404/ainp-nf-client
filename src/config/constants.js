@@ -120,19 +120,19 @@ export const experimentFactors = (e) => {
   return [
     {
       key: "A",
-      label: factorial ? "Factor A" : "Main plot",
+      label: factorial ? "Factor 1" : "Main plot",
       field: "mainPlotCode",
       levels: levels("M", e.mainPlotCount, e.mainPlotData),
     },
     {
       key: "B",
-      label: factorial ? "Factor B" : "Sub plot",
+      label: factorial ? "Factor 2" : "Sub plot",
       field: "subPlotCode",
       levels: levels("S", e.subPlotCount, e.subPlotData),
     },
     {
       key: "C",
-      label: factorial ? "Factor C" : "Sub-sub plot",
+      label: factorial ? "Factor 3" : "Sub-sub plot",
       field: "subSubPlotCode",
       levels: levels("SS", e.subSubPlotCount, e.subSubPlotData),
     },
