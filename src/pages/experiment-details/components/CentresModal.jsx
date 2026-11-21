@@ -272,7 +272,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
                   <span style={{ fontSize: "0.9rem", lineHeight: 1.3 }}>
                     <span style={{ fontWeight: 600 }}>
                       {c.host || c.code}
-                      asdf
+                      {/* asdf */}
                     </span>
                     <span
                       style={{

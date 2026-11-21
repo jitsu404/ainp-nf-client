@@ -11,11 +11,10 @@
  * In development, '/api/v1' goes through the Vite proxy (vite.config.js); VITE_API_BASE_URL can
  * point it elsewhere there.
  */
-export const API_BASE_URL = (
-  import.meta.env.PROD
-    ? "/api/v1"
-    : (import.meta.env.VITE_API_BASE_URL ?? "/api/v1")
-).replace(/\/$/, "");
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(
+  /\/$/,
+  "",
+);
 
 /** API error codes that mean "the session is no longer usable". */
 export const SESSION_ENDED_CODES = [
@@ -62,6 +61,8 @@ export const PASSWORD_RULE = {
 export const EXPERIMENT_DESIGNS = [
   "RBD",
   "Split plot",
+  "Split-split plot",
+  "Factorial",
   "Strip plot",
   "Non-replicated",
   "Farmer participatory",
@@ -73,6 +74,12 @@ export const DESIGN_HINTS = {
     "Main plots × sub plots; each plot holds every treatment × replication. ANOVA per plot.",
   "Strip plot":
     "Horizontal × vertical strips, each holding every treatment (× replication, if replicated). ANOVA per plot when replicated.",
+  "Split-split plot":
+    "Main plots × sub plots × sub-sub plots with replications. Treatment ANOVA calculated.",
+  "Split split plot":
+    "Main plots × sub plots × sub-sub plots with replications. Treatment ANOVA calculated.",
+  Factorial:
+    "Factorial design evaluating multiple factors and their interactions.",
   "Non-replicated": "Large plots, one value per treatment.",
   "Farmer participatory":
     "Validation in farmers’ fields (e.g. SCSP/STC). One value per treatment.",
@@ -82,7 +89,11 @@ export const DESIGN_HINTS = {
  * Laid out in main plots × sub plots; each plot is a complete RBD (every treatment × replication).
  * Must match DESIGNS_WITH_PLOTS and MAX_PLOT_COUNT in the backend.
  */
-export const DESIGNS_WITH_PLOTS = ["Split plot", "Strip plot"];
+export const DESIGNS_WITH_PLOTS = [
+  "Split plot",
+  "Strip plot",
+  "Split-split plot",
+];
 export const MAX_PLOT_COUNT = 10;
 /** Every plot of an experiment's layout, main plot first; one null plot for other designs. */
 export const experimentPlots = (e) =>
@@ -121,7 +132,12 @@ export const plotTitle = (e, p) => {
   return `${part(`M${p.mainPlot}`, main)} · ${part(`S${p.subPlot}`, sub)}`;
 };
 /** At least 2 replications. */
-export const DESIGNS_NEEDING_REPLICATIONS = ["RBD", "Split plot"];
+export const DESIGNS_NEEDING_REPLICATIONS = [
+  "RBD",
+  "Split plot",
+  "Split-split plot",
+  "Factorial",
+];
 /** Never replicated (data is one value per treatment). Strip plot may be either. */
 export const UNREPLICATED_DESIGNS = [
   "Non-replicated",

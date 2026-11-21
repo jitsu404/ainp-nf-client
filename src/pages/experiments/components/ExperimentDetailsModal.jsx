@@ -81,6 +81,7 @@ export function ExperimentDetailsModal({
     replications: experiment ? (experiment.replications ?? "") : 3,
     mainPlotCount: experiment?.mainPlotCount ?? 0,
     subPlotCount: experiment?.subPlotCount ?? 0,
+    subSubPlotCount: experiment?.subSubPlotCount ?? 0,
     startYear: experiment?.startYear ?? defaultYear,
     endYear: experiment?.endYear ?? defaultYear + 3,
     piUserId: null,
@@ -99,6 +100,7 @@ export function ExperimentDetailsModal({
         replications: experiment.replications ?? "",
         mainPlotCount: experiment.mainPlotCount ?? 0,
         subPlotCount: experiment.subPlotCount ?? 0,
+        subSubPlotCount: experiment.subSubPlotCount ?? 0,
         startYear: experiment.startYear ?? defaultYear,
         endYear: experiment.endYear ?? defaultYear + 3,
         piUserId: null,
@@ -124,16 +126,22 @@ export function ExperimentDetailsModal({
         Number(reps) >= 2 &&
         Number(reps) <= 20;
 
-  // Split / strip plot: 1–10 main plots and sub plots; each plot holds every treatment × replication.
+  // Split / strip / split-split plot: 1–10 main plots and sub plots; each plot holds every treatment × replication.
   const plotted = DESIGNS_WITH_PLOTS.includes(v.design);
+  const isSplitSplit = v.design === "Split-split plot";
   const countOk = (x) =>
     Number.isInteger(Number(x)) &&
     Number(x) >= 1 &&
     Number(x) <= MAX_PLOT_COUNT;
   const plotsOk =
-    !plotted || (countOk(v.mainPlotCount) && countOk(v.subPlotCount));
+    !plotted ||
+    (countOk(v.mainPlotCount) &&
+      countOk(v.subPlotCount) &&
+      (!isSplitSplit || countOk(v.subSubPlotCount)));
   const plotCount = plotted
-    ? Number(v.mainPlotCount) * Number(v.subPlotCount)
+    ? Number(v.mainPlotCount) *
+      Number(v.subPlotCount) *
+      (isSplitSplit ? Number(v.subSubPlotCount) : 1)
     : 1;
 
   const startYearNum = Number(v.startYear);
@@ -167,6 +175,7 @@ export function ExperimentDetailsModal({
       b.replications = replicated && reps !== "" ? Number(reps) : null;
       b.mainPlotCount = plotted ? Number(v.mainPlotCount) : 0;
       b.subPlotCount = plotted ? Number(v.subPlotCount) : 0;
+      b.subSubPlotCount = isSplitSplit ? Number(v.subSubPlotCount) : 0;
     }
     if (experiment) {
       b.status = v.status;
@@ -337,16 +346,37 @@ export function ExperimentDetailsModal({
                 placeholder={`1–${MAX_PLOT_COUNT}`}
               />
             </div>
+
+            {isSplitSplit && (
+              <div className="field">
+                <label htmlFor="x-sub-sub-plots">
+                  Sub-sub plots per sub plot
+                </label>
+                <input
+                  id="x-sub-sub-plots"
+                  type="number"
+                  min={1}
+                  max={MAX_PLOT_COUNT}
+                  value={v.subSubPlotCount || ""}
+                  disabled={locked}
+                  onChange={(e) => set("subSubPlotCount", e.target.value)}
+                  placeholder={`1–${MAX_PLOT_COUNT}`}
+                />
+              </div>
+            )}
+
             <div className="field full">
               {plotsOk ? (
                 <span className="muted small">
-                  {plotCount} plot{plotCount === 1 ? "" : "s"}; each plot
-                  records every treatment
-                  {replicated && reps !== "" ? ` × ${reps} replications` : ""}.
+                  {plotCount} plot{plotCount === 1 ? "" : "s"}
+                  {/* records every treatment
+                  {replicated && reps !== "" ? ` × ${reps} replications` : ""}. */}
                 </span>
               ) : (
                 <span className="field-error">
-                  Enter 1–{MAX_PLOT_COUNT} main plots and sub plots.
+                  {isSplitSplit
+                    ? `Enter 1–${MAX_PLOT_COUNT} main plots, sub plots, and sub-sub plots.`
+                    : `Enter 1–${MAX_PLOT_COUNT} main plots and sub plots.`}
                 </span>
               )}
             </div>

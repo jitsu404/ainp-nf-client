@@ -159,6 +159,7 @@ export default function ExperimentDetail() {
             onEditParameters={() => setModal("parameters")}
             onEditMainPlot={() => setModal("mainPlot")}
             onEditSubPlot={() => setModal("subPlot")}
+            onEditSubSubPlot={() => setModal("subSubPlot")}
             onEditDetails={() => setModal("details")}
           />
         )}
@@ -208,6 +209,14 @@ export default function ExperimentDetail() {
         <TreatmentsModal
           experiment={e}
           type="subPlot"
+          save={save}
+          onClose={close}
+        />
+      )}
+      {modal === "subSubPlot" && (
+        <TreatmentsModal
+          experiment={e}
+          type="subSubPlot"
           save={save}
           onClose={close}
         />

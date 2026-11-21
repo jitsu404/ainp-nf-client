@@ -72,18 +72,23 @@ export function ExperimentOverviewCard({
               {e.endYear ? ` – ${e.endYear}` : ""}
             </b>
           </div>
-          <div>
+          {/* <div>
             <span>Reference treatment</span>
             <b>
               {e.referenceTreatmentCode
                 ? `${e.referenceTreatmentCode} · ${e.treatments.find((t) => t.code === e.referenceTreatmentCode)?.name ?? ""}`
                 : "—"}
             </b>
-          </div>
+          </div> */}
           <div>
             <span>Seasons</span>
             <b>{formatSeasons(e.seasons, seasons, cropName)}</b>
           </div>
+          <div>
+            <span>Replication count</span>
+            <b>{e.replications || 0}</b>
+          </div>
+
           {e.mainPlotCount > 0 && e.subPlotCount > 0 && (
             <div>
               <span>Plots</span>
