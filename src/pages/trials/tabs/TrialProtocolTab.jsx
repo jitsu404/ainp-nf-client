@@ -1,5 +1,7 @@
-import { AlertCircle, Lock, Unlock } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, Lock, SlidersHorizontal, Unlock } from "lucide-react";
 import { Card, Table } from "../../../components/ui";
+import { UpdateProtocolModal } from "../components";
 
 /**
  * Lock/Unlock Toggle Button for Protocol sections.
@@ -47,7 +49,15 @@ function SectionLockToggle({ lockedKey, locked = [], canLock, onToggle }) {
   );
 }
 
-export function TrialProtocolTab({ trial: t, unit, canLock, onToggleLock }) {
+export function TrialProtocolTab({
+  trial: t,
+  unit,
+  canLock,
+  edit,
+  save,
+  onToggleLock,
+}) {
+  const [openWizard, setOpenWizard] = useState(false);
   const e = t.experiment ?? {};
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
@@ -73,8 +83,55 @@ export function TrialProtocolTab({ trial: t, unit, canLock, onToggleLock }) {
 
   const parameters = e.defaultParameters ?? e.parameters ?? [];
 
+  const canEditProtocol = edit || canLock;
+  const allSectionsLocked =
+    (hasPlots
+      ? locked.includes("mainPlot") && locked.includes("subPlot")
+      : true) &&
+    (isSplitSplitPlot ? locked.includes("subSubPlot") : true) &&
+    locked.includes("treatments") &&
+    locked.includes("parameters");
+
   return (
     <div className="stack" style={{ gap: 16 }}>
+      {/* Protocol Toolbar / Action Row */}
+      <div
+        className="row"
+        style={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+        }}
+      >
+        <div className="muted small">
+          Protocol setup for this trial based on <b>{e.design || "Standard"}</b>{" "}
+          design.
+        </div>
+        {canEditProtocol && (
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => setOpenWizard(true)}
+            disabled={allSectionsLocked}
+            title={
+              allSectionsLocked
+                ? "All protocol sections are locked"
+                : "Update trial protocol (plots, treatments, parameters)"
+            }
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              height: 32,
+              padding: "6px 14px",
+            }}
+          >
+            <SlidersHorizontal size={14} /> Update protocol
+          </button>
+        )}
+      </div>
+
       {/* Split / Split-split Plots Configuration */}
       {hasPlots && (
         <div className={isSplitSplitPlot ? "grid g3" : "grid g2"}>
@@ -376,6 +433,15 @@ export function TrialProtocolTab({ trial: t, unit, canLock, onToggleLock }) {
           </div>
         </Card>
       </div>
+
+      {/* Multi-step Protocol Update Modal */}
+      {openWizard && (
+        <UpdateProtocolModal
+          trial={t}
+          save={save}
+          onClose={() => setOpenWizard(false)}
+        />
+      )}
     </div>
   );
 }

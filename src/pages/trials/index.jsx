@@ -144,7 +144,9 @@ export default function TrialDetail() {
           <TrialProtocolTab
             trial={t}
             unit={unit}
+            edit={edit}
             canLock={canLock}
+            save={save}
             onToggleLock={handleToggleLock}
           />
         )}
