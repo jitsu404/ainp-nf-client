@@ -454,6 +454,9 @@ export default function SheetDetail() {
   );
 }
 
+/** Widths (px) of the frozen columns on the left of an entry grid. */
+const FROZEN_COL = { treatment: 96, factor: 124, rep: 60 };
+
 function Grid({
   title,
   factors = [],
@@ -468,6 +471,21 @@ function Grid({
 }) {
   const unit = useUnitLabel();
   const replicated = reps[0] !== null;
+  // Treatment, factor-level and Rep columns are frozen on the left; only the value columns scroll
+  // sideways. Each has a fixed width so the next one knows its `left` offset.
+  const frozenWidths = [
+    FROZEN_COL.treatment,
+    ...factors.map(() => FROZEN_COL.factor),
+    ...(replicated ? [FROZEN_COL.rep] : []),
+  ];
+  const frozen = (i) => {
+    const left = frozenWidths.slice(0, i).reduce((a, b) => a + b, 0);
+    const width = frozenWidths[i];
+    return {
+      className: `frozen${i === 0 ? " frozen-first" : ""}${i === frozenWidths.length - 1 ? " frozen-last" : ""}`,
+      style: { left, width, minWidth: width, maxWidth: width },
+    };
+  };
   const input = (p, key, where) => {
     const cls = `${edits.has(key) ? "dirty" : ""} ${invalid.has(key) ? "invalid" : ""}`;
     const common = {
@@ -508,11 +526,13 @@ function Grid({
         <table className={`entry ${editable ? "" : "ro"}`}>
           <thead>
             <tr>
-              <th className="sticky-col">Treatment</th>
-              {factors.map((f) => (
-                <th key={f.key}>{f.label}</th>
+              <th {...frozen(0)}>Treatment</th>
+              {factors.map((f, i) => (
+                <th key={f.key} {...frozen(i + 1)}>
+                  {f.label}
+                </th>
               ))}
-              {replicated && <th>Rep</th>}
+              {replicated && <th {...frozen(factors.length + 1)}>Rep</th>}
               {params.map((p) => (
                 <th
                   key={p.parameterId}
@@ -538,22 +558,34 @@ function Grid({
             {treatments.flatMap((t) =>
               reps.map((r) => (
                 <tr key={`${t.code}-${r}`}>
-                  <td className="rowhead sticky-col" title={t.name}>
+                  <td
+                    {...frozen(0)}
+                    className={`rowhead ${frozen(0).className}`}
+                    title={t.name}
+                  >
                     {r === null || r === 1 ? t.code : ""}
                   </td>
-                  {factors.map((f) => {
+                  {factors.map((f, i) => {
                     const level = f.levels.find((l) => l.code === t[f.field]);
                     return (
                       <td
                         key={f.key}
-                        className="muted small nowrap"
+                        {...frozen(i + 1)}
+                        className={`muted small nowrap ${frozen(i + 1).className}`}
                         title={level?.name ?? undefined}
                       >
                         {r === null || r === 1 ? (t[f.field] ?? "—") : ""}
                       </td>
                     );
                   })}
-                  {replicated && <td className="muted">R{r}</td>}
+                  {replicated && (
+                    <td
+                      {...frozen(factors.length + 1)}
+                      className={`muted ${frozen(factors.length + 1).className}`}
+                    >
+                      R{r}
+                    </td>
+                  )}
                   {params.map((p) => {
                     const key = cellKey(t.code, r, p.parameterId);
                     const where = [t.code, r ? `R${r}` : ""]

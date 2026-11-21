@@ -116,6 +116,8 @@ textarea {
 }
 .stack {
   display: grid;
+  /* minmax(0, …) so a wide child (an entry table) scrolls inside its box instead of widening the page */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 .grow {
@@ -616,6 +618,50 @@ table.entry select {
 }
 table.entry th {
   padding: 7px 8px;
+}
+/* The header stays put while the rows scroll inside .table-wrap. A box-shadow draws its bottom
+   line because collapsed borders don't travel with sticky cells. */
+table.entry thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+table.entry thead th.sticky-col {
+  z-index: 3;
+}
+/* Frozen left columns (Treatment … Rep): `left` and widths come inline from the grid. */
+table.entry .frozen {
+  position: sticky;
+  z-index: 1;
+  background: var(--surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+table.entry thead th.frozen {
+  z-index: 3;
+  background: #fafbfa;
+}
+table.entry .frozen-last {
+  box-shadow: inset -1px 0 0 var(--line);
+}
+/* On a phone the frozen block would cover the whole grid: keep only Treatment frozen. */
+@media (max-width: 760px) {
+  table.entry td.frozen:not(.frozen-first) {
+    position: static;
+    box-shadow: none;
+  }
+  /* Header cells stay sticky to the top, just not to the left (`left` is set inline). */
+  table.entry thead th.frozen:not(.frozen-first) {
+    left: auto !important;
+    z-index: 2;
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+}
+table.entry thead th.frozen-last {
+  box-shadow:
+    inset -1px 0 0 var(--line),
+    inset 0 -1px 0 var(--line);
 }
 table.entry.ro td {
   padding: 8px 10px;
