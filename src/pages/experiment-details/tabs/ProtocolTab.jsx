@@ -1,5 +1,12 @@
-import { AlertCircle, FlaskConical, ListChecks } from "lucide-react";
+import { useMemo } from "react";
+import {
+  AlertCircle,
+  FlaskConical,
+  ListChecks,
+  SlidersHorizontal,
+} from "lucide-react";
 import { Card, Table } from "../../../components/ui";
+import { seasonMap } from "../../../lib/seasonCrops";
 
 export function ProtocolTab({
   experiment: e,
@@ -11,6 +18,7 @@ export function ProtocolTab({
   onEditSubPlot,
   onEditSubSubPlot,
   onEditDetails,
+  onSetParameters,
 }) {
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
@@ -29,6 +37,15 @@ export function ProtocolTab({
       ? mainCount * subCount * subSubCount
       : mainCount * subCount
     : null;
+
+  const seasonCodes = useMemo(
+    () => Object.keys(seasonMap(e.seasons)),
+    [e.seasons],
+  );
+  const canSetParameters =
+    (e.defaultParameters?.length ?? 0) > 0 &&
+    (e.treatments?.length ?? 0) > 0 &&
+    seasonCodes.length > 0;
 
   return (
     <div className="stack" style={{ gap: 16 }}>
@@ -244,9 +261,16 @@ export function ProtocolTab({
           pad={false}
           actions={
             config && (
-              <button className="btn ghost sm" onClick={onEditTreatments}>
-                <ListChecks size={14} /> Edit treatments
-              </button>
+              <div className="row" style={{ gap: 8 }}>
+                {canSetParameters && (
+                  <button className="btn ghost sm" onClick={onSetParameters}>
+                    <SlidersHorizontal size={14} /> Set parameters
+                  </button>
+                )}
+                <button className="btn ghost sm" onClick={onEditTreatments}>
+                  <ListChecks size={14} /> Edit treatments
+                </button>
+              </div>
             )
           }
         >

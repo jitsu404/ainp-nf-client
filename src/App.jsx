@@ -17,7 +17,7 @@ import Login from "./pages/Login";
 import Masters from "./pages/masters";
 import SheetDetail from "./pages/SheetDetail";
 import Sheets from "./pages/Sheets";
-import TrialDetail from "./pages/TrialDetail";
+import TrialDetail from "./pages/trials/index.jsx";
 
 // Live app: centres and accounts, masters, and research (experiments → trials → observation
 // sheets), all through the API. The prototype's other screens (Finance, AUC/SoE …) stay in the

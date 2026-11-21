@@ -132,6 +132,11 @@ export const useAssignCentres = (experimentId) =>
 
 export const useUpdateTrial = (id) =>
   useResearchMutation(async (body) => (await trialsApi.update(id, body)).data);
+export const useToggleTrialLock = (id) =>
+  useResearchMutation(
+    async ({ lockedKey, isLocked }) =>
+      (await trialsApi.toggleLock(id, { lockedKey, isLocked })).data,
+  );
 export const useCreateSheet = () =>
   useResearchMutation(async (body) => (await sheetsApi.create(body)).data);
 

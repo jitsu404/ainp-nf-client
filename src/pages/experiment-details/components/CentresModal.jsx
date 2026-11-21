@@ -454,8 +454,10 @@ export function CentresModal({ experiment, trials = [], onClose }) {
       )}
 
       <div className="note">
-        Each assigned centre gets its own trial. A withdrawn centre keeps its
-        trial and data, read-only; assigning it again brings them back.
+        Each assigned centre gets its own trial, initialized with the
+        experiment&apos;s treatments and plot configuration. A withdrawn centre
+        keeps its trial and data, read-only; assigning it again brings them
+        back.
       </div>
     </SaveModal>
   );

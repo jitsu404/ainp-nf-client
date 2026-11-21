@@ -1,0 +1,883 @@
+{
+  "success": true,
+  "data": {
+    "experimentId": "6b0128c513e2e3b21a2fff3d",
+    "centreId": {
+      "code": "AJM",
+      "host": "ICAR-National Research Centre on Seed Spices, Tabiji, Ajmer",
+      "name": "Ajmer",
+      "state": "Rajasthan",
+      "id": "6af8394fc5c446de53d91c55"
+    },
+    "treatments": [
+      {
+        "code": "T1",
+        "name": "Treatment - 1",
+        "description": "Treatment - 1 Description",
+        "mainPlotCode": "M1",
+        "subPlotCode": "S1",
+        "subSubPlotCode": "SS1"
+      },
+      {
+        "code": "T2",
+        "name": "Treatment - 2",
+        "description": "Treatment - 2 Description",
+        "mainPlotCode": "M1",
+        "subPlotCode": "S1",
+        "subSubPlotCode": "SS2"
+      },
+      {
+        "code": "T3",
+        "name": "Treatment - 3",
+        "description": "Treatment - 3 Description",
+        "mainPlotCode": "M1",
+        "subPlotCode": "S2",
+        "subSubPlotCode": "SS1"
+      },
+      {
+        "code": "T4",
+        "name": "Treatment - 4",
+        "description": "Treatment - 4 Description",
+        "mainPlotCode": "M1",
+        "subPlotCode": "S2",
+        "subSubPlotCode": "SS2"
+      },
+      {
+        "code": "T5",
+        "name": "Treatment - 5",
+        "description": "Treatment - 5 Description",
+        "mainPlotCode": "M2",
+        "subPlotCode": "S1",
+        "subSubPlotCode": "SS1"
+      },
+      {
+        "code": "T6",
+        "name": "Treatment - 6",
+        "description": "Treatment - 6 Description",
+        "mainPlotCode": "M2",
+        "subPlotCode": "S1",
+        "subSubPlotCode": "SS2"
+      },
+      {
+        "code": "T7",
+        "name": "Treatment - 7",
+        "description": "Treatment - 7 Description",
+        "mainPlotCode": "M2",
+        "subPlotCode": "S2",
+        "subSubPlotCode": "SS1"
+      },
+      {
+        "code": "T8",
+        "name": "Treatment - 8",
+        "description": "Treatment - 8 Description",
+        "mainPlotCode": "M2",
+        "subPlotCode": "S2",
+        "subSubPlotCode": "SS2"
+      }
+    ],
+    "mainPlotData": [
+      {
+        "code": "M1",
+        "name": "MP-1",
+        "description": "MP-1 Details",
+        "mainPlotCode": null,
+        "subPlotCode": null,
+        "subSubPlotCode": null
+      },
+      {
+        "code": "M2",
+        "name": "MP-2",
+        "description": "MP-2 Details",
+        "mainPlotCode": null,
+        "subPlotCode": null,
+        "subSubPlotCode": null
+      }
+    ],
+    "subPlotData": [
+      {
+        "code": "S1",
+        "name": "SP-1",
+        "description": "SP-1 Details",
+        "mainPlotCode": null,
+        "subPlotCode": null,
+        "subSubPlotCode": null
+      },
+      {
+        "code": "S2",
+        "name": "SP-2",
+        "description": "SP-2 Details",
+        "mainPlotCode": null,
+        "subPlotCode": null,
+        "subSubPlotCode": null
+      }
+    ],
+    "subSubPlotData": [
+      {
+        "code": "SS1",
+        "name": "SSP-1",
+        "description": "SSP-1 Details",
+        "mainPlotCode": null,
+        "subPlotCode": null,
+        "subSubPlotCode": null
+      },
+      {
+        "code": "SS2",
+        "name": "SSP-2",
+        "description": "SSP-2 Details",
+        "mainPlotCode": null,
+        "subPlotCode": null,
+        "subSubPlotCode": null
+      }
+    ],
+    "disabledParameters": [
+      {
+        "treatment": "T2",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb16"
+      },
+      {
+        "treatment": "T2",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb14"
+      },
+      {
+        "treatment": "T2",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb12"
+      },
+      {
+        "treatment": "T2",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb15"
+      },
+      {
+        "treatment": "T2",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb13"
+      },
+      {
+        "treatment": "T4",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb15"
+      },
+      {
+        "treatment": "T4",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb16"
+      },
+      {
+        "treatment": "T4",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb14"
+      },
+      {
+        "treatment": "T4",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb12"
+      },
+      {
+        "treatment": "T8",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb12"
+      },
+      {
+        "treatment": "T8",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb15"
+      },
+      {
+        "treatment": "T8",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb13"
+      },
+      {
+        "treatment": "T6",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      },
+      {
+        "treatment": "T5",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      },
+      {
+        "treatment": "T4",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      },
+      {
+        "treatment": "T3",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      },
+      {
+        "treatment": "T3",
+        "season": "KHARIF",
+        "parameterId": "6afacd180798267fa8dccb13"
+      },
+      {
+        "treatment": "T1",
+        "season": "PRE_KHARIF",
+        "parameterId": "6afacd180798267fa8dccb12"
+      },
+      {
+        "treatment": "T1",
+        "season": "PRE_KHARIF",
+        "parameterId": "6afacd180798267fa8dccb13"
+      },
+      {
+        "treatment": "T3",
+        "season": "PRE_KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      },
+      {
+        "treatment": "T4",
+        "season": "PRE_KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      },
+      {
+        "treatment": "T5",
+        "season": "PRE_KHARIF",
+        "parameterId": "6afacd180798267fa8dccb18"
+      }
+    ],
+    "inChargeUserId": null,
+    "layoutNotes": null,
+    "status": "Setup",
+    "assignmentStatus": "Active",
+    "assignedAt": "2026-11-21T07:22:13.117Z",
+    "assignedBy": "6afacdc46afd9bcb1a625c92",
+    "withdrawnAt": null,
+    "withdrawnBy": null,
+    "withdrawReason": null,
+    "createdBy": "6afacdc46afd9bcb1a625c92",
+    "updatedBy": "6afacdc46afd9bcb1a625c92",
+    "seasonCrops": {},
+    "croppingSystems": [],
+    "practices": [],
+    "createdAt": "2026-11-21T06:45:30.437Z",
+    "updatedAt": "2026-11-21T07:22:13.123Z",
+    "id": "6b013e0a081f88154fa0a588",
+    "cropsBySeason": [
+      {
+        "seasonCode": "PRE_KHARIF",
+        "crops": [
+          {
+            "id": "6afacd170798267fa8dcca73",
+            "code": "CRP-002",
+            "name": "Wheat"
+          },
+          {
+            "id": "6afacd170798267fa8dcca72",
+            "code": "CRP-001",
+            "name": "Rice"
+          }
+        ],
+        "defaultCrops": [
+          {
+            "id": "6afacd170798267fa8dcca73",
+            "code": "CRP-002",
+            "name": "Wheat"
+          },
+          {
+            "id": "6afacd170798267fa8dcca72",
+            "code": "CRP-001",
+            "name": "Rice"
+          }
+        ],
+        "changed": false,
+        "inProtocol": true
+      },
+      {
+        "seasonCode": "KHARIF",
+        "crops": [
+          {
+            "id": "6afacd170798267fa8dcca72",
+            "code": "CRP-001",
+            "name": "Rice"
+          },
+          {
+            "id": "6afacd170798267fa8dcca75",
+            "code": "CRP-004",
+            "name": "Barley"
+          }
+        ],
+        "defaultCrops": [
+          {
+            "id": "6afacd170798267fa8dcca72",
+            "code": "CRP-001",
+            "name": "Rice"
+          },
+          {
+            "id": "6afacd170798267fa8dcca75",
+            "code": "CRP-004",
+            "name": "Barley"
+          }
+        ],
+        "changed": false,
+        "inProtocol": true
+      }
+    ],
+    "experiment": {
+      "code": "AINP-NF-EXPT-007",
+      "title": "TEST EXP",
+      "programmeCode": "P1",
+      "objectives": ["OBJ 1", "OBJ 2"],
+      "design": "Split-split plot",
+      "replications": 3,
+      "mainPlotCount": 2,
+      "subPlotCount": 2,
+      "subSubPlotCount": 2,
+      "referenceTreatmentCode": null,
+      "seasons": {
+        "PRE_KHARIF": ["6afacd170798267fa8dcca73", "6afacd170798267fa8dcca72"],
+        "KHARIF": ["6afacd170798267fa8dcca72", "6afacd170798267fa8dcca75"]
+      },
+      "startYear": 2026,
+      "startYearDate": "2026-01-01T00:00:00.000Z",
+      "endYear": 2029,
+      "endYearDate": "2029-12-31T23:59:59.999Z",
+      "status": "Draft",
+      "centreIds": ["6af8394fc5c446de53d91c55"],
+      "piUserId": null,
+      "dataLocked": false,
+      "createdBy": "6afacdc46afd9bcb1a625c92",
+      "updatedBy": "6afacdc46afd9bcb1a625c92",
+      "treatments": [
+        {
+          "code": "T1",
+          "name": "Treatment - 1",
+          "description": "Treatment - 1 Description",
+          "mainPlotCode": "M1",
+          "subPlotCode": "S1",
+          "subSubPlotCode": "SS1"
+        },
+        {
+          "code": "T2",
+          "name": "Treatment - 2",
+          "description": "Treatment - 2 Description",
+          "mainPlotCode": "M1",
+          "subPlotCode": "S1",
+          "subSubPlotCode": "SS2"
+        },
+        {
+          "code": "T3",
+          "name": "Treatment - 3",
+          "description": "Treatment - 3 Description",
+          "mainPlotCode": "M1",
+          "subPlotCode": "S2",
+          "subSubPlotCode": "SS1"
+        },
+        {
+          "code": "T4",
+          "name": "Treatment - 4",
+          "description": "Treatment - 4 Description",
+          "mainPlotCode": "M1",
+          "subPlotCode": "S2",
+          "subSubPlotCode": "SS2"
+        },
+        {
+          "code": "T5",
+          "name": "Treatment - 5",
+          "description": "Treatment - 5 Description",
+          "mainPlotCode": "M2",
+          "subPlotCode": "S1",
+          "subSubPlotCode": "SS1"
+        },
+        {
+          "code": "T6",
+          "name": "Treatment - 6",
+          "description": "Treatment - 6 Description",
+          "mainPlotCode": "M2",
+          "subPlotCode": "S1",
+          "subSubPlotCode": "SS2"
+        },
+        {
+          "code": "T7",
+          "name": "Treatment - 7",
+          "description": "Treatment - 7 Description",
+          "mainPlotCode": "M2",
+          "subPlotCode": "S2",
+          "subSubPlotCode": "SS1"
+        },
+        {
+          "code": "T8",
+          "name": "Treatment - 8",
+          "description": "Treatment - 8 Description",
+          "mainPlotCode": "M2",
+          "subPlotCode": "S2",
+          "subSubPlotCode": "SS2"
+        }
+      ],
+      "mainPlotData": [
+        {
+          "mainPlotCode": null,
+          "subPlotCode": null,
+          "subSubPlotCode": null,
+          "code": "M1",
+          "name": "MP-1",
+          "description": "MP-1 Details"
+        },
+        {
+          "mainPlotCode": null,
+          "subPlotCode": null,
+          "subSubPlotCode": null,
+          "code": "M2",
+          "name": "MP-2",
+          "description": "MP-2 Details"
+        }
+      ],
+      "subPlotData": [
+        {
+          "mainPlotCode": null,
+          "subPlotCode": null,
+          "subSubPlotCode": null,
+          "code": "S1",
+          "name": "SP-1",
+          "description": "SP-1 Details"
+        },
+        {
+          "mainPlotCode": null,
+          "subPlotCode": null,
+          "subSubPlotCode": null,
+          "code": "S2",
+          "name": "SP-2",
+          "description": "SP-2 Details"
+        }
+      ],
+      "subSubPlotData": [
+        {
+          "mainPlotCode": null,
+          "subPlotCode": null,
+          "subSubPlotCode": null,
+          "code": "SS1",
+          "name": "SSP-1",
+          "description": "SSP-1 Details"
+        },
+        {
+          "mainPlotCode": null,
+          "subPlotCode": null,
+          "subSubPlotCode": null,
+          "code": "SS2",
+          "name": "SSP-2",
+          "description": "SSP-2 Details"
+        }
+      ],
+      "defaultParameters": [
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb16",
+          "code": "PRM_001",
+          "name": "Benefit : cost ratio",
+          "unitCode": "UNT-026",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 2,
+          "min": 0,
+          "max": 100,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb14",
+          "code": "PRM_005",
+          "name": "Net returns",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": null,
+          "max": 100000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb12",
+          "code": "PRM_002",
+          "name": "Cost of cultivation",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": 0,
+          "max": 10000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb15",
+          "code": "PRM_006",
+          "name": "Net returns (with organic premium)",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": null,
+          "max": 100000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb13",
+          "code": "PRM_003",
+          "name": "Gross returns",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": 0,
+          "max": 100000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb18",
+          "code": "PRM_007",
+          "name": "Sale price of intercrop",
+          "unitCode": "UNT-006",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 2,
+          "min": 0,
+          "max": 100000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb1a",
+          "code": "PRM_004",
+          "name": "Input cost reduction",
+          "unitCode": "UNT-008",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 1,
+          "min": -100,
+          "max": 100,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb17",
+          "code": "PRM_008",
+          "name": "Sale price of main crop",
+          "unitCode": "UNT-006",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 2,
+          "min": 0,
+          "max": 100000,
+          "choices": [],
+          "formula": null
+        }
+      ],
+      "metadata": {
+        "smdName": null,
+        "instituteName": null,
+        "unitType": null,
+        "unitName": null,
+        "projectTitle": null,
+        "projectCode": null,
+        "datasetTitle": null,
+        "description": null,
+        "piNames": null,
+        "piDesignations": null,
+        "piEmails": null,
+        "fundingType": null,
+        "fundingSource": null,
+        "subject": null,
+        "keywords": null,
+        "commodity": null,
+        "completionDate": null,
+        "dataCategory": null,
+        "design": null,
+        "plotSize": null,
+        "dataFormat": [],
+        "dataType": null,
+        "methodology": null,
+        "instruments": null,
+        "dataScale": null,
+        "language": null,
+        "temporalExtent": null,
+        "seasons": null,
+        "spatialExtent": null,
+        "availabilityLocation": null,
+        "custodian": null,
+        "embargoYears": null,
+        "source": null,
+        "relation": null,
+        "citation": null,
+        "attributes": null,
+        "resource": null,
+        "coPis": []
+      },
+      "createdAt": "2026-11-21T05:14:45.083Z",
+      "updatedAt": "2026-11-21T07:22:13.242Z",
+      "disabledParameters": [
+        {
+          "treatment": "T2",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb16"
+        },
+        {
+          "treatment": "T2",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb14"
+        },
+        {
+          "treatment": "T2",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb12"
+        },
+        {
+          "treatment": "T2",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb15"
+        },
+        {
+          "treatment": "T2",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb13"
+        },
+        {
+          "treatment": "T4",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb15"
+        },
+        {
+          "treatment": "T4",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb16"
+        },
+        {
+          "treatment": "T4",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb14"
+        },
+        {
+          "treatment": "T4",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb12"
+        },
+        {
+          "treatment": "T8",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb12"
+        },
+        {
+          "treatment": "T8",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb15"
+        },
+        {
+          "treatment": "T8",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb13"
+        },
+        {
+          "treatment": "T6",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        },
+        {
+          "treatment": "T5",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        },
+        {
+          "treatment": "T4",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        },
+        {
+          "treatment": "T3",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        },
+        {
+          "treatment": "T3",
+          "season": "KHARIF",
+          "parameterId": "6afacd180798267fa8dccb13"
+        },
+        {
+          "treatment": "T1",
+          "season": "PRE_KHARIF",
+          "parameterId": "6afacd180798267fa8dccb12"
+        },
+        {
+          "treatment": "T1",
+          "season": "PRE_KHARIF",
+          "parameterId": "6afacd180798267fa8dccb13"
+        },
+        {
+          "treatment": "T3",
+          "season": "PRE_KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        },
+        {
+          "treatment": "T4",
+          "season": "PRE_KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        },
+        {
+          "treatment": "T5",
+          "season": "PRE_KHARIF",
+          "parameterId": "6afacd180798267fa8dccb18"
+        }
+      ],
+      "id": "6b0128c513e2e3b21a2fff3d",
+      "parameters": [
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb16",
+          "code": "PRM_001",
+          "name": "Benefit : cost ratio",
+          "unitCode": "UNT-026",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 2,
+          "min": 0,
+          "max": 100,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb14",
+          "code": "PRM_005",
+          "name": "Net returns",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": null,
+          "max": 100000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb12",
+          "code": "PRM_002",
+          "name": "Cost of cultivation",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": 0,
+          "max": 10000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb15",
+          "code": "PRM_006",
+          "name": "Net returns (with organic premium)",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": null,
+          "max": 100000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb13",
+          "code": "PRM_003",
+          "name": "Gross returns",
+          "unitCode": "UNT-005",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 0,
+          "min": 0,
+          "max": 100000000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb18",
+          "code": "PRM_007",
+          "name": "Sale price of intercrop",
+          "unitCode": "UNT-006",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 2,
+          "min": 0,
+          "max": 100000,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb1a",
+          "code": "PRM_004",
+          "name": "Input cost reduction",
+          "unitCode": "UNT-008",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 1,
+          "min": -100,
+          "max": 100,
+          "choices": [],
+          "formula": null
+        },
+        {
+          "section": "Economics",
+          "level": "plot",
+          "required": false,
+          "parameterId": "6afacd180798267fa8dccb17",
+          "code": "PRM_008",
+          "name": "Sale price of main crop",
+          "unitCode": "UNT-006",
+          "category": "Economics",
+          "dataType": "number",
+          "decimals": 2,
+          "min": 0,
+          "max": 100000,
+          "choices": [],
+          "formula": null
+        }
+      ]
+    }
+  }
+}

@@ -19,6 +19,7 @@ import {
   ExperimentOverviewCard,
   ExperimentStatusSwitch,
   ParametersModal,
+  TreatmentParametersModal,
   TreatmentsModal,
 } from "./components";
 import { getExperimentTabs } from "./experiment-tabs";
@@ -167,6 +168,7 @@ export default function ExperimentDetail() {
             onEditSubPlot={() => setModal("subPlot")}
             onEditSubSubPlot={() => setModal("subSubPlot")}
             onEditDetails={() => setModal("details")}
+            onSetParameters={() => setModal("treatmentParameters")}
           />
         )}
 
@@ -229,6 +231,9 @@ export default function ExperimentDetail() {
       )}
       {modal === "parameters" && (
         <ParametersModal experiment={e} save={save} onClose={close} />
+      )}
+      {modal === "treatmentParameters" && (
+        <TreatmentParametersModal experiment={e} save={save} onClose={close} />
       )}
       {modal === "pi" && (
         <LinkExperimentPiModal experiment={e} save={save} onClose={close} />

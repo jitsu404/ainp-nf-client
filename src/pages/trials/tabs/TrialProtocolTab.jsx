@@ -1,0 +1,381 @@
+import { AlertCircle, Lock, Unlock } from "lucide-react";
+import { Card, Table } from "../../../components/ui";
+
+/**
+ * Lock/Unlock Toggle Button for Protocol sections.
+ */
+function SectionLockToggle({ lockedKey, locked = [], canLock, onToggle }) {
+  const isLocked = locked.includes(lockedKey);
+
+  return (
+    <button
+      type="button"
+      className="btn sm"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: isLocked
+          ? "var(--amber-bg, #fdf1dc)"
+          : "var(--green-bg, #e7f5ec)",
+        color: isLocked ? "var(--amber, #a86200)" : "var(--green, #1b7f4b)",
+        borderColor: isLocked
+          ? "rgba(168, 98, 0, 0.3)"
+          : "rgba(27, 127, 75, 0.3)",
+        cursor: canLock ? "pointer" : "default",
+        fontWeight: 600,
+        fontSize: "0.8rem",
+        padding: "4px 10px",
+        height: 28,
+        borderRadius: 6,
+      }}
+      disabled={!canLock}
+      onClick={() => canLock && onToggle(lockedKey, !isLocked)}
+      title={
+        canLock
+          ? isLocked
+            ? `Section is locked. Click to unlock.`
+            : `Section is unlocked. Click to lock.`
+          : isLocked
+            ? `Locked`
+            : `Unlocked`
+      }
+    >
+      {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
+      <span>{isLocked ? "Locked" : "Unlocked"}</span>
+    </button>
+  );
+}
+
+export function TrialProtocolTab({ trial: t, unit, canLock, onToggleLock }) {
+  const e = t.experiment ?? {};
+  const isSplitPlot = e.design === "Split plot";
+  const isSplitSplitPlot = e.design === "Split-split plot";
+  const hasPlots = isSplitPlot || isSplitSplitPlot;
+  const isDerivedTreatments = isSplitPlot || isSplitSplitPlot;
+
+  const mainCount = e.mainPlotCount ?? 0;
+  const subCount = e.subPlotCount ?? 0;
+  const subSubCount = e.subSubPlotCount ?? 0;
+
+  // Use the trial's own plot data and treatments
+  const mainData = t.mainPlotData ?? [];
+  const subData = t.subPlotData ?? [];
+  const subSubData = t.subSubPlotData ?? [];
+  const treatments = t.treatments ?? [];
+  const locked = t.locked ?? [];
+
+  const expectedTreatments = isDerivedTreatments
+    ? isSplitSplitPlot
+      ? mainCount * subCount * subSubCount
+      : mainCount * subCount
+    : null;
+
+  const parameters = e.defaultParameters ?? e.parameters ?? [];
+
+  return (
+    <div className="stack" style={{ gap: 16 }}>
+      {/* Split / Split-split Plots Configuration */}
+      {hasPlots && (
+        <div className={isSplitSplitPlot ? "grid g3" : "grid g2"}>
+          {/* Main Plot Card */}
+          <Card
+            title={
+              mainCount > 0
+                ? `Main Plot (${mainData.length} of ${mainCount})`
+                : "Main Plot"
+            }
+            pad={mainCount <= 0}
+            actions={
+              <SectionLockToggle
+                lockedKey="mainPlot"
+                locked={locked}
+                canLock={canLock}
+                onToggle={onToggleLock}
+              />
+            }
+          >
+            {mainCount <= 0 ? (
+              <div className="note warn">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>
+                  Main Plot Count is currently 0 in experiment protocol.
+                </span>
+              </div>
+            ) : (
+              <Table
+                rows={mainData.map((m) => ({ ...m, id: m.code }))}
+                pageSize={30}
+                empty="No main plots configured."
+                columns={[
+                  { label: "Code", render: (m) => <b>{m.code}</b> },
+                  { label: "Main Plot", key: "name" },
+                  {
+                    label: "Details",
+                    render: (m) => (
+                      <span className="muted small">
+                        {m.description || "—"}
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            )}
+          </Card>
+
+          {/* Sub Plot Card */}
+          <Card
+            title={
+              subCount > 0
+                ? `Sub Plot (${subData.length} of ${subCount})`
+                : "Sub Plot"
+            }
+            pad={subCount <= 0}
+            actions={
+              <SectionLockToggle
+                lockedKey="subPlot"
+                locked={locked}
+                canLock={canLock}
+                onToggle={onToggleLock}
+              />
+            }
+          >
+            {subCount <= 0 ? (
+              <div className="note warn">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>
+                  Sub Plot Count is currently 0 in experiment protocol.
+                </span>
+              </div>
+            ) : (
+              <Table
+                rows={subData.map((s) => ({ ...s, id: s.code }))}
+                pageSize={30}
+                empty="No sub plots configured."
+                columns={[
+                  { label: "Code", render: (s) => <b>{s.code}</b> },
+                  { label: "Sub Plot", key: "name" },
+                  {
+                    label: "Details",
+                    render: (s) => (
+                      <span className="muted small">
+                        {s.description || "—"}
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            )}
+          </Card>
+
+          {/* Sub-sub Plot Card */}
+          {isSplitSplitPlot && (
+            <Card
+              title={
+                subSubCount > 0
+                  ? `Sub-sub Plot (${subSubData.length} of ${subSubCount})`
+                  : "Sub-sub Plot"
+              }
+              pad={subSubCount <= 0}
+              actions={
+                <SectionLockToggle
+                  lockedKey="subSubPlot"
+                  locked={locked}
+                  canLock={canLock}
+                  onToggle={onToggleLock}
+                />
+              }
+            >
+              {subSubCount <= 0 ? (
+                <div className="note warn">
+                  <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                  <span>
+                    Sub-sub Plot Count is currently 0 in experiment protocol.
+                  </span>
+                </div>
+              ) : (
+                <Table
+                  rows={subSubData.map((ss) => ({ ...ss, id: ss.code }))}
+                  pageSize={30}
+                  empty="No sub-sub plots configured."
+                  columns={[
+                    { label: "Code", render: (ss) => <b>{ss.code}</b> },
+                    { label: "Sub-sub Plot", key: "name" },
+                    {
+                      label: "Details",
+                      render: (ss) => (
+                        <span className="muted small">
+                          {ss.description || "—"}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              )}
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Treatments Section */}
+      <div
+        className={isDerivedTreatments ? "stack" : "grid g2"}
+        style={{ gap: 16 }}
+      >
+        <Card
+          title={
+            isDerivedTreatments && expectedTreatments > 0
+              ? `Treatments (${treatments.length} of ${expectedTreatments})`
+              : `Treatments (${treatments.length})`
+          }
+          pad={false}
+          actions={
+            <SectionLockToggle
+              lockedKey="treatments"
+              locked={locked}
+              canLock={canLock}
+              onToggle={onToggleLock}
+            />
+          }
+        >
+          <Table
+            rows={treatments.map((tr) => ({ ...tr, id: tr.code }))}
+            pageSize={30}
+            empty="No treatments configured yet."
+            columns={
+              isDerivedTreatments
+                ? [
+                    { label: "Code", render: (tr) => <b>{tr.code}</b> },
+                    {
+                      label: "Main Plot",
+                      render: (tr) => {
+                        const name = mainData.find(
+                          (m) => m.code === tr.mainPlotCode,
+                        )?.name;
+                        return tr.mainPlotCode ? (
+                          <span>
+                            <b>{tr.mainPlotCode}</b>
+                            {name ? (
+                              <span className="muted small"> ({name})</span>
+                            ) : (
+                              ""
+                            )}
+                          </span>
+                        ) : (
+                          "—"
+                        );
+                      },
+                    },
+                    {
+                      label: "Sub Plot",
+                      render: (tr) => {
+                        const name = subData.find(
+                          (s) => s.code === tr.subPlotCode,
+                        )?.name;
+                        return tr.subPlotCode ? (
+                          <span>
+                            <b>{tr.subPlotCode}</b>
+                            {name ? (
+                              <span className="muted small"> ({name})</span>
+                            ) : (
+                              ""
+                            )}
+                          </span>
+                        ) : (
+                          "—"
+                        );
+                      },
+                    },
+                    ...(isSplitSplitPlot
+                      ? [
+                          {
+                            label: "Sub-sub Plot",
+                            render: (tr) => {
+                              const name = subSubData.find(
+                                (ss) => ss.code === tr.subSubPlotCode,
+                              )?.name;
+                              return tr.subSubPlotCode ? (
+                                <span>
+                                  <b>{tr.subSubPlotCode}</b>
+                                  {name ? (
+                                    <span className="muted small">
+                                      {" "}
+                                      ({name})
+                                    </span>
+                                  ) : (
+                                    ""
+                                  )}
+                                </span>
+                              ) : (
+                                "—"
+                              );
+                            },
+                          },
+                        ]
+                      : []),
+                    { label: "Treatment", key: "name" },
+                    {
+                      label: "Details",
+                      render: (tr) => (
+                        <span className="muted small">
+                          {tr.description || "—"}
+                        </span>
+                      ),
+                    },
+                  ]
+                : [
+                    { label: "Code", render: (tr) => <b>{tr.code}</b> },
+                    { label: "Treatment", key: "name" },
+                    {
+                      label: "Details",
+                      render: (tr) => (
+                        <span className="muted small">
+                          {tr.description || "—"}
+                        </span>
+                      ),
+                    },
+                  ]
+            }
+          />
+        </Card>
+
+        {/* Parameters Recorded Card */}
+        <Card title="Parameters recorded" pad={false}>
+          <Table
+            rows={parameters.map((p) => ({
+              ...p,
+              id: p.parameterId,
+            }))}
+            pageSize={30}
+            empty="No parameters recorded."
+            columns={[
+              { label: "Section", key: "section" },
+              {
+                label: "Parameter",
+                render: (p) => (
+                  <>
+                    {p.name}
+                    {p.required && !p.formula && (
+                      <span className="muted"> *</span>
+                    )}
+                  </>
+                ),
+              },
+              { label: "Unit", render: (p) => unit?.(p.unitCode) || "—" },
+              {
+                label: "Recorded",
+                render: (p) =>
+                  (p.level === "plot" && e.replications
+                    ? "Per plot"
+                    : "Per treatment") + (p.formula ? " · calculated" : ""),
+              },
+            ]}
+          />
+          <div className="muted small" style={{ padding: "8px 16px" }}>
+            * required before a sheet can be submitted
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}

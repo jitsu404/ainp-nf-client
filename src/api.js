@@ -208,6 +208,8 @@ export const trialsApi = {
   list: (params) => api.get("/trials", params),
   get: (id) => api.get(`/trials/${id}`),
   update: (id, body) => api.patch(`/trials/${id}`, body),
+  toggleLock: (id, { lockedKey, isLocked }) =>
+    api.patch(`/trials/${id}/lock`, { lockedKey, isLocked }),
   getMetadata: (id) => api.get(`/trials/${id}/metadata`),
   saveMetadata: (id, body) => api.put(`/trials/${id}/metadata`, body),
 };
