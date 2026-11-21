@@ -12,7 +12,7 @@ export const PHOTOS = Object.entries(
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([, src]) => src);
 
-const SLIDE_MS = 5000;
+const SLIDE_MS = 2000;
 
 /**
  * Cross-fading photo carousel: advances every few seconds (not when the user prefers reduced
