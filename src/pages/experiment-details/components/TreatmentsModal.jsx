@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { SaveModal } from "../../../components/forms";
 import { Body, SmallBody } from "../../../components/ui";
+import { useCroppingSystems } from "../../../queries/croppingSystems";
 
 export function TreatmentsModal({
   experiment,
@@ -9,35 +10,48 @@ export function TreatmentsModal({
   save,
   onClose,
 }) {
-  const isMainPlot = type === "mainPlot";
-  const isSubPlot = type === "subPlot";
-  const isSubSubPlot = type === "subSubPlot";
-  const isPlot = isMainPlot || isSubPlot || isSubSubPlot;
+  const croppingSystems = useCroppingSystems();
 
   const isSplitPlot = experiment?.design === "Split plot";
   const isSplitSplitPlot = experiment?.design === "Split-split plot";
-  // Factorial: the three level lists are factors A, B and (optional) C, and the treatments are their
-  // combinations, generated like split-plot treatments.
   const isFactorial = experiment?.design === "Factorial";
+
+  const isFactor1 = isFactorial
+    ? type === "factor1" || type === "mainPlot"
+    : type === "factor1";
+  const isFactor2 = isFactorial
+    ? type === "factor2" || type === "subPlot"
+    : type === "factor2";
+  const isFactor3 = isFactorial
+    ? type === "factor3" || type === "subSubPlot"
+    : type === "factor3";
+  const isFactor = isFactor1 || isFactor2 || isFactor3;
+
+  const isMainPlot = !isFactorial && type === "mainPlot";
+  const isSubPlot = !isFactorial && type === "subPlot";
+  const isSubSubPlot = !isFactorial && type === "subSubPlot";
+  const isPlot = isMainPlot || isSubPlot || isSubSubPlot;
+
+  const isLevelConfig = isPlot || isFactor;
   const isDerivedTreatments =
-    !isPlot && (isSplitPlot || isSplitSplitPlot || isFactorial);
+    !isLevelConfig && (isSplitPlot || isSplitSplitPlot || isFactorial);
 
   const mCount = experiment?.mainPlotCount ?? 0;
   const sCount = experiment?.subPlotCount ?? 0;
   const ssCount =
     isSplitSplitPlot || isFactorial ? (experiment?.subSubPlotCount ?? 0) : 0;
-  // A third level list in use (split-split plot, or a 3-factor factorial).
   const hasC = isSplitSplitPlot || (isFactorial && ssCount > 0);
+
   const names = isFactorial
     ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
     : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
 
-  const targetCount = isPlot
-    ? isMainPlot
+  const targetCount = isLevelConfig
+    ? isMainPlot || isFactor1
       ? mCount
-      : isSubPlot
+      : isSubPlot || isFactor2
         ? sCount
-        : isSubSubPlot
+        : isSubSubPlot || isFactor3
           ? ssCount
           : null
     : isDerivedTreatments
@@ -46,76 +60,198 @@ export function TreatmentsModal({
         : mCount * sCount
       : null;
 
-  const fieldKey = isMainPlot
-    ? "mainPlotData"
-    : isSubPlot
-      ? "subPlotData"
-      : isSubSubPlot
-        ? "subSubPlotData"
-        : "treatments";
+  const fieldKey = isFactor1
+    ? "factor1Data"
+    : isFactor2
+      ? "factor2Data"
+      : isFactor3
+        ? "factor3Data"
+        : isMainPlot
+          ? "mainPlotData"
+          : isSubPlot
+            ? "subPlotData"
+            : isSubSubPlot
+              ? "subSubPlotData"
+              : "treatments";
 
-  const prefix = isMainPlot ? "M" : isSubPlot ? "S" : isSubSubPlot ? "SS" : "T";
+  const prefix = isFactor1
+    ? "F1_"
+    : isFactor2
+      ? "F2_"
+      : isFactor3
+        ? "F3_"
+        : isMainPlot
+          ? "M"
+          : isSubPlot
+            ? "S"
+            : isSubSubPlot
+              ? "SS"
+              : "T";
 
-  const existingList = isMainPlot
-    ? (experiment.mainPlotData ?? [])
-    : isSubPlot
-      ? (experiment.subPlotData ?? [])
-      : isSubSubPlot
-        ? (experiment.subSubPlotData ?? [])
-        : (experiment.treatments ?? []);
+  const existingList = isFactor1
+    ? (experiment.factor1Data ?? [])
+    : isFactor2
+      ? (experiment.factor2Data ?? [])
+      : isFactor3
+        ? (experiment.factor3Data ?? [])
+        : isMainPlot
+          ? (experiment.mainPlotData ?? [])
+          : isSubPlot
+            ? (experiment.subPlotData ?? [])
+            : isSubSubPlot
+              ? (experiment.subSubPlotData ?? [])
+              : (experiment.treatments ?? []);
 
   const original = new Set(existingList.map((t) => t.code));
 
   const mainPlotName = (code) =>
     (experiment.mainPlotData ?? []).find((t) => t.code === code)?.name || "";
-  const subPlotName = (code) =>
-    (experiment.subPlotData ?? []).find((t) => t.code === code)?.name || "";
+  const subPlotName = (code) => {
+    const sp = (experiment.subPlotData ?? []).find((t) => t.code === code);
+    return croppingSystems.nameOf(sp?.croppingSystem) || sp?.code || "";
+  };
   const subSubPlotName = (code) =>
     (experiment.subSubPlotData ?? []).find((t) => t.code === code)?.name || "";
 
+  const factor1Name = (code) =>
+    (experiment.factor1Data ?? []).find((t) => t.code === code)?.name || "";
+  const factor2Name = (code) =>
+    (experiment.factor2Data ?? []).find((t) => t.code === code)?.name || "";
+  const factor3Name = (code) =>
+    (experiment.factor3Data ?? []).find((t) => t.code === code)?.name || "";
+
   const generateDerivedRows = () => {
-    if (mCount <= 0 || sCount <= 0 || (isSplitSplitPlot && ssCount <= 0)) {
+    if (mCount <= 0 || sCount <= 0 || (hasC && ssCount <= 0)) {
       return [];
     }
     const existing = experiment?.treatments ?? [];
-    const existingMap = new Map();
-    for (const t of existing) {
-      if (t.mainPlotCode && t.subPlotCode) {
-        const key = `${t.mainPlotCode}|${t.subPlotCode}|${t.subSubPlotCode ?? ""}`;
-        existingMap.set(key, t);
-      }
-    }
-
     const generated = [];
     let idx = 1;
-    for (let m = 1; m <= mCount; m++) {
-      for (let s = 1; s <= sCount; s++) {
-        if (hasC) {
-          for (let ss = 1; ss <= ssCount; ss++) {
-            const key = `M${m}|S${s}|SS${ss}`;
+
+    if (isFactorial) {
+      const existingMap = new Map();
+      for (const t of existing) {
+        if (t.factor1Code && t.factor2Code) {
+          const key = `${t.factor1Code}|${t.factor2Code}|${t.factor3Code ?? ""}`;
+          existingMap.set(key, t);
+        }
+      }
+
+      const f1List = experiment.factor1Data ?? [];
+      const f2List = experiment.factor2Data ?? [];
+      const f3List = experiment.factor3Data ?? [];
+
+      for (let m = 1; m <= mCount; m++) {
+        const f1Code = f1List[m - 1]?.code || `F1_${m}`;
+        const f1Item = f1List[m - 1];
+        for (let s = 1; s <= sCount; s++) {
+          const f2Code = f2List[s - 1]?.code || `F2_${s}`;
+          const f2Item = f2List[s - 1];
+          if (hasC) {
+            for (let ss = 1; ss <= ssCount; ss++) {
+              const f3Code = f3List[ss - 1]?.code || `F3_${ss}`;
+              const f3Item = f3List[ss - 1];
+              const key = `${f1Code}|${f2Code}|${f3Code}`;
+              const match = existingMap.get(key) || existing[idx - 1];
+              const autoName = [f1Item?.name, f2Item?.name, f3Item?.name]
+                .filter(Boolean)
+                .join(" | ");
+              generated.push({
+                code: `T${idx}`,
+                factor1Code: f1Code,
+                factor2Code: f2Code,
+                factor3Code: f3Code,
+                mainPlotCode: null,
+                subPlotCode: null,
+                subSubPlotCode: null,
+                name: match?.name ?? autoName,
+                description: match?.description ?? "",
+              });
+              idx++;
+            }
+          } else {
+            const key = `${f1Code}|${f2Code}|`;
             const match = existingMap.get(key) || existing[idx - 1];
+            const autoName = [f1Item?.name, f2Item?.name]
+              .filter(Boolean)
+              .join(" | ");
             generated.push({
               code: `T${idx}`,
-              mainPlotCode: `M${m}`,
-              subPlotCode: `S${s}`,
-              subSubPlotCode: `SS${ss}`,
-              name: match?.name ?? "",
+              factor1Code: f1Code,
+              factor2Code: f2Code,
+              factor3Code: null,
+              mainPlotCode: null,
+              subPlotCode: null,
+              subSubPlotCode: null,
+              name: match?.name ?? autoName,
               description: match?.description ?? "",
             });
             idx++;
           }
-        } else {
-          const key = `M${m}|S${s}|`;
-          const match = existingMap.get(key) || existing[idx - 1];
-          generated.push({
-            code: `T${idx}`,
-            mainPlotCode: `M${m}`,
-            subPlotCode: `S${s}`,
-            subSubPlotCode: null,
-            name: match?.name ?? "",
-            description: match?.description ?? "",
-          });
-          idx++;
+        }
+      }
+    } else {
+      // Split Plot or Split-split Plot
+      const existingMap = new Map();
+      for (const t of existing) {
+        if (t.mainPlotCode && t.subPlotCode) {
+          const key = `${t.mainPlotCode}|${t.subPlotCode}|${t.subSubPlotCode ?? ""}`;
+          existingMap.set(key, t);
+        }
+      }
+
+      const mList = experiment.mainPlotData ?? [];
+      const sList = experiment.subPlotData ?? [];
+      const ssList = experiment.subSubPlotData ?? [];
+
+      for (let m = 1; m <= mCount; m++) {
+        const mCode = mList[m - 1]?.code || `M${m}`;
+        const mItem = mList[m - 1];
+        for (let s = 1; s <= sCount; s++) {
+          const sCode = sList[s - 1]?.code || `S${s}`;
+          const sItem = sList[s - 1];
+          const csName = croppingSystems.nameOf(sItem?.croppingSystem);
+          if (hasC) {
+            for (let ss = 1; ss <= ssCount; ss++) {
+              const ssCode = ssList[ss - 1]?.code || `SS${ss}`;
+              const ssItem = ssList[ss - 1];
+              const key = `${mCode}|${sCode}|${ssCode}`;
+              const match = existingMap.get(key) || existing[idx - 1];
+              const autoName = [mItem?.name, csName || sCode, ssItem?.name]
+                .filter(Boolean)
+                .join(" | ");
+              generated.push({
+                code: `T${idx}`,
+                mainPlotCode: mCode,
+                subPlotCode: sCode,
+                subSubPlotCode: ssCode,
+                factor1Code: null,
+                factor2Code: null,
+                factor3Code: null,
+                name: match?.name ?? autoName,
+                description: match?.description ?? "",
+              });
+              idx++;
+            }
+          } else {
+            const key = `${mCode}|${sCode}|`;
+            const match = existingMap.get(key) || existing[idx - 1];
+            const autoName = [mItem?.name, csName || sCode]
+              .filter(Boolean)
+              .join(" | ");
+            generated.push({
+              code: `T${idx}`,
+              mainPlotCode: mCode,
+              subPlotCode: sCode,
+              subSubPlotCode: null,
+              factor1Code: null,
+              factor2Code: null,
+              factor3Code: null,
+              name: match?.name ?? autoName,
+              description: match?.description ?? "",
+            });
+            idx++;
+          }
         }
       }
     }
@@ -129,21 +265,28 @@ export function TreatmentsModal({
     if (existingList.length) {
       return existingList.map((t) => ({
         code: t.code,
-        name: t.name,
+        name: t.name ?? "",
+        croppingSystem: t.croppingSystem ?? "",
         description: t.description ?? "",
         mainPlotCode: t.mainPlotCode ?? null,
         subPlotCode: t.subPlotCode ?? null,
         subSubPlotCode: t.subSubPlotCode ?? null,
+        factor1Code: t.factor1Code ?? null,
+        factor2Code: t.factor2Code ?? null,
+        factor3Code: t.factor3Code ?? null,
       }));
     }
-    if (isPlot && targetCount > 0) {
+    if (isLevelConfig && targetCount > 0) {
       return Array.from({ length: targetCount }, (_, idx) => ({
         code: `${prefix}${idx + 1}`,
         name: "",
+        croppingSystem: "",
         description: "",
       }));
     }
-    return [{ code: `${prefix}1`, name: "", description: "" }];
+    return [
+      { code: `${prefix}1`, name: "", croppingSystem: "", description: "" },
+    ];
   });
 
   const set = (i, k, value) =>
@@ -151,10 +294,15 @@ export function TreatmentsModal({
 
   const add = () => {
     if (isDerivedTreatments) return;
-    if (isPlot && rows.length >= targetCount) return;
+    if (isLevelConfig && rows.length >= targetCount) return;
     setRows((r) => [
       ...r,
-      { code: `${prefix}${r.length + 1}`, name: "", description: "" },
+      {
+        code: `${prefix}${r.length + 1}`,
+        name: "",
+        croppingSystem: "",
+        description: "",
+      },
     ]);
   };
 
@@ -167,102 +315,174 @@ export function TreatmentsModal({
   const codes = rows.map((r) => r.code.trim().toUpperCase());
 
   const countValid =
-    !isPlot && !isDerivedTreatments
+    !isLevelConfig && !isDerivedTreatments
       ? true
       : targetCount != null && targetCount > 0 && rows.length === targetCount;
 
   const valid =
     countValid &&
     rows.length > 0 &&
-    rows.every((r) => r.code.trim() && r.name.trim()) &&
+    (isSubPlot
+      ? rows.every((r) => r.code.trim() && r.croppingSystem)
+      : rows.every((r) => r.code.trim() && r.name.trim())) &&
     new Set(codes).size === codes.length;
 
-  const title = isMainPlot
+  const title = isFactor1
     ? names.A
-    : isSubPlot
+    : isFactor2
       ? names.B
-      : isSubSubPlot
+      : isFactor3
         ? names.C
-        : "Treatments";
+        : isMainPlot
+          ? names.A
+          : isSubPlot
+            ? names.B
+            : isSubSubPlot
+              ? names.C
+              : "Treatments";
 
-  const subtitle = isMainPlot
-    ? `The main plots configured for this experiment (${targetCount} required).`
-    : isSubPlot
-      ? `The sub plots configured for this experiment (${targetCount} required).`
-      : isSubSubPlot
-        ? `The sub-sub plots configured for this Split-split plot experiment (${targetCount} required).`
-        : isDerivedTreatments
-          ? isFactorial
-            ? `Fixed treatment combinations for the factorial (${targetCount} required: ${[mCount, sCount, ssCount].filter(Boolean).join(" × ")} levels of ${hasC ? "factors 1, 2, 3" : "factors 1, 2"}).`
-            : isSplitSplitPlot
-              ? `Fixed treatment combinations for Split-split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub × ${ssCount} Sub-sub).`
-              : `Fixed treatment combinations for Split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub).`
-          : "The common treatments every centre applies (T1, T2 …).";
+  const subtitle = isFactor1
+    ? `The Factor 1 levels configured for this experiment (${targetCount} required).`
+    : isFactor2
+      ? `The Factor 2 levels configured for this experiment (${targetCount} required).`
+      : isFactor3
+        ? `The Factor 3 levels configured for this experiment (${targetCount} required).`
+        : isMainPlot
+          ? `The main plots configured for this experiment (${targetCount} required).`
+          : isSubPlot
+            ? `The sub plots (Cropping Systems) configured for this experiment (${targetCount} required).`
+            : isSubSubPlot
+              ? `The sub-sub plots configured for this Split-split plot experiment (${targetCount} required).`
+              : isDerivedTreatments
+                ? isFactorial
+                  ? `Fixed treatment combinations for the factorial (${targetCount} required: ${[mCount, sCount, ssCount].filter(Boolean).join(" × ")} levels of ${hasC ? "factors 1, 2, 3" : "factors 1, 2"}).`
+                  : isSplitSplitPlot
+                    ? `Fixed treatment combinations for Split-split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub × ${ssCount} Sub-sub).`
+                    : `Fixed treatment combinations for Split plot (${targetCount} required: ${mCount} Main × ${sCount} Sub).`
+                : "The common treatments every centre applies (T1, T2 …).";
+
+  const handleSave = () => {
+    if (isSubPlot) {
+      return save({
+        subPlotData: rows.map((r) => ({
+          code: r.code.trim(),
+          croppingSystem: r.croppingSystem || null,
+          ...(r.description?.trim()
+            ? { description: r.description.trim() }
+            : {}),
+        })),
+      });
+    }
+
+    if (isFactor1 || isFactor2 || isFactor3 || isMainPlot || isSubSubPlot) {
+      return save({
+        [fieldKey]: rows.map((r) => ({
+          code: r.code.trim(),
+          name: r.name.trim(),
+          ...(r.description?.trim()
+            ? { description: r.description.trim() }
+            : {}),
+        })),
+      });
+    }
+
+    if (isDerivedTreatments) {
+      return save({
+        treatments: rows.map((r) => ({
+          code: r.code.trim(),
+          name: r.name.trim(),
+          mainPlotCode: r.mainPlotCode ?? null,
+          subPlotCode: r.subPlotCode ?? null,
+          subSubPlotCode: r.subSubPlotCode ?? null,
+          factor1Code: r.factor1Code ?? null,
+          factor2Code: r.factor2Code ?? null,
+          factor3Code: r.factor3Code ?? null,
+          ...(r.description?.trim()
+            ? { description: r.description.trim() }
+            : {}),
+        })),
+      });
+    }
+
+    return save({
+      treatments: rows.map((r) => ({
+        code: r.code.trim(),
+        name: r.name.trim(),
+        mainPlotCode: null,
+        subPlotCode: null,
+        subSubPlotCode: null,
+        factor1Code: null,
+        factor2Code: null,
+        factor3Code: null,
+        ...(r.description?.trim() ? { description: r.description.trim() } : {}),
+      })),
+    });
+  };
 
   return (
     <SaveModal
       title={title}
       subtitle={subtitle}
       canSave={valid}
-      onSave={() =>
-        save({
-          [fieldKey]: rows.map((r) => ({
-            code: r.code.trim(),
-            name: r.name.trim(),
-            mainPlotCode: r.mainPlotCode ?? null,
-            subPlotCode: r.subPlotCode ?? null,
-            subSubPlotCode: r.subSubPlotCode ?? null,
-            ...(r.description?.trim()
-              ? { description: r.description.trim() }
-              : {}),
-          })),
-        })
-      }
+      onSave={handleSave}
       onClose={onClose}
     >
-      {isPlot && targetCount <= 0 && (
+      {isLevelConfig && targetCount <= 0 && (
         <Body as="div" className="note warn">
-          {isMainPlot ? names.A : isSubPlot ? names.B : names.C}{" "}
-          {isFactorial ? "levels" : "Count"} is 0. Please set the count in Edit
-          details before saving.
+          {title} count is 0. Please set the count in Edit details before
+          saving.
         </Body>
       )}
       {isDerivedTreatments && targetCount <= 0 && (
         <Body as="div" className="note warn">
-          Plot counts (
+          Counts (
           {hasC
             ? `${names.A}, ${names.B}, ${names.C}`
             : `${names.A}, ${names.B}`}
-          ) are not configured. Please set plot counts in Edit details before
+          ) are not configured. Please set counts in Edit details before
           configuring treatments.
         </Body>
       )}
-      {(isPlot || isDerivedTreatments) &&
+      {(isLevelConfig || isDerivedTreatments) &&
         targetCount > 0 &&
         rows.length !== targetCount && (
           <Body as="div" className="note warn">
             Exactly {targetCount}{" "}
-            {isMainPlot
-              ? "main plots"
-              : isSubPlot
-                ? "sub plots"
-                : isSubSubPlot
-                  ? "sub-sub plots"
-                  : "treatments"}{" "}
+            {isFactor1
+              ? "Factor 1 levels"
+              : isFactor2
+                ? "Factor 2 levels"
+                : isFactor3
+                  ? "Factor 3 levels"
+                  : isMainPlot
+                    ? "main plots"
+                    : isSubPlot
+                      ? "sub plots"
+                      : isSubSubPlot
+                        ? "sub-sub plots"
+                        : "treatments"}{" "}
             must be configured (currently {rows.length}).
           </Body>
         )}
       {!valid && rows.length > 0 && (
         <Body as="div" className="note warn">
           Every{" "}
-          {isMainPlot
-            ? "main plot"
-            : isSubPlot
-              ? "sub plot"
-              : isSubSubPlot
-                ? "sub-sub plot"
-                : "treatment"}{" "}
-          needs a unique code and a name.
+          {isFactor1
+            ? "Factor 1 level"
+            : isFactor2
+              ? "Factor 2 level"
+              : isFactor3
+                ? "Factor 3 level"
+                : isMainPlot
+                  ? "main plot"
+                  : isSubPlot
+                    ? "sub plot"
+                    : isSubSubPlot
+                      ? "sub-sub plot"
+                      : "treatment"}{" "}
+          {isSubPlot
+            ? "needs a unique code and a selected Cropping System."
+            : "needs a unique code and a name."}
         </Body>
       )}
 
@@ -327,7 +547,11 @@ export function TreatmentsModal({
               <>
                 <div
                   className="select"
-                  title={mainPlotName(r.mainPlotCode)}
+                  title={
+                    isFactorial
+                      ? factor1Name(r.factor1Code)
+                      : mainPlotName(r.mainPlotCode)
+                  }
                   style={{
                     backgroundColor: "var(--surface-muted, #f3f5f3)",
                     color: "var(--text-muted, #556056)",
@@ -339,11 +563,15 @@ export function TreatmentsModal({
                     userSelect: "none",
                   }}
                 >
-                  {r.mainPlotCode}
+                  {isFactorial ? r.factor1Code : r.mainPlotCode}
                 </div>
                 <div
                   className="select"
-                  title={subPlotName(r.subPlotCode)}
+                  title={
+                    isFactorial
+                      ? factor2Name(r.factor2Code)
+                      : subPlotName(r.subPlotCode)
+                  }
                   style={{
                     backgroundColor: "var(--surface-muted, #f3f5f3)",
                     color: "var(--text-muted, #556056)",
@@ -355,12 +583,16 @@ export function TreatmentsModal({
                     userSelect: "none",
                   }}
                 >
-                  {r.subPlotCode}
+                  {isFactorial ? r.factor2Code : r.subPlotCode}
                 </div>
                 {hasC && (
                   <div
                     className="select"
-                    title={subSubPlotName(r.subSubPlotCode)}
+                    title={
+                      isFactorial
+                        ? factor3Name(r.factor3Code)
+                        : subSubPlotName(r.subSubPlotCode)
+                    }
                     style={{
                       backgroundColor: "var(--surface-muted, #f3f5f3)",
                       color: "var(--text-muted, #556056)",
@@ -372,34 +604,61 @@ export function TreatmentsModal({
                       userSelect: "none",
                     }}
                   >
-                    {r.subSubPlotCode}
+                    {isFactorial ? r.factor3Code : r.subSubPlotCode}
                   </div>
                 )}
               </>
             )}
-            <input
-              aria-label={
-                isMainPlot
-                  ? "Main plot name"
-                  : isSubPlot
-                    ? "Sub plot name"
-                    : isSubSubPlot
-                      ? "Sub-sub plot name"
-                      : "Treatment name"
-              }
-              value={r.name}
-              onChange={(e) => set(i, "name", e.target.value)}
-              placeholder={
-                isMainPlot
-                  ? "Main plot name, e.g. Natural farming system"
-                  : isSubPlot
-                    ? "Sub plot name, e.g. Desi variety"
-                    : isSubSubPlot
-                      ? "Sub-sub plot name, e.g. Sub-treatment A"
-                      : "Treatment name, e.g. Complete NF"
-              }
-              className="select"
-            />
+
+            {isSubPlot ? (
+              <select
+                aria-label="Cropping System"
+                value={r.croppingSystem || ""}
+                onChange={(e) => set(i, "croppingSystem", e.target.value)}
+                className="select"
+                style={{ flex: 1, height: 32 }}
+              >
+                <option value="">Select Cropping System…</option>
+                {croppingSystems.options.map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                aria-label={
+                  isFactor1
+                    ? "Factor 1 name"
+                    : isFactor2
+                      ? "Factor 2 name"
+                      : isFactor3
+                        ? "Factor 3 name"
+                        : isMainPlot
+                          ? "Main plot name"
+                          : isSubSubPlot
+                            ? "Sub-sub plot name"
+                            : "Treatment name"
+                }
+                value={r.name}
+                onChange={(e) => set(i, "name", e.target.value)}
+                placeholder={
+                  isFactor1
+                    ? "Factor 1 name, e.g. Conventional"
+                    : isFactor2
+                      ? "Factor 2 name, e.g. Tillage method"
+                      : isFactor3
+                        ? "Factor 3 name, e.g. Nitrogen level"
+                        : isMainPlot
+                          ? "Main plot name, e.g. Natural farming system"
+                          : isSubSubPlot
+                            ? "Sub-sub plot name, e.g. Sub-treatment A"
+                            : "Treatment name, e.g. Complete NF"
+                }
+                className="select"
+              />
+            )}
+
             <input
               aria-label="Details"
               value={r.description}
@@ -425,19 +684,26 @@ export function TreatmentsModal({
             className="btn ghost sm"
             onClick={add}
             disabled={
-              isDerivedTreatments || (isPlot && rows.length >= targetCount)
+              isDerivedTreatments ||
+              (isLevelConfig && rows.length >= targetCount)
             }
           >
             <Plus size={14} /> Add{" "}
-            {isMainPlot
-              ? "main plot"
-              : isSubPlot
-                ? "sub plot"
-                : isSubSubPlot
-                  ? "sub-sub plot"
-                  : "treatment"}
+            {isFactor1
+              ? "Factor 1 level"
+              : isFactor2
+                ? "Factor 2 level"
+                : isFactor3
+                  ? "Factor 3 level"
+                  : isMainPlot
+                    ? "main plot"
+                    : isSubPlot
+                      ? "sub plot"
+                      : isSubSubPlot
+                        ? "sub-sub plot"
+                        : "treatment"}
           </button>
-          {isPlot && (
+          {isLevelConfig && (
             <SmallBody muted style={{ marginLeft: 10 }}>
               {rows.length} of {targetCount} configured
             </SmallBody>
@@ -445,7 +711,7 @@ export function TreatmentsModal({
           {isDerivedTreatments && (
             <SmallBody muted style={{ marginLeft: 10 }}>
               Fixed layout ({rows.length} of {targetCount} treatments) —
-              combinations are fixed by plot design
+              combinations are fixed by design
             </SmallBody>
           )}
         </div>

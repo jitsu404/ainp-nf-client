@@ -15,6 +15,7 @@ import {
 import { Body, Modal, SmallBody, SubHeading } from "../../../components/ui";
 import { seasonMap } from "../../../lib/seasonCrops";
 import { toast } from "../../../lib/toast";
+import { useCroppingSystems } from "../../../queries/croppingSystems";
 import { useMasterOptions, useUnitLabel } from "../../../queries/masters";
 
 /**
@@ -48,9 +49,16 @@ function HeaderCheckbox({ checked, indeterminate, onChange, title }) {
 }
 
 /**
- * Step Form for Main Plot, Sub Plot, or Sub-sub Plot.
+ * Step Form for Main Plot, Sub Plot (Cropping Systems), Sub-sub Plot, or Factor 1/2/3.
  */
-function PlotStepForm({ label, prefix, rows, onChange }) {
+function PlotStepForm({
+  label,
+  prefix,
+  rows,
+  onChange,
+  isSubPlot = false,
+  croppingSystems,
+}) {
   const setField = (index, field, value) => {
     onChange(rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   };
@@ -59,11 +67,17 @@ function PlotStepForm({ label, prefix, rows, onChange }) {
     const nextNum = rows.length + 1;
     onChange([
       ...rows,
-      {
-        code: `${prefix}${nextNum}`,
-        name: "",
-        description: "",
-      },
+      isSubPlot
+        ? {
+            code: `${prefix}${nextNum}`,
+            croppingSystem: "",
+            description: "",
+          }
+        : {
+            code: `${prefix}${nextNum}`,
+            name: "",
+            description: "",
+          },
     ]);
   };
 
@@ -135,7 +149,7 @@ function PlotStepForm({ label, prefix, rows, onChange }) {
                   textAlign: "left",
                 }}
               >
-                {label} Name{" "}
+                {isSubPlot ? "Cropping System" : `${label} Name`}{" "}
                 <span style={{ color: "var(--red, #b3261e)" }}>*</span>
               </th>
               <th
@@ -179,14 +193,33 @@ function PlotStepForm({ label, prefix, rows, onChange }) {
                   />
                 </td>
                 <td style={{ padding: "8px 12px" }}>
-                  <input
-                    className="select"
-                    style={{ height: 32, width: "100%" }}
-                    value={row.name}
-                    onChange={(e) => setField(idx, "name", e.target.value)}
-                    placeholder={`e.g. ${prefix}P-${idx + 1}`}
-                    required
-                  />
+                  {isSubPlot ? (
+                    <select
+                      className="select"
+                      style={{ height: 32, width: "100%" }}
+                      value={row.croppingSystem || ""}
+                      onChange={(e) =>
+                        setField(idx, "croppingSystem", e.target.value)
+                      }
+                      required
+                    >
+                      <option value="">Select Cropping System…</option>
+                      {croppingSystems?.options.map(([id, optLabel]) => (
+                        <option key={id} value={id}>
+                          {optLabel}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      className="select"
+                      style={{ height: 32, width: "100%" }}
+                      value={row.name}
+                      onChange={(e) => setField(idx, "name", e.target.value)}
+                      placeholder={`e.g. ${prefix}P-${idx + 1}`}
+                      required
+                    />
+                  )}
                 </td>
                 <td style={{ padding: "8px 12px" }}>
                   <input
@@ -231,13 +264,15 @@ function PlotStepForm({ label, prefix, rows, onChange }) {
  */
 function TreatmentsStepForm({
   isDerived,
+  isFactorial,
   isSplitSplitPlot,
   names,
-  mainPlotData,
-  subPlotData,
-  subSubPlotData,
+  level1Data,
+  level2Data,
+  level3Data,
   rows,
   onChange,
+  croppingSystems,
 }) {
   const setField = (index, field, value) => {
     onChange(rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
@@ -263,12 +298,15 @@ function TreatmentsStepForm({
     onChange(rows.filter((_, i) => i !== index));
   };
 
-  const mainName = (code) =>
-    mainPlotData.find((m) => m.code === code)?.name || "";
-  const subName = (code) =>
-    subPlotData.find((s) => s.code === code)?.name || "";
-  const subSubName = (code) =>
-    subSubPlotData.find((ss) => ss.code === code)?.name || "";
+  const l1Name = (code) => level1Data.find((m) => m.code === code)?.name || "";
+  const l2Name = (code) => {
+    const item = level2Data.find((s) => s.code === code);
+    return isFactorial
+      ? item?.name || ""
+      : croppingSystems?.nameOf(item?.croppingSystem) || "";
+  };
+  const l3Name = (code) =>
+    level3Data.find((ss) => ss.code === code)?.name || "";
 
   return (
     <div className="stack" style={{ gap: 14 }}>
@@ -289,7 +327,7 @@ function TreatmentsStepForm({
           </SubHeading>
           <SmallBody muted style={{ margin: "2px 0 0 0", display: "block" }}>
             {isDerived
-              ? "Treatments are dynamically generated from the combination of plots. Provide names and details."
+              ? "Treatments are dynamically generated from the combination of plots/factors. Provide names and details."
               : "Define the treatment codes, names, and details for this trial."}
           </SmallBody>
         </div>
@@ -336,7 +374,7 @@ function TreatmentsStepForm({
                       textAlign: "left",
                     }}
                   >
-                    {names?.A || "Main Plot"}
+                    {names?.A || "Factor 1"}
                   </th>
                   <th
                     style={{
@@ -345,7 +383,7 @@ function TreatmentsStepForm({
                       textAlign: "left",
                     }}
                   >
-                    {names?.B || "Sub Plot"}
+                    {names?.B || "Factor 2"}
                   </th>
                   {isSplitSplitPlot && (
                     <th
@@ -355,7 +393,7 @@ function TreatmentsStepForm({
                         textAlign: "left",
                       }}
                     >
-                      {names?.C || "Sub-sub Plot"}
+                      {names?.C || "Factor 3"}
                     </th>
                   )}
                 </>
@@ -430,22 +468,36 @@ function TreatmentsStepForm({
                   <>
                     <td style={{ padding: "8px 12px" }}>
                       <span>
-                        <b>{row.mainPlotCode}</b>
-                        {mainName(row.mainPlotCode) && (
+                        <b>
+                          {isFactorial ? row.factor1Code : row.mainPlotCode}
+                        </b>
+                        {l1Name(
+                          isFactorial ? row.factor1Code : row.mainPlotCode,
+                        ) && (
                           <span className="muted small">
                             {" "}
-                            ({mainName(row.mainPlotCode)})
+                            (
+                            {l1Name(
+                              isFactorial ? row.factor1Code : row.mainPlotCode,
+                            )}
+                            )
                           </span>
                         )}
                       </span>
                     </td>
                     <td style={{ padding: "8px 12px" }}>
                       <span>
-                        <b>{row.subPlotCode}</b>
-                        {subName(row.subPlotCode) && (
+                        <b>{isFactorial ? row.factor2Code : row.subPlotCode}</b>
+                        {l2Name(
+                          isFactorial ? row.factor2Code : row.subPlotCode,
+                        ) && (
                           <span className="muted small">
                             {" "}
-                            ({subName(row.subPlotCode)})
+                            (
+                            {l2Name(
+                              isFactorial ? row.factor2Code : row.subPlotCode,
+                            )}
+                            )
                           </span>
                         )}
                       </span>
@@ -453,11 +505,21 @@ function TreatmentsStepForm({
                     {isSplitSplitPlot && (
                       <td style={{ padding: "8px 12px" }}>
                         <span>
-                          <b>{row.subSubPlotCode}</b>
-                          {subSubName(row.subSubPlotCode) && (
+                          <b>
+                            {isFactorial ? row.factor3Code : row.subSubPlotCode}
+                          </b>
+                          {l3Name(
+                            isFactorial ? row.factor3Code : row.subSubPlotCode,
+                          ) && (
                             <span className="muted small">
                               {" "}
-                              ({subSubName(row.subSubPlotCode)})
+                              (
+                              {l3Name(
+                                isFactorial
+                                  ? row.factor3Code
+                                  : row.subSubPlotCode,
+                              )}
+                              )
                             </span>
                           )}
                         </span>
@@ -521,11 +583,12 @@ function TreatmentsStepForm({
 function ParametersStepForm({
   experiment,
   treatments,
-  mainPlotData,
-  subPlotData,
-  subSubPlotData,
+  level1Data,
+  level2Data,
+  level3Data,
   disabledList,
   onChange,
+  croppingSystems,
 }) {
   const seasonsMaster = useMasterOptions("season");
   const unit = useUnitLabel();
@@ -737,22 +800,43 @@ function ParametersStepForm({
   const isFactorial = experiment?.design === "Factorial";
 
   const getTreatmentTooltip = (t) => {
-    const m = mainPlotData.find((mp) => mp.code === t.mainPlotCode);
-    const s = subPlotData.find((sp) => sp.code === t.subPlotCode);
-    const ss = subSubPlotData.find((ssp) => ssp.code === t.subSubPlotCode);
     const lines = [`${t.code} - ${t.name}`];
-    if (t.mainPlotCode)
-      lines.push(
-        `${isFactorial ? "Factor 1" : "Main"}: ${t.mainPlotCode}${m?.name ? ` (${m.name})` : ""}`,
-      );
-    if (t.subPlotCode)
-      lines.push(
-        `${isFactorial ? "Factor 2" : "Sub"}: ${t.subPlotCode}${s?.name ? ` (${s.name})` : ""}`,
-      );
-    if (t.subSubPlotCode)
-      lines.push(
-        `${isFactorial ? "Factor 3" : "Sub-sub"}: ${t.subSubPlotCode}${ss?.name ? ` (${ss.name})` : ""}`,
-      );
+    if (isFactorial) {
+      if (t.factor1Code) {
+        const f1 = level1Data.find((f) => f.code === t.factor1Code);
+        lines.push(
+          `Factor 1: ${t.factor1Code}${f1?.name ? ` (${f1.name})` : ""}`,
+        );
+      }
+      if (t.factor2Code) {
+        const f2 = level2Data.find((f) => f.code === t.factor2Code);
+        lines.push(
+          `Factor 2: ${t.factor2Code}${f2?.name ? ` (${f2.name})` : ""}`,
+        );
+      }
+      if (t.factor3Code) {
+        const f3 = level3Data.find((f) => f.code === t.factor3Code);
+        lines.push(
+          `Factor 3: ${t.factor3Code}${f3?.name ? ` (${f3.name})` : ""}`,
+        );
+      }
+    } else {
+      if (t.mainPlotCode) {
+        const m = level1Data.find((mp) => mp.code === t.mainPlotCode);
+        lines.push(`Main: ${t.mainPlotCode}${m?.name ? ` (${m.name})` : ""}`);
+      }
+      if (t.subPlotCode) {
+        const s = level2Data.find((sp) => sp.code === t.subPlotCode);
+        const csName = croppingSystems?.nameOf(s?.croppingSystem);
+        lines.push(`Sub: ${t.subPlotCode}${csName ? ` (${csName})` : ""}`);
+      }
+      if (t.subSubPlotCode) {
+        const ss = level3Data.find((ssp) => ssp.code === t.subSubPlotCode);
+        lines.push(
+          `Sub-sub: ${t.subSubPlotCode}${ss?.name ? ` (${ss.name})` : ""}`,
+        );
+      }
+    }
     if (t.description) lines.push(`Details: ${t.description}`);
     return lines.join("\n");
   };
@@ -1281,6 +1365,7 @@ function ParametersStepForm({
  * Main Multi-Step Update Protocol Modal.
  */
 export function UpdateProtocolModal({ trial, save, onClose }) {
+  const croppingSystems = useCroppingSystems();
   const e = trial.experiment ?? {};
   const locked = trial.locked ?? [];
 
@@ -1290,6 +1375,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
   const hasPlots = isSplitPlot || isSplitSplitPlot || isFactorial;
   const hasC =
     isSplitSplitPlot || (isFactorial && (e.subSubPlotCount ?? 0) > 0);
+
   const names = isFactorial
     ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
     : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
@@ -1297,28 +1383,61 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
   // Active steps dynamically computed based on design and locks
   const steps = useMemo(() => {
     const list = [];
-    if (hasPlots && !locked.includes("mainPlot")) {
-      list.push({ key: "mainPlot", label: names.A, stepNum: 1 });
-    }
-    if (hasPlots && !locked.includes("subPlot")) {
-      list.push({ key: "subPlot", label: names.B, stepNum: 2 });
-    }
-    if (hasC && !locked.includes("subSubPlot")) {
-      list.push({ key: "subSubPlot", label: names.C, stepNum: 3 });
+    if (isFactorial) {
+      if (!locked.includes("factor1") && !locked.includes("mainPlot")) {
+        list.push({ key: "factor1", label: names.A, stepNum: 1 });
+      }
+      if (!locked.includes("factor2") && !locked.includes("subPlot")) {
+        list.push({ key: "factor2", label: names.B, stepNum: 2 });
+      }
+      if (
+        hasC &&
+        !locked.includes("factor3") &&
+        !locked.includes("subSubPlot")
+      ) {
+        list.push({ key: "factor3", label: names.C, stepNum: 3 });
+      }
+    } else if (hasPlots) {
+      if (!locked.includes("mainPlot")) {
+        list.push({ key: "mainPlot", label: names.A, stepNum: 1 });
+      }
+      if (!locked.includes("subPlot")) {
+        list.push({ key: "subPlot", label: names.B, stepNum: 2 });
+      }
+      if (hasC && !locked.includes("subSubPlot")) {
+        list.push({ key: "subSubPlot", label: names.C, stepNum: 3 });
+      }
     }
     if (!locked.includes("treatments")) {
-      list.push({ key: "treatments", label: "Treatments", stepNum: 4 });
+      list.push({
+        key: "treatments",
+        label: "Treatments",
+        stepNum: list.length + 1,
+      });
     }
     if (!locked.includes("parameters")) {
-      list.push({ key: "parameters", label: "Set Parameters", stepNum: 5 });
+      list.push({
+        key: "parameters",
+        label: "Set Parameters",
+        stepNum: list.length + 1,
+      });
     }
     return list;
-  }, [hasPlots, hasC, locked, names.A, names.B, names.C]);
+  }, [hasPlots, hasC, isFactorial, locked, names.A, names.B, names.C]);
 
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [busy, setBusy] = useState(false);
 
   // Local state for all sections
+  const [factor1Data, setFactor1Data] = useState(() =>
+    (trial.factor1Data ?? []).map((f) => ({ ...f })),
+  );
+  const [factor2Data, setFactor2Data] = useState(() =>
+    (trial.factor2Data ?? []).map((f) => ({ ...f })),
+  );
+  const [factor3Data, setFactor3Data] = useState(() =>
+    (trial.factor3Data ?? []).map((f) => ({ ...f })),
+  );
   const [mainPlotData, setMainPlotData] = useState(() =>
     (trial.mainPlotData ?? []).map((m) => ({ ...m })),
   );
@@ -1339,51 +1458,110 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
     })),
   );
 
-  // Recalculate treatment combinations when arriving at Treatments step in split plot designs
+  // Recalculate treatment combinations when arriving at Treatments step in derived designs
   const recalculateDerivedTreatments = () => {
     if (!hasPlots) return;
     const existing = treatments;
-    const existingMap = new Map();
-    for (const tr of existing) {
-      const key = `${tr.mainPlotCode}|${tr.subPlotCode}|${tr.subSubPlotCode ?? ""}`;
-      existingMap.set(key, tr);
-    }
-
     const generated = [];
     let idx = 1;
-    for (const m of mainPlotData) {
-      for (const s of subPlotData) {
-        if (hasC) {
-          for (const ss of subSubPlotData) {
-            const key = `${m.code}|${s.code}|${ss.code}`;
+
+    if (isFactorial) {
+      const existingMap = new Map();
+      for (const tr of existing) {
+        const key = `${tr.factor1Code}|${tr.factor2Code}|${tr.factor3Code ?? ""}`;
+        existingMap.set(key, tr);
+      }
+
+      for (const f1 of factor1Data) {
+        for (const f2 of factor2Data) {
+          if (hasC && factor3Data.length > 0) {
+            for (const f3 of factor3Data) {
+              const key = `${f1.code}|${f2.code}|${f3.code}`;
+              const match = existingMap.get(key) || existing[idx - 1];
+              generated.push({
+                code: `T${idx}`,
+                factor1Code: f1.code,
+                factor2Code: f2.code,
+                factor3Code: f3.code,
+                mainPlotCode: null,
+                subPlotCode: null,
+                subSubPlotCode: null,
+                name:
+                  match?.name ||
+                  `${f1.name || f1.code} + ${f2.name || f2.code} + ${f3.name || f3.code}`,
+                description: match?.description || "",
+              });
+              idx++;
+            }
+          } else {
+            const key = `${f1.code}|${f2.code}|`;
+            const match = existingMap.get(key) || existing[idx - 1];
+            generated.push({
+              code: `T${idx}`,
+              factor1Code: f1.code,
+              factor2Code: f2.code,
+              factor3Code: null,
+              mainPlotCode: null,
+              subPlotCode: null,
+              subSubPlotCode: null,
+              name:
+                match?.name || `${f1.name || f1.code} + ${f2.name || f2.code}`,
+              description: match?.description || "",
+            });
+            idx++;
+          }
+        }
+      }
+    } else {
+      // Split plot
+      const existingMap = new Map();
+      for (const tr of existing) {
+        const key = `${tr.mainPlotCode}|${tr.subPlotCode}|${tr.subSubPlotCode ?? ""}`;
+        existingMap.set(key, tr);
+      }
+
+      for (const m of mainPlotData) {
+        for (const s of subPlotData) {
+          const sLabel = croppingSystems.nameOf(s.croppingSystem) || s.code;
+          if (hasC && subSubPlotData.length > 0) {
+            for (const ss of subSubPlotData) {
+              const key = `${m.code}|${s.code}|${ss.code}`;
+              const match = existingMap.get(key) || existing[idx - 1];
+              generated.push({
+                code: `T${idx}`,
+                mainPlotCode: m.code,
+                subPlotCode: s.code,
+                subSubPlotCode: ss.code,
+                factor1Code: null,
+                factor2Code: null,
+                factor3Code: null,
+                name:
+                  match?.name ||
+                  `${m.name || m.code} + ${sLabel} + ${ss.name || ss.code}`,
+                description: match?.description || "",
+              });
+              idx++;
+            }
+          } else {
+            const key = `${m.code}|${s.code}|`;
             const match = existingMap.get(key) || existing[idx - 1];
             generated.push({
               code: `T${idx}`,
               mainPlotCode: m.code,
               subPlotCode: s.code,
-              subSubPlotCode: ss.code,
-              name:
-                match?.name ||
-                `${m.name || m.code} + ${s.name || s.code} + ${ss.name || ss.code}`,
+              subSubPlotCode: null,
+              factor1Code: null,
+              factor2Code: null,
+              factor3Code: null,
+              name: match?.name || `${m.name || m.code} + ${sLabel}`,
               description: match?.description || "",
             });
             idx++;
           }
-        } else {
-          const key = `${m.code}|${s.code}|`;
-          const match = existingMap.get(key) || existing[idx - 1];
-          generated.push({
-            code: `T${idx}`,
-            mainPlotCode: m.code,
-            subPlotCode: s.code,
-            subSubPlotCode: null,
-            name: match?.name || `${m.name || m.code} + ${s.name || s.code}`,
-            description: match?.description || "",
-          });
-          idx++;
         }
       }
     }
+
     setTreatments(generated);
   };
 
@@ -1397,17 +1575,45 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
     setBusy(true);
 
     try {
-      if (currentStep.key === "mainPlot") {
+      if (currentStep.key === "factor1") {
+        if (factor1Data.some((f) => !f.name.trim())) {
+          throw new Error(`All ${names.A.toLowerCase()} names are required.`);
+        }
+        await save({ factor1Data });
+        toast.success(`${names.A} updated`);
+      } else if (currentStep.key === "factor2") {
+        if (factor2Data.some((f) => !f.name.trim())) {
+          throw new Error(`All ${names.B.toLowerCase()} names are required.`);
+        }
+        await save({ factor2Data });
+        toast.success(`${names.B} updated`);
+      } else if (currentStep.key === "factor3") {
+        if (factor3Data.some((f) => !f.name.trim())) {
+          throw new Error(`All ${names.C.toLowerCase()} names are required.`);
+        }
+        await save({ factor3Data });
+        toast.success(`${names.C} updated`);
+      } else if (currentStep.key === "mainPlot") {
         if (mainPlotData.some((m) => !m.name.trim())) {
           throw new Error(`All ${names.A.toLowerCase()} names are required.`);
         }
         await save({ mainPlotData });
         toast.success(`${names.A} updated`);
       } else if (currentStep.key === "subPlot") {
-        if (subPlotData.some((s) => !s.name.trim())) {
-          throw new Error(`All ${names.B.toLowerCase()} names are required.`);
+        if (subPlotData.some((s) => !s.croppingSystem)) {
+          throw new Error(
+            `Cropping system must be selected for all sub plots.`,
+          );
         }
-        await save({ subPlotData });
+        await save({
+          subPlotData: subPlotData.map((s) => ({
+            code: s.code.trim(),
+            croppingSystem: s.croppingSystem || null,
+            ...(s.description?.trim()
+              ? { description: s.description.trim() }
+              : {}),
+          })),
+        });
         toast.success(`${names.B} updated`);
       } else if (currentStep.key === "subSubPlot") {
         if (subSubPlotData.some((ss) => !ss.name.trim())) {
@@ -1481,6 +1687,10 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
       </Modal>
     );
   }
+
+  const level1Data = isFactorial ? factor1Data : mainPlotData;
+  const level2Data = isFactorial ? factor2Data : subPlotData;
+  const level3Data = isFactorial ? factor3Data : subSubPlotData;
 
   return (
     <Modal
@@ -1594,7 +1804,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {isPast ? <Check size={12} /> : <span>{st.stepNum}.</span>}
+                {isPast ? <Check size={12} /> : <span>{idx + 1}.</span>}
                 <span>{st.label}</span>
               </button>
             );
@@ -1602,6 +1812,33 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
         </div>
 
         {/* Current Step Content */}
+        {currentStep?.key === "factor1" && (
+          <PlotStepForm
+            label={names.A}
+            prefix="F1_"
+            rows={factor1Data}
+            onChange={setFactor1Data}
+          />
+        )}
+
+        {currentStep?.key === "factor2" && (
+          <PlotStepForm
+            label={names.B}
+            prefix="F2_"
+            rows={factor2Data}
+            onChange={setFactor2Data}
+          />
+        )}
+
+        {currentStep?.key === "factor3" && (
+          <PlotStepForm
+            label={names.C}
+            prefix="F3_"
+            rows={factor3Data}
+            onChange={setFactor3Data}
+          />
+        )}
+
         {currentStep?.key === "mainPlot" && (
           <PlotStepForm
             label={names.A}
@@ -1617,6 +1854,8 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
             prefix="S"
             rows={subPlotData}
             onChange={setSubPlotData}
+            isSubPlot
+            croppingSystems={croppingSystems}
           />
         )}
 
@@ -1632,13 +1871,15 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
         {currentStep?.key === "treatments" && (
           <TreatmentsStepForm
             isDerived={hasPlots}
+            isFactorial={isFactorial}
             isSplitSplitPlot={hasC}
             names={names}
-            mainPlotData={mainPlotData}
-            subPlotData={subPlotData}
-            subSubPlotData={subSubPlotData}
+            level1Data={level1Data}
+            level2Data={level2Data}
+            level3Data={level3Data}
             rows={treatments}
             onChange={setTreatments}
+            croppingSystems={croppingSystems}
           />
         )}
 
@@ -1646,11 +1887,12 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
           <ParametersStepForm
             experiment={e}
             treatments={treatments}
-            mainPlotData={mainPlotData}
-            subPlotData={subPlotData}
-            subSubPlotData={subSubPlotData}
+            level1Data={level1Data}
+            level2Data={level2Data}
+            level3Data={level3Data}
             disabledList={disabledList}
             onChange={setDisabledList}
+            croppingSystems={croppingSystems}
           />
         )}
       </div>

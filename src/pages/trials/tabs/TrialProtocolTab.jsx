@@ -7,6 +7,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { Body, Card, SmallBody, Table } from "../../../components/ui";
+import { useCroppingSystems } from "../../../queries/croppingSystems";
 import { UpdateProtocolModal } from "../components";
 
 /**
@@ -94,6 +95,8 @@ export function TrialProtocolTab({
   onToggleLock,
 }) {
   const [openWizard, setOpenWizard] = useState(false);
+  const croppingSystems = useCroppingSystems();
+
   const e = t.experiment ?? {};
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
@@ -109,10 +112,16 @@ export function TrialProtocolTab({
     ? { A: "Factor 1", B: "Factor 2", C: "Factor 3" }
     : { A: "Main Plot", B: "Sub Plot", C: "Sub-sub Plot" };
 
-  // Use the trial's own plot data and treatments
-  const mainData = t.mainPlotData ?? [];
-  const subData = t.subPlotData ?? [];
-  const subSubData = t.subSubPlotData ?? [];
+  // Use the trial's own level data and treatments
+  const level1Data = isFactorial
+    ? (t.factor1Data ?? [])
+    : (t.mainPlotData ?? []);
+  const level2Data = isFactorial
+    ? (t.factor2Data ?? [])
+    : (t.subPlotData ?? []);
+  const level3Data = isFactorial
+    ? (t.factor3Data ?? [])
+    : (t.subSubPlotData ?? []);
   const treatments = t.treatments ?? [];
   const locked = t.locked ?? [];
 
@@ -125,11 +134,18 @@ export function TrialProtocolTab({
   const parameters = e.defaultParameters ?? e.parameters ?? [];
 
   const canEditProtocol = edit || canLock;
+  const lockKeyA = isFactorial ? "factor1" : "mainPlot";
+  const lockKeyB = isFactorial ? "factor2" : "subPlot";
+  const lockKeyC = isFactorial ? "factor3" : "subSubPlot";
+
   const allSectionsLocked =
     (hasPlots
-      ? locked.includes("mainPlot") && locked.includes("subPlot")
+      ? (locked.includes("mainPlot") || locked.includes("factor1")) &&
+        (locked.includes("subPlot") || locked.includes("factor2"))
       : true) &&
-    (hasC ? locked.includes("subSubPlot") : true) &&
+    (hasC
+      ? locked.includes("subSubPlot") || locked.includes("factor3")
+      : true) &&
     locked.includes("treatments") &&
     locked.includes("parameters");
 
@@ -173,20 +189,20 @@ export function TrialProtocolTab({
         )}
       </div>
 
-      {/* Split / Split-split Plots Configuration */}
+      {/* Plots / Factors Configuration */}
       {hasPlots && (
         <div className={hasC ? "grid g3" : "grid g2"}>
-          {/* Main Plot Card */}
+          {/* Card 1: Main Plot / Factor 1 */}
           <Card
             title={
               mainCount > 0
-                ? `${names.A} (${mainData.length} of ${mainCount})`
+                ? `${names.A} (${level1Data.length} of ${mainCount})`
                 : names.A
             }
             pad={mainCount <= 0}
             actions={
               <SectionLockToggle
-                lockedKey="mainPlot"
+                lockedKey={lockKeyA}
                 locked={locked}
                 canLock={canLock}
                 onToggle={onToggleLock}
@@ -202,7 +218,7 @@ export function TrialProtocolTab({
               </div>
             ) : (
               <Table
-                rows={mainData.map((m) => ({ ...m, id: m.code }))}
+                rows={level1Data.map((m) => ({ ...m, id: m.code }))}
                 pageSize={30}
                 empty={`No ${names.A.toLowerCase()} configured.`}
                 columns={[
@@ -219,17 +235,17 @@ export function TrialProtocolTab({
             )}
           </Card>
 
-          {/* Sub Plot Card */}
+          {/* Card 2: Sub Plot (Cropping System) / Factor 2 */}
           <Card
             title={
               subCount > 0
-                ? `${names.B} (${subData.length} of ${subCount})`
+                ? `${names.B} (${level2Data.length} of ${subCount})`
                 : names.B
             }
             pad={subCount <= 0}
             actions={
               <SectionLockToggle
-                lockedKey="subPlot"
+                lockedKey={lockKeyB}
                 locked={locked}
                 canLock={canLock}
                 onToggle={onToggleLock}
@@ -245,12 +261,25 @@ export function TrialProtocolTab({
               </div>
             ) : (
               <Table
-                rows={subData.map((s) => ({ ...s, id: s.code }))}
+                rows={level2Data.map((s) => ({ ...s, id: s.code }))}
                 pageSize={30}
                 empty={`No ${names.B.toLowerCase()} configured.`}
                 columns={[
                   { label: "Code", render: (s) => <b>{s.code}</b> },
-                  { label: names.B, key: "name" },
+                  {
+                    label: isFactorial ? names.B : "Cropping System",
+                    render: (s) =>
+                      isFactorial ? (
+                        s.name || "—"
+                      ) : (
+                        <span>
+                          <b>
+                            {croppingSystems.nameOf(s.croppingSystem) ||
+                              "Not selected"}
+                          </b>
+                        </span>
+                      ),
+                  },
                   {
                     label: "Details",
                     render: (s) => (
@@ -262,18 +291,18 @@ export function TrialProtocolTab({
             )}
           </Card>
 
-          {/* Sub-sub Plot Card */}
+          {/* Card 3: Sub-sub Plot / Factor 3 */}
           {hasC && (
             <Card
               title={
                 subSubCount > 0
-                  ? `${names.C} (${subSubData.length} of ${subSubCount})`
+                  ? `${names.C} (${level3Data.length} of ${subSubCount})`
                   : names.C
               }
               pad={subSubCount <= 0}
               actions={
                 <SectionLockToggle
-                  lockedKey="subSubPlot"
+                  lockedKey={lockKeyC}
                   locked={locked}
                   canLock={canLock}
                   onToggle={onToggleLock}
@@ -289,7 +318,7 @@ export function TrialProtocolTab({
                 </div>
               ) : (
                 <Table
-                  rows={subSubData.map((ss) => ({ ...ss, id: ss.code }))}
+                  rows={level3Data.map((ss) => ({ ...ss, id: ss.code }))}
                   pageSize={30}
                   empty={`No ${names.C.toLowerCase()} configured.`}
                   columns={[
@@ -341,13 +370,18 @@ export function TrialProtocolTab({
                     {
                       label: names.A,
                       render: (tr) => {
-                        const name = mainData.find(
-                          (m) => m.code === tr.mainPlotCode,
-                        )?.name;
-                        return tr.mainPlotCode ? (
+                        const code = isFactorial
+                          ? tr.factor1Code
+                          : tr.mainPlotCode;
+                        const item = level1Data.find((m) => m.code === code);
+                        return code ? (
                           <span>
-                            <b>{tr.mainPlotCode}</b>
-                            {name ? <SmallBody muted> ({name})</SmallBody> : ""}
+                            <b>{code}</b>
+                            {item?.name ? (
+                              <SmallBody muted> ({item.name})</SmallBody>
+                            ) : (
+                              ""
+                            )}
                           </span>
                         ) : (
                           "—"
@@ -357,13 +391,21 @@ export function TrialProtocolTab({
                     {
                       label: names.B,
                       render: (tr) => {
-                        const name = subData.find(
-                          (s) => s.code === tr.subPlotCode,
-                        )?.name;
-                        return tr.subPlotCode ? (
+                        const code = isFactorial
+                          ? tr.factor2Code
+                          : tr.subPlotCode;
+                        const item = level2Data.find((s) => s.code === code);
+                        const label = isFactorial
+                          ? item?.name
+                          : croppingSystems.nameOf(item?.croppingSystem);
+                        return code ? (
                           <span>
-                            <b>{tr.subPlotCode}</b>
-                            {name ? <SmallBody muted> ({name})</SmallBody> : ""}
+                            <b>{code}</b>
+                            {label ? (
+                              <SmallBody muted> ({label})</SmallBody>
+                            ) : (
+                              ""
+                            )}
                           </span>
                         ) : (
                           "—"
@@ -375,14 +417,17 @@ export function TrialProtocolTab({
                           {
                             label: names.C,
                             render: (tr) => {
-                              const name = subSubData.find(
-                                (ss) => ss.code === tr.subSubPlotCode,
-                              )?.name;
-                              return tr.subSubPlotCode ? (
+                              const code = isFactorial
+                                ? tr.factor3Code
+                                : tr.subSubPlotCode;
+                              const item = level3Data.find(
+                                (ss) => ss.code === code,
+                              );
+                              return code ? (
                                 <span>
-                                  <b>{tr.subSubPlotCode}</b>
-                                  {name ? (
-                                    <SmallBody muted> ({name})</SmallBody>
+                                  <b>{code}</b>
+                                  {item?.name ? (
+                                    <SmallBody muted> ({item.name})</SmallBody>
                                   ) : (
                                     ""
                                   )}

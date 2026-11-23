@@ -203,26 +203,26 @@ export default function ExperimentDetail() {
           onClose={close}
         />
       )}
-      {modal === "mainPlot" && (
+      {(modal === "mainPlot" || modal === "factor1") && (
         <TreatmentsModal
           experiment={e}
-          type="mainPlot"
+          type={e.design === "Factorial" ? "factor1" : "mainPlot"}
           save={save}
           onClose={close}
         />
       )}
-      {modal === "subPlot" && (
+      {(modal === "subPlot" || modal === "factor2") && (
         <TreatmentsModal
           experiment={e}
-          type="subPlot"
+          type={e.design === "Factorial" ? "factor2" : "subPlot"}
           save={save}
           onClose={close}
         />
       )}
-      {modal === "subSubPlot" && (
+      {(modal === "subSubPlot" || modal === "factor3") && (
         <TreatmentsModal
           experiment={e}
-          type="subSubPlot"
+          type={e.design === "Factorial" ? "factor3" : "subSubPlot"}
           save={save}
           onClose={close}
         />

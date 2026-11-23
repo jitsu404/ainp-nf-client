@@ -10,6 +10,7 @@ import {
 import { SaveModal } from "../../../components/forms";
 import { seasonMap } from "../../../lib/seasonCrops";
 import { toast } from "../../../lib/toast";
+import { useCroppingSystems } from "../../../queries/croppingSystems";
 import { useMasterOptions, useUnitLabel } from "../../../queries/masters";
 
 /**
@@ -61,9 +62,14 @@ export function TreatmentParametersModal({ experiment, save, onClose }) {
     [experiment.defaultParameters, experiment.parameters],
   );
 
+  const croppingSystems = useCroppingSystems();
+  const isFactorial = experiment?.design === "Factorial";
   const mainPlotData = experiment.mainPlotData ?? [];
   const subPlotData = experiment.subPlotData ?? [];
   const subSubPlotData = experiment.subSubPlotData ?? [];
+  const factor1Data = experiment.factor1Data ?? [];
+  const factor2Data = experiment.factor2Data ?? [];
+  const factor3Data = experiment.factor3Data ?? [];
 
   const seasonCodes = useMemo(
     () => Object.keys(seasonMap(experiment.seasons)),
@@ -112,38 +118,59 @@ export function TreatmentParametersModal({ experiment, save, onClose }) {
 
   // Treatment hover details resolution
   const getTreatmentInfo = (t) => {
-    const mainPlot = mainPlotData.find((m) => m.code === t.mainPlotCode);
-    const subPlot = subPlotData.find((s) => s.code === t.subPlotCode);
-    const subSubPlot = subSubPlotData.find(
-      (ss) => ss.code === t.subSubPlotCode,
-    );
-
-    const isFactorial = experiment?.design === "Factorial";
     const lines = [];
     lines.push(`Treatment: ${t.code} - ${t.name}`);
-    if (t.mainPlotCode) {
-      lines.push(
-        `${isFactorial ? "Factor 1" : "Main Plot"}: ${t.mainPlotCode}${mainPlot?.name ? ` (${mainPlot.name})` : ""}`,
-      );
+
+    let mName = "";
+    let sName = "";
+    let ssName = "";
+
+    if (isFactorial) {
+      if (t.factor1Code) {
+        const f1 = factor1Data.find((f) => f.code === t.factor1Code);
+        mName = f1?.name || "";
+        lines.push(`Factor 1: ${t.factor1Code}${mName ? ` (${mName})` : ""}`);
+      }
+      if (t.factor2Code) {
+        const f2 = factor2Data.find((f) => f.code === t.factor2Code);
+        sName = f2?.name || "";
+        lines.push(`Factor 2: ${t.factor2Code}${sName ? ` (${sName})` : ""}`);
+      }
+      if (t.factor3Code) {
+        const f3 = factor3Data.find((f) => f.code === t.factor3Code);
+        ssName = f3?.name || "";
+        lines.push(`Factor 3: ${t.factor3Code}${ssName ? ` (${ssName})` : ""}`);
+      }
+    } else {
+      if (t.mainPlotCode) {
+        const mainPlot = mainPlotData.find((m) => m.code === t.mainPlotCode);
+        mName = mainPlot?.name || "";
+        lines.push(`Main Plot: ${t.mainPlotCode}${mName ? ` (${mName})` : ""}`);
+      }
+      if (t.subPlotCode) {
+        const subPlot = subPlotData.find((s) => s.code === t.subPlotCode);
+        sName = croppingSystems.nameOf(subPlot?.croppingSystem) || "";
+        lines.push(`Sub Plot: ${t.subPlotCode}${sName ? ` (${sName})` : ""}`);
+      }
+      if (t.subSubPlotCode) {
+        const subSubPlot = subSubPlotData.find(
+          (ss) => ss.code === t.subSubPlotCode,
+        );
+        ssName = subSubPlot?.name || "";
+        lines.push(
+          `Sub-sub Plot: ${t.subSubPlotCode}${ssName ? ` (${ssName})` : ""}`,
+        );
+      }
     }
-    if (t.subPlotCode) {
-      lines.push(
-        `${isFactorial ? "Factor 2" : "Sub Plot"}: ${t.subPlotCode}${subPlot?.name ? ` (${subPlot.name})` : ""}`,
-      );
-    }
-    if (t.subSubPlotCode) {
-      lines.push(
-        `${isFactorial ? "Factor 3" : "Sub-sub Plot"}: ${t.subSubPlotCode}${subSubPlot?.name ? ` (${subSubPlot.name})` : ""}`,
-      );
-    }
+
     if (t.description) {
       lines.push(`Description: ${t.description}`);
     }
     return {
       title: lines.join("\n"),
-      mainPlotName: mainPlot?.name,
-      subPlotName: subPlot?.name,
-      subSubPlotName: subSubPlot?.name,
+      mainPlotName: mName,
+      subPlotName: sName,
+      subSubPlotName: ssName,
     };
   };
 

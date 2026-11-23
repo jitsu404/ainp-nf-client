@@ -117,22 +117,46 @@ export const experimentFactors = (e) => {
       const code = `${prefix}${i + 1}`;
       return { code, name: data?.find((d) => d.code === code)?.name || null };
     });
+  if (factorial) {
+    return [
+      {
+        key: "A",
+        label: "Factor 1",
+        field: "factor1Code",
+        levels: levels("F1_", e.mainPlotCount, e.factor1Data),
+      },
+      {
+        key: "B",
+        label: "Factor 2",
+        field: "factor2Code",
+        levels: levels("F2_", e.subPlotCount, e.factor2Data),
+      },
+      {
+        key: "C",
+        label: "Factor 3",
+        field: "factor3Code",
+        levels: levels("F3_", e.subSubPlotCount, e.factor3Data),
+      },
+    ].filter(
+      (f) => f.levels.length && (f.key !== "C" || (e.subSubPlotCount ?? 0) > 0),
+    );
+  }
   return [
     {
       key: "A",
-      label: factorial ? "Factor 1" : "Main plot",
+      label: "Main plot",
       field: "mainPlotCode",
       levels: levels("M", e.mainPlotCount, e.mainPlotData),
     },
     {
       key: "B",
-      label: factorial ? "Factor 2" : "Sub plot",
+      label: "Sub plot",
       field: "subPlotCode",
       levels: levels("S", e.subPlotCount, e.subPlotData),
     },
     {
       key: "C",
-      label: factorial ? "Factor 3" : "Sub-sub plot",
+      label: "Sub-sub plot",
       field: "subSubPlotCode",
       levels: levels("SS", e.subSubPlotCount, e.subSubPlotData),
     },
