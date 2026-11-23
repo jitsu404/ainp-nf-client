@@ -95,7 +95,7 @@ export function ForcedPasswordChange() {
         <div>
           <div className="logos">
             <img src="/logos/icar.png" alt="ICAR logo" />
-            <img src="/logos/iifsr.png" alt="ICAR-IIFSR logo" />
+            {/* <img src="/logos/iifsr.png" alt="ICAR-IIFSR logo" /> */}
           </div>
           <h1>
             {programme.short}

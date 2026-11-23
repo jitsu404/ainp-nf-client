@@ -110,7 +110,7 @@ export function ParametersModal({ experiment, save, onClose }) {
       {selected.size > 0 && (
         <div
           className="table-wrap"
-          style={{ maxHeight: 260, overflow: "auto" }}
+          style={{ maxHeight: 240, overflow: "auto" }}
         >
           <table className="entry">
             <thead>

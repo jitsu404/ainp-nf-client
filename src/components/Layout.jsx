@@ -125,7 +125,7 @@ export default function Layout() {
         </nav>
         <div className="side-foot">
           <div className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
-            <img src="/logos/iifsr.png" alt="ICAR-IIFSR logo" height="34" />
+            {/* <img src="/logos/iifsr.png" alt="ICAR-IIFSR logo" height="34" /> */}
             <span>{programme.institute}</span>
           </div>
         </div>
