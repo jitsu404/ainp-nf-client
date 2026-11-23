@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2 } from "lucide-react";
-import { Badge, Card, Table } from "../../../components/ui";
+import { Badge, Body, Card, SmallBody, Table } from "../../../components/ui";
 import { ROUTES } from "../../../config/constants";
 import { formatDate } from "../../../hooks";
 import { effectiveSeasonCrops } from "../../../lib/seasonCrops";
@@ -38,7 +38,7 @@ export function CentresTab({
     return (
       <div className="stack" style={{ gap: 2 }}>
         {list.map((s) => (
-          <div key={s.seasonCode} className="small">
+          <SmallBody as="div" key={s.seasonCode}>
             <span className="muted">{seasons.nameOf(s.seasonCode)}:</span>{" "}
             {s.crops.length ? s.crops.map(cropName).join(", ") : "—"}
             {s.changed && (
@@ -47,7 +47,7 @@ export function CentresTab({
                 <Badge tone="amber">Own crops</Badge>
               </>
             )}
-          </div>
+          </SmallBody>
         ))}
       </div>
     );
@@ -57,7 +57,9 @@ export function CentresTab({
     {
       label: "Centre",
       render: (t) => (
-        <b style={{ fontWeight: 550 }}>{t.centreId?.name ?? "—"}</b>
+        <Body as="b" style={{ fontWeight: 550 }}>
+          {t.centreId?.name ?? "—"}
+        </Body>
       ),
     },
     { label: "Code", render: (t) => t.centreId?.code },

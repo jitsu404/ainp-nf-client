@@ -6,7 +6,15 @@ import {
   CredentialsModal,
   ErrorNote,
 } from "../components/forms";
-import { Badge, Card, Page, Table, Tabs } from "../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Page,
+  SmallBody,
+  Table,
+  Tabs,
+} from "../components/ui";
 import {
   personFields,
   temporaryPasswordField,
@@ -57,10 +65,10 @@ export default function Accounts() {
       }
     >
       <div className="stack">
-        <p className="muted">
+        <Body muted>
           PCU users manage centres and assign Centre PIs, the same as the Super
           Admin. Only the Super Admin can create or deactivate PCU accounts.
-        </p>
+        </Body>
         <ErrorNote error={users.error} />
         <Card pad={false}>
           <Tabs
@@ -77,10 +85,10 @@ export default function Accounts() {
               {
                 label: "Name",
                 render: (u) => (
-                  <b style={{ fontWeight: 550 }}>
+                  <Body as="b" style={{ fontWeight: 550 }}>
                     {u.name}
-                    {u.id === me.id && <span className="muted"> (you)</span>}
-                  </b>
+                    {u.id === me.id && <SmallBody muted> (you)</SmallBody>}
+                  </Body>
                 ),
               },
               { label: "Designation", render: (u) => u.designation || "—" },

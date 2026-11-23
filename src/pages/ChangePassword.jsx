@@ -2,7 +2,14 @@ import { useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ErrorNote } from "../components/forms";
-import { Card, Page } from "../components/ui";
+import {
+  Body,
+  Card,
+  LargeHeading,
+  Page,
+  SmallBody,
+  SubHeading,
+} from "../components/ui";
 import { PASSWORD_RULE } from "../config/constants";
 import { programme } from "../programme/config";
 
@@ -41,7 +48,9 @@ function PasswordForm({ onDone }) {
     <form onSubmit={submit} className="stack" noValidate>
       <ErrorNote error={error} />
       <div className="field">
-        <label htmlFor="current">Current password</label>
+        <label htmlFor="current">
+          <Body as="span">Current password</Body>
+        </label>
         <input
           id="current"
           type="password"
@@ -51,7 +60,9 @@ function PasswordForm({ onDone }) {
         />
       </div>
       <div className="field">
-        <label htmlFor="next">New password</label>
+        <label htmlFor="next">
+          <Body as="span">New password</Body>
+        </label>
         <input
           id="next"
           type="password"
@@ -59,14 +70,16 @@ function PasswordForm({ onDone }) {
           value={next}
           onChange={(e) => setNext(e.target.value)}
         />
-        <span
-          className={`small ${next && !meetsRule(next) ? "field-error" : "muted"}`}
+        <SmallBody
+          className={next && !meetsRule(next) ? "field-error" : "muted"}
         >
           {RULE}
-        </span>
+        </SmallBody>
       </div>
       <div className="field">
-        <label htmlFor="confirm">Confirm new password</label>
+        <label htmlFor="confirm">
+          <Body as="span">Confirm new password</Body>
+        </label>
         <input
           id="confirm"
           type="password"
@@ -75,7 +88,9 @@ function PasswordForm({ onDone }) {
           onChange={(e) => setConfirm(e.target.value)}
         />
         {mismatch && (
-          <span className="field-error">The passwords don’t match</span>
+          <SmallBody className="field-error">
+            The passwords don’t match
+          </SmallBody>
         )}
       </div>
       <button className="btn" type="submit" disabled={!ready || busy}>
@@ -97,22 +112,28 @@ export function ForcedPasswordChange() {
             <img src="/logos/icar.png" alt="ICAR logo" />
             {/* <img src="/logos/iifsr.png" alt="ICAR-IIFSR logo" /> */}
           </div>
-          <h1>
+          <LargeHeading as="h1">
             {programme.short}
             <br />
             {programme.system}
-          </h1>
-          <p className="scheme">{programme.name}</p>
+          </LargeHeading>
+          <Body as="p" className="scheme">
+            {programme.name}
+          </Body>
         </div>
       </section>
       <section className="login-panel">
         <div className="login-card">
-          <span className="eyebrow">Welcome, {user.name}</span>
-          <h2>Choose your password</h2>
-          <p className="muted" style={{ marginBottom: 14 }}>
+          <SmallBody as="span" className="eyebrow">
+            Welcome, {user.name}
+          </SmallBody>
+          <SubHeading as="h2" style={{ fontSize: "1.4em", marginBottom: 8 }}>
+            Choose your password
+          </SubHeading>
+          <Body muted style={{ marginBottom: 14 }}>
             You signed in with a temporary password. Choose your own to
             continue.
-          </p>
+          </Body>
           <PasswordForm />
           <button
             className="btn ghost"
@@ -137,21 +158,29 @@ export default function AccountPage({ onChanged }) {
         <Card title="Profile">
           <div className="kv" style={{ gridTemplateColumns: "1fr" }}>
             <div>
-              <span>Name</span>
-              <b>{user.name}</b>
+              <SmallBody muted as="span">
+                Name
+              </SmallBody>
+              <Body as="b">{user.name}</Body>
             </div>
             <div>
-              <span>Email</span>
-              <b>{user.email}</b>
+              <SmallBody muted as="span">
+                Email
+              </SmallBody>
+              <Body as="b">{user.email}</Body>
             </div>
             <div>
-              <span>Role</span>
-              <b>{role.label}</b>
+              <SmallBody muted as="span">
+                Role
+              </SmallBody>
+              <Body as="b">{role.label}</Body>
             </div>
             {user.designation && (
               <div>
-                <span>Designation</span>
-                <b>{user.designation}</b>
+                <SmallBody muted as="span">
+                  Designation
+                </SmallBody>
+                <Body as="b">{user.designation}</Body>
               </div>
             )}
           </div>
@@ -159,7 +188,7 @@ export default function AccountPage({ onChanged }) {
         <Card title="Change password">
           {done && (
             <div className="note" style={{ marginBottom: 12 }}>
-              Password changed. Other devices have been signed out.
+              <Body>Password changed. Other devices have been signed out.</Body>
             </div>
           )}
           <PasswordForm

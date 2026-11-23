@@ -246,6 +246,45 @@ textarea {
   border-radius: 8px;
   padding: 6px 8px;
 }
+.font-size-controller {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.font-size-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: all 0.15s ease;
+}
+.font-size-btn:hover {
+  color: var(--ink);
+  background: var(--bg);
+}
+.font-size-btn.active {
+  background: var(--green-bg);
+  color: var(--green);
+  font-weight: 700;
+}
+.font-size-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.font-size-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
 .user {
   display: flex;
   align-items: center;

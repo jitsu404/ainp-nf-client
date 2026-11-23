@@ -8,7 +8,15 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ErrorNote } from "../components/forms";
-import { Badge, Card, Page, Stat, Table } from "../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Page,
+  SmallBody,
+  Stat,
+  Table,
+} from "../components/ui";
 import { ROUTES, TABLE_PAGE_SIZE } from "../config/constants";
 import { formatDate, formatDateTime } from "../hooks";
 import { useCentre, useCentres } from "../queries/centres";
@@ -29,9 +37,7 @@ export default function Home() {
   if (auth.role.scope === "experiment") return <ExperimentPiDashboard />;
   return (
     <Page title={`Welcome, ${auth.user.name}`}>
-      <p className="muted">
-        Your modules will appear here as they are enabled.
-      </p>
+      <Body muted>Your modules will appear here as they are enabled.</Body>
     </Page>
   );
 }
@@ -165,11 +171,11 @@ function ExperimentPiDashboard() {
             ]}
           />
         </Card>
-        <p className="muted small" style={{ margin: 0 }}>
+        <SmallBody muted style={{ margin: 0 }} as="p">
           You edit the experiment&apos;s definition: treatments, parameters,
           seasons and metadata. The PCU assigns centres and approves their data;
           each centre runs its trial.
-        </p>
+        </SmallBody>
       </div>
     </Page>
   );
@@ -187,15 +193,17 @@ function CentreDashboard() {
         <ErrorNote error={centre.error} />
         {!user.centreId && (
           <div className="note warn">
-            Your account isn’t linked to a centre. Please contact the PCU.
+            <Body>
+              Your account isn’t linked to a centre. Please contact the PCU.
+            </Body>
           </div>
         )}
         <div className="grid g2">
           <Card title="Your centre">
             {!c ? (
-              <p className="muted">
+              <Body muted>
                 {centre.isPending && user.centreId ? "Loading…" : "—"}
-              </p>
+              </Body>
             ) : (
               <div className="stack" style={{ gap: 12 }}>
                 <div className="row" style={{ gap: 10 }}>
@@ -205,28 +213,42 @@ function CentreDashboard() {
                 </div>
                 <div className="kv two">
                   <div>
-                    <span>Host institution</span>
-                    <b>{c.host}</b>
+                    <SmallBody muted as="span">
+                      Host institution
+                    </SmallBody>
+                    <Body as="b">{c.host}</Body>
                   </div>
                   <div>
-                    <span>Host type</span>
-                    <b>{c.hostType || "—"}</b>
+                    <SmallBody muted as="span">
+                      Host type
+                    </SmallBody>
+                    <Body as="b">{c.hostType || "—"}</Body>
                   </div>
                   <div>
-                    <span>City / State</span>
-                    <b>{[c.city, c.state].filter(Boolean).join(", ")}</b>
+                    <SmallBody muted as="span">
+                      City / State
+                    </SmallBody>
+                    <Body as="b">
+                      {[c.city, c.state].filter(Boolean).join(", ")}
+                    </Body>
                   </div>
                   <div>
-                    <span>Agro-climatic zone</span>
-                    <b>{c.zone || "—"}</b>
+                    <SmallBody muted as="span">
+                      Agro-climatic zone
+                    </SmallBody>
+                    <Body as="b">{c.zone || "—"}</Body>
                   </div>
                   <div>
-                    <span>Centre type</span>
-                    <b>{c.type}</b>
+                    <SmallBody muted as="span">
+                      Centre type
+                    </SmallBody>
+                    <Body as="b">{c.type}</Body>
                   </div>
                   <div>
-                    <span>Pincode</span>
-                    <b>{c.pincode || "—"}</b>
+                    <SmallBody muted as="span">
+                      Pincode
+                    </SmallBody>
+                    <Body as="b">{c.pincode || "—"}</Body>
                   </div>
                 </div>
               </div>
@@ -236,30 +258,40 @@ function CentreDashboard() {
           <Card title="Your role">
             <div className="kv" style={{ gridTemplateColumns: "1fr" }}>
               <div>
-                <span>Role</span>
-                <b>
+                <SmallBody muted as="span">
+                  Role
+                </SmallBody>
+                <Body as="b">
                   {role.label}
                   {user.designation ? ` · ${user.designation}` : ""}
-                </b>
+                </Body>
               </div>
               <div>
-                <span>Organization</span>
-                <b>{user.organization || "—"}</b>
+                <SmallBody muted as="span">
+                  Organization
+                </SmallBody>
+                <Body as="b">{user.organization || "—"}</Body>
               </div>
               <div>
-                <span>Email · Mobile</span>
-                <b>
+                <SmallBody muted as="span">
+                  Email · Mobile
+                </SmallBody>
+                <Body as="b">
                   {user.email}
                   {user.mobile ? ` · ${user.mobile}` : ""}
-                </b>
+                </Body>
               </div>
               <div>
-                <span>PI of this centre since</span>
-                <b>{formatDate(user.createdAt)}</b>
+                <SmallBody muted as="span">
+                  PI of this centre since
+                </SmallBody>
+                <Body as="b">{formatDate(user.createdAt)}</Body>
               </div>
               <div>
-                <span>Last sign-in</span>
-                <b>{formatDateTime(user.lastLoginAt)}</b>
+                <SmallBody muted as="span">
+                  Last sign-in
+                </SmallBody>
+                <Body as="b">{formatDateTime(user.lastLoginAt)}</Body>
               </div>
             </div>
           </Card>
@@ -275,11 +307,11 @@ function CentreDashboard() {
               color="var(--text-muted)"
               style={{ flex: "none", marginTop: 2 }}
             />
-            <p className="muted">
+            <Body muted>
               Research data entry, experiments, expenditure and AUC/SoE
               submission for your centre will appear here as each module is
               enabled by the PCU.
-            </p>
+            </Body>
           </div>
         </Card>
       </div>

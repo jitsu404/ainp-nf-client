@@ -1,4 +1,4 @@
-import { Card } from "../../../components/ui";
+import { Body, Card, SmallBody } from "../../../components/ui";
 import { formatDate } from "../../../hooks";
 
 export function TrialOverviewCard({ trial: t }) {
@@ -8,7 +8,7 @@ export function TrialOverviewCard({ trial: t }) {
   return (
     <Card>
       <div className="stack" style={{ gap: 10 }}>
-        <b>{e.title}</b>
+        <Body style={{ fontWeight: 600 }}>{e.title}</Body>
         <div className="kv">
           <div>
             <span>Centre</span>
@@ -30,23 +30,23 @@ export function TrialOverviewCard({ trial: t }) {
         </div>
         {t.layoutNotes && (
           <div>
-            <span className="muted small">Layout notes</span>
+            <SmallBody muted>Layout notes</SmallBody>
             <div style={{ whiteSpace: "pre-wrap" }}>{t.layoutNotes}</div>
           </div>
         )}
         {withdrawn && (
-          <div className="note warn">
+          <Body as="div" className="note warn">
             This centre was withdrawn from the experiment
             {t.withdrawnAt ? ` on ${formatDate(t.withdrawnAt)}` : ""}
             {t.withdrawReason ? ` (${t.withdrawReason})` : ""}. Its trial and
             data are kept, read-only.
-          </div>
+          </Body>
         )}
         {!withdrawn && e.status !== "Active" && (
-          <div className="note">
+          <Body as="div" className="note">
             The experiment is {e.status}. Sheets can be opened once the PCU
             makes it Active.
-          </div>
+          </Body>
         )}
       </div>
     </Card>

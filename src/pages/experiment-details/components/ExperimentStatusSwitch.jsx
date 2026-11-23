@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, CircleDashed, Lock } from "lucide-react";
 import { SaveModal } from "../../../components/forms";
+import { Body } from "../../../components/ui";
 import { EXPERIMENT_STATUSES } from "../../../config/constants";
 import { toast } from "../../../lib/toast";
 
@@ -122,17 +123,18 @@ export function ExperimentStatusSwitch({ experiment, canChange, save }) {
             onClose={() => setTarget(null)}
           >
             <div className="stack" style={{ gap: 8 }}>
-              <p style={{ margin: 0 }}>
+              <Body style={{ margin: 0 }}>
                 <b>{target}:</b> {MEANING[target]}
-              </p>
+              </Body>
               {consequences(current, target, experiment).map((n) => (
-                <div
+                <Body
+                  as="div"
                   key={n}
                   className={`note ${n.startsWith("Still missing") ? "warn" : ""}`}
                   style={{ margin: 0 }}
                 >
                   {n}
-                </div>
+                </Body>
               ))}
             </div>
           </SaveModal>,

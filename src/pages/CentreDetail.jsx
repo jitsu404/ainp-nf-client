@@ -15,7 +15,15 @@ import {
   CredentialsModal,
   ErrorNote,
 } from "../components/forms";
-import { Badge, Card, Page, Table } from "../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Page,
+  SmallBody,
+  SubHeading,
+  Table,
+} from "../components/ui";
 import {
   personFields,
   personValues,
@@ -127,40 +135,58 @@ export default function CentreDetail() {
           <Card title="Centre information">
             <div className="kv two">
               <div>
-                <span>Host institution</span>
-                <b>{c.host}</b>
+                <SmallBody muted as="span">
+                  Host institution
+                </SmallBody>
+                <Body as="b">{c.host}</Body>
               </div>
               <div>
-                <span>Host short name</span>
-                <b>{c.hostShort || "—"}</b>
+                <SmallBody muted as="span">
+                  Host short name
+                </SmallBody>
+                <Body as="b">{c.hostShort || "—"}</Body>
               </div>
               <div>
-                <span>Host type</span>
-                <b>{c.hostType || "—"}</b>
+                <SmallBody muted as="span">
+                  Host type
+                </SmallBody>
+                <Body as="b">{c.hostType || "—"}</Body>
               </div>
               <div>
-                <span>City</span>
-                <b>{c.city || "—"}</b>
+                <SmallBody muted as="span">
+                  City
+                </SmallBody>
+                <Body as="b">{c.city || "—"}</Body>
               </div>
               <div>
-                <span>State</span>
-                <b>{c.state}</b>
+                <SmallBody muted as="span">
+                  State
+                </SmallBody>
+                <Body as="b">{c.state}</Body>
               </div>
               <div>
-                <span>Pincode</span>
-                <b>{c.pincode || "—"}</b>
+                <SmallBody muted as="span">
+                  Pincode
+                </SmallBody>
+                <Body as="b">{c.pincode || "—"}</Body>
               </div>
               <div>
-                <span>Agro-climatic zone</span>
-                <b>{c.zone || "—"}</b>
+                <SmallBody muted as="span">
+                  Agro-climatic zone
+                </SmallBody>
+                <Body as="b">{c.zone || "—"}</Body>
               </div>
               <div>
-                <span>Centre type</span>
-                <b>{c.type}</b>
+                <SmallBody muted as="span">
+                  Centre type
+                </SmallBody>
+                <Body as="b">{c.type}</Body>
               </div>
               <div>
-                <span>Added</span>
-                <b>{formatDate(c.createdAt)}</b>
+                <SmallBody muted as="span">
+                  Added
+                </SmallBody>
+                <Body as="b">{formatDate(c.createdAt)}</Body>
               </div>
             </div>
           </Card>
@@ -182,20 +208,27 @@ export default function CentreDetail() {
                 <div className="pi-card">
                   <span className="avatar">{initials(current.name)}</span>
                   <div>
-                    <b style={{ fontSize: 15 }}>{current.name}</b>
-                    <div className="muted">
+                    <SubHeading as="b" style={{ fontSize: "1.07em" }}>
+                      {current.name}
+                    </SubHeading>
+                    <SmallBody muted as="div">
                       {current.designation || "Centre PI"}
-                    </div>
-                    <div className="small" style={{ marginTop: 6 }}>
+                    </SmallBody>
+                    <SmallBody
+                      as="div"
+                      style={{ marginTop: 6, display: "block" }}
+                    >
                       {current.email}
                       {current.mobile && ` · ${current.mobile}`}
-                    </div>
-                    <div className="small muted">
+                    </SmallBody>
+                    <SmallBody muted as="div">
                       Signs in as{" "}
                       <span className="mono">{current.loginEmail}</span>
-                    </div>
+                    </SmallBody>
                     {current.organization && (
-                      <div className="small muted">{current.organization}</div>
+                      <SmallBody muted as="div">
+                        {current.organization}
+                      </SmallBody>
                     )}
                     {(!current.title || !current.mobile) && (
                       <div style={{ marginTop: 6 }}>
@@ -204,13 +237,13 @@ export default function CentreDetail() {
                         </Badge>
                       </div>
                     )}
-                    <div className="small muted">
+                    <SmallBody muted as="div">
                       PI since {formatDate(current.occupiedSince)} · last
                       sign-in{" "}
                       {current.lastLoginAt
                         ? formatDateTime(current.lastLoginAt)
                         : "never"}
-                    </div>
+                    </SmallBody>
                   </div>
                 </div>
                 {manage && (

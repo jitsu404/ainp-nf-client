@@ -6,7 +6,7 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import { Card, Table } from "../../../components/ui";
+import { Card, Table, Body, SmallBody } from "../../../components/ui";
 import { seasonMap } from "../../../lib/seasonCrops";
 import { toast } from "../../../lib/toast";
 
@@ -211,14 +211,15 @@ export function ProtocolTab({
                 pageSize={30}
                 empty={`No ${lower(names.A)} levels yet.`}
                 columns={[
-                  { label: "Code", render: (t) => <b>{t.code}</b> },
+                  {
+                    label: "Code",
+                    render: (t) => <Body as="b">{t.code}</Body>,
+                  },
                   { label: names.A, key: "name" },
                   {
                     label: "Details",
                     render: (t) => (
-                      <span className="muted small">
-                        {t.description || "—"}
-                      </span>
+                      <SmallBody muted>{t.description || "—"}</SmallBody>
                     ),
                   },
                 ]}
@@ -275,14 +276,15 @@ export function ProtocolTab({
                 pageSize={30}
                 empty={`No ${lower(names.B)} levels yet.`}
                 columns={[
-                  { label: "Code", render: (t) => <b>{t.code}</b> },
+                  {
+                    label: "Code",
+                    render: (t) => <Body as="b">{t.code}</Body>,
+                  },
                   { label: names.B, key: "name" },
                   {
                     label: "Details",
                     render: (t) => (
-                      <span className="muted small">
-                        {t.description || "—"}
-                      </span>
+                      <SmallBody muted>{t.description || "—"}</SmallBody>
                     ),
                   },
                 ]}
@@ -340,14 +342,15 @@ export function ProtocolTab({
                   pageSize={30}
                   empty={`No ${lower(names.C)} levels yet.`}
                   columns={[
-                    { label: "Code", render: (t) => <b>{t.code}</b> },
+                    {
+                      label: "Code",
+                      render: (t) => <Body as="b">{t.code}</Body>,
+                    },
                     { label: names.C, key: "name" },
                     {
                       label: "Details",
                       render: (t) => (
-                        <span className="muted small">
-                          {t.description || "—"}
-                        </span>
+                        <SmallBody muted>{t.description || "—"}</SmallBody>
                       ),
                     },
                   ]}
@@ -475,21 +478,20 @@ export function ProtocolTab({
                     {
                       label: "Details",
                       render: (t) => (
-                        <span className="muted small">
-                          {t.description || "—"}
-                        </span>
+                        <SmallBody muted>{t.description || "—"}</SmallBody>
                       ),
                     },
                   ]
                 : [
-                    { label: "Code", render: (t) => <b>{t.code}</b> },
+                    {
+                      label: "Code",
+                      render: (t) => <Body as="b">{t.code}</Body>,
+                    },
                     { label: "Treatment", key: "name" },
                     {
                       label: "Details",
                       render: (t) => (
-                        <span className="muted small">
-                          {t.description || "—"}
-                        </span>
+                        <SmallBody muted>{t.description || "—"}</SmallBody>
                       ),
                     },
                   ]
@@ -546,9 +548,9 @@ export function ProtocolTab({
               },
             ]}
           />
-          <div className="muted small" style={{ padding: "8px 16px" }}>
+          <SmallBody muted style={{ display: "block", padding: "8px 16px" }}>
             * required before a sheet can be submitted
-          </div>
+          </SmallBody>
         </Card>
       </div>
     </div>

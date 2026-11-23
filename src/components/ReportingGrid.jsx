@@ -3,7 +3,7 @@ import { ROUTES } from "../config/constants";
 import { useMasterOptions } from "../queries/masters";
 import { useReporting } from "../queries/research";
 import { ErrorNote } from "./forms";
-import { Badge, Card } from "./ui";
+import { Badge, Body, Card, SmallBody } from "./ui";
 
 // Who has reported what: each assigned centre × financial year × season, with the status of the
 // sheets opened there. "Not opened" is only shown where data is still expected (an active
@@ -22,7 +22,7 @@ export function ReportingGrid({ experimentId }) {
   const seasons = useMasterOptions("season");
   const r = reporting.data;
   if (reporting.error) return <ErrorNote error={reporting.error} />;
-  if (!r) return <p className="muted">Loading…</p>;
+  if (!r) return <Body muted>Loading…</Body>;
 
   // Experiments without fixed seasons: show whichever seasons have sheets.
   const seasonCodes = r.seasons.length
@@ -64,10 +64,10 @@ export function ReportingGrid({ experimentId }) {
     <div className="stack">
       <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
         {Object.entries(totals).map(([status, n]) => (
-          <span key={status} className="row small" style={{ gap: 4 }}>
+          <SmallBody key={status} className="row" style={{ gap: 4 }}>
             <Badge tone={TONE[status] ?? "grey"}>{status}</Badge>
             <b>{n}</b>
-          </span>
+          </SmallBody>
         ))}
       </div>
       <Card pad={false}>

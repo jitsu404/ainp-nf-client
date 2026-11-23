@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import Select from "react-select";
 import { RotateCcw, Search } from "lucide-react";
 import { ErrorNote, SaveModal } from "../../../components/forms";
-import { Badge } from "../../../components/ui";
+import { Badge, Body, SmallBody } from "../../../components/ui";
 import { toast } from "../../../lib/toast";
 import {
   effectiveSeasonCrops,
@@ -175,9 +175,9 @@ export function CentresModal({ experiment, trials = [], onClose }) {
           >
             Clear
           </button>
-          <span className="muted small">
+          <SmallBody muted>
             {selectedIds.length} of {rows.length} selected
-          </span>
+          </SmallBody>
         </div>
         <label className="search">
           <Search size={14} />
@@ -201,21 +201,15 @@ export function CentresModal({ experiment, trials = [], onClose }) {
         }}
       >
         {centres.isPending && (
-          <div
-            className="muted"
-            style={{ padding: "32px 0", textAlign: "center" }}
-          >
+          <Body muted style={{ padding: "32px 0", textAlign: "center" }}>
             Loading centres…
-          </div>
+          </Body>
         )}
 
         {!centres.isPending && filtered.length === 0 && (
-          <div
-            className="muted"
-            style={{ padding: "32px 0", textAlign: "center" }}
-          >
+          <Body muted style={{ padding: "32px 0", textAlign: "center" }}>
             {search ? "No centres match your search." : "No centres available."}
-          </div>
+          </Body>
         )}
 
         {filtered.map((c) => {

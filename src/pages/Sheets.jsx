@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth";
 import { ErrorNote } from "../components/forms";
-import { Badge, Card, Page, Select, Table } from "../components/ui";
+import { Badge, Card, Page, Select, SmallBody, Table } from "../components/ui";
 import {
   ROUTES,
   SHEET_STATUSES,
@@ -59,12 +59,12 @@ export default function Sheets() {
               all="All years"
             />
             <span className="grow" />
-            <span className="muted small row" style={{ gap: 6 }}>
+            <SmallBody muted className="row" style={{ gap: 6 }}>
               {sheets.isFetching && <Loader2 size={13} className="spin" />}
               {sheets.isPending
                 ? "Loading…"
                 : `${rows.length} sheet${rows.length === 1 ? "" : "s"}`}
-            </span>
+            </SmallBody>
           </div>
           <Table
             rows={rows}

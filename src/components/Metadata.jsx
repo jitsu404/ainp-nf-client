@@ -21,7 +21,7 @@ import {
   useTrialMetadata,
 } from "../queries/metadata";
 import { ErrorNote, SaveModal } from "./forms";
-import { Badge, Card, Modal, Table } from "./ui";
+import { Badge, Body, Card, Modal, SmallBody, SubHeading, Table } from "./ui";
 
 // ICAR research-data metadata (fields 1–38). The field list, values and what the caller may do
 // all come from the API; this file only renders them.
@@ -33,7 +33,7 @@ export function TrialMetadata({ trialId }) {
   const close = () => setModal(null);
   if (meta.error) return <ErrorNote error={meta.error} />;
   const m = meta.data;
-  if (!m) return <p className="muted">Loading…</p>;
+  if (!m) return <Body muted>Loading…</Body>;
   const last = m.history.at(-1);
 
   return (
@@ -68,15 +68,15 @@ export function TrialMetadata({ trialId }) {
           )}
         </div>
         {!m.isOwnCentre && (
-          <div className="note" style={{ marginTop: 12 }}>
+          <Body as="div" className="note" style={{ marginTop: 12 }}>
             This is {m.centre?.name}&apos;s metadata. You can read it; only that
             centre can change it.
-          </div>
+          </Body>
         )}
         {m.status === "Returned" && last?.remark && (
-          <div className="note warn" style={{ marginTop: 12 }}>
+          <Body as="div" className="note warn" style={{ marginTop: 12 }}>
             Returned by {last.byName}: {last.remark}
-          </div>
+          </Body>
         )}
         {m.status === "Submitted" && (
           <div className="note" style={{ marginTop: 12 }}>
@@ -643,7 +643,7 @@ export function ExperimentMetadata({ experimentId }) {
   const [openTrial, setOpenTrial] = useState(null);
   if (meta.error) return <ErrorNote error={meta.error} />;
   const m = meta.data;
-  if (!m) return <p className="muted">Loading…</p>;
+  if (!m) return <Body muted>Loading…</Body>;
 
   return (
     <div className="stack">

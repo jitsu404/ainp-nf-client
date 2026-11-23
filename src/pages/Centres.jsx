@@ -3,7 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, Plus, Search } from "lucide-react";
 import { useAuth } from "../auth";
 import { AsyncFormModal, ErrorNote } from "../components/forms";
-import { Badge, Card, Page, Select, Table } from "../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Page,
+  Select,
+  SmallBody,
+  Table,
+} from "../components/ui";
 import { HOST_TYPES, ROUTES, TABLE_PAGE_SIZE } from "../config/constants";
 import { useDebounced } from "../hooks";
 import { programme } from "../programme/config";
@@ -92,12 +100,12 @@ export default function Centres() {
               all="All centres"
             />
             <span className="grow" />
-            <span className="muted small row" style={{ gap: 6 }}>
+            <SmallBody muted className="row" style={{ gap: 6 }}>
               {centres.isFetching && <Loader2 size={13} className="spin" />}
               {centres.isPending
                 ? "Loading…"
                 : `${rows.length} centre${rows.length === 1 ? "" : "s"}`}
-            </span>
+            </SmallBody>
           </div>
           <Table
             rows={rows}
@@ -108,7 +116,11 @@ export default function Centres() {
               { label: "Code", key: "code" },
               {
                 label: "Centre",
-                render: (c) => <b style={{ fontWeight: 550 }}>{c.name}</b>,
+                render: (c) => (
+                  <Body as="b" style={{ fontWeight: 550 }}>
+                    {c.name}
+                  </Body>
+                ),
               },
               {
                 label: "Host",

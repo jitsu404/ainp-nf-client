@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { useStore } from "../store";
 import { WORKFLOW_STAGES } from "../roles";
+import { LargeHeading, SubHeading, Body, SmallBody, Text } from "./Typography";
+
+export { LargeHeading, SubHeading, Body, SmallBody, Text };
 
 export const num = (n, d = 2) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: d });
@@ -67,7 +70,7 @@ export const Badge = ({ children, tone }) => (
 export const Page = ({ title, actions, children }) => (
   <>
     <div className="page-head">
-      <h1>{title}</h1>
+      {typeof title === "string" ? <LargeHeading>{title}</LargeHeading> : title}
       {actions && <div className="row">{actions}</div>}
     </div>
     {children}
@@ -84,7 +87,11 @@ export const Card = ({
   <section className={`card ${className}`}>
     {(title || actions) && (
       <div className="card-head">
-        <h3>{title}</h3>
+        {typeof title === "string" ? (
+          <SubHeading level="card">{title}</SubHeading>
+        ) : (
+          title
+        )}
         <div className="row">{actions}</div>
       </div>
     )}
@@ -104,10 +111,21 @@ export const Stat = ({ icon: Icon, label, value, hint }) => (
           <Icon size={15} />
         </span>
       )}
-      {label}
+      <SmallBody color="text-muted">{label}</SmallBody>
     </div>
-    <div className="value">{value}</div>
-    {hint && <div className="hint">{hint}</div>}
+    <div className="value">
+      <LargeHeading
+        as="div"
+        style={{ fontSize: "1.64em", letterSpacing: "-0.3px" }}
+      >
+        {value}
+      </LargeHeading>
+    </div>
+    {hint && (
+      <div className="hint">
+        <SmallBody muted>{hint}</SmallBody>
+      </div>
+    )}
   </div>
 );
 
@@ -221,13 +239,17 @@ export function Table({
           )}
         </table>
       </div>
-      {!rows.length && <div className="empty">{empty}</div>}
+      {!rows.length && (
+        <div className="empty">
+          {typeof empty === "string" ? <Body muted>{empty}</Body> : empty}
+        </div>
+      )}
       {rows.length > pageSize && (
         <div className="table-foot">
-          <span>
+          <SmallBody muted>
             {p * pageSize + 1}–{Math.min(rows.length, (p + 1) * pageSize)} of{" "}
             {rows.length}
-          </span>
+          </SmallBody>
           <span className="row">
             <button
               className="icon-btn"
@@ -237,7 +259,9 @@ export function Table({
             >
               <ChevronLeft size={16} />
             </button>
-            Page {p + 1} of {pages}
+            <SmallBody muted>
+              Page {p + 1} of {pages}
+            </SmallBody>
             <button
               className="icon-btn"
               disabled={p >= pages - 1}
@@ -317,8 +341,19 @@ export function Modal({
       >
         <div className="modal-head" style={{ flexShrink: 0 }}>
           <div>
-            <h3>{title}</h3>
-            {subtitle && <p className="muted small">{subtitle}</p>}
+            {typeof title === "string" ? (
+              <SubHeading>{title}</SubHeading>
+            ) : (
+              title
+            )}
+            {subtitle &&
+              (typeof subtitle === "string" ? (
+                <SmallBody muted as="p" style={{ marginTop: 2 }}>
+                  {subtitle}
+                </SmallBody>
+              ) : (
+                subtitle
+              ))}
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close">
             <X size={18} />

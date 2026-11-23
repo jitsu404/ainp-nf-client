@@ -5,7 +5,14 @@ import { useAuth } from "../../../../auth";
 import { ExcelImportModal } from "../../../../components/ExcelImport";
 import { FormulaField } from "../../../../components/FormulaField";
 import { AsyncFormModal, ErrorNote } from "../../../../components/forms";
-import { Badge, Card, Select, Table } from "../../../../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Select,
+  SmallBody,
+  Table,
+} from "../../../../components/ui";
 import {
   PARAMETER_CATEGORIES,
   PARAMETER_DATA_TYPES,
@@ -160,9 +167,9 @@ export default function ParametersTab() {
           all="All categories"
         />
         <span className="grow" />
-        <span className="muted small">
+        <SmallBody muted>
           {params.data ? `${params.data.length} parameters` : ""}
-        </span>
+        </SmallBody>
       </div>
       <ErrorNote error={params.error} />
       <Table
@@ -176,7 +183,11 @@ export default function ParametersTab() {
           },
           {
             label: "Name",
-            render: (p) => <b style={{ fontWeight: 550 }}>{p.name}</b>,
+            render: (p) => (
+              <Body as="b" style={{ fontWeight: 550 }}>
+                {p.name}
+              </Body>
+            ),
           },
           { label: "Category", key: "category" },
           {

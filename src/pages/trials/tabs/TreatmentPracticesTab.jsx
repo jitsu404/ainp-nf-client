@@ -1,5 +1,5 @@
 import { Pencil } from "lucide-react";
-import { Card, Table } from "../../../components/ui";
+import { Card, SmallBody, Table } from "../../../components/ui";
 import { PRACTICE_FIELDS } from "../components";
 
 export function TreatmentPracticesTab({ trial: t, edit, onEditPractices }) {
@@ -35,9 +35,9 @@ export function TreatmentPracticesTab({ trial: t, edit, onEditPractices }) {
           ...PRACTICE_FIELDS.map(([key, label]) => ({
             label,
             render: (tr) => (
-              <span className="small" style={{ whiteSpace: "pre-wrap" }}>
+              <SmallBody style={{ whiteSpace: "pre-wrap" }}>
                 {practiceOf(tr.code)[key] || "—"}
-              </span>
+              </SmallBody>
             ),
           })),
         ]}

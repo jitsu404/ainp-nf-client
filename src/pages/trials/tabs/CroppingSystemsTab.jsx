@@ -1,6 +1,6 @@
 import { Sprout } from "lucide-react";
 import { SeasonCropsCard } from "../../../components/SeasonCrops";
-import { Card, Table } from "../../../components/ui";
+import { Body, Card, Table } from "../../../components/ui";
 import { formatDate } from "../../../hooks";
 
 export function CroppingSystemsTab({
@@ -34,9 +34,9 @@ export function CroppingSystemsTab({
         )}
         {t.croppingSystems.map((cs) => (
           <div key={cs.code} style={{ padding: "6px 0 10px" }}>
-            <div style={{ padding: "4px 16px" }}>
+            <Body style={{ padding: "4px 16px" }}>
               <b>{cs.code}</b> · {cs.name}
-            </div>
+            </Body>
             <Table
               rows={cs.seasons.map((s) => ({ ...s, id: s.seasonCode }))}
               pageSize={10}

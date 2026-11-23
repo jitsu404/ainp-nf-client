@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { Select } from "../../../components/ui";
+import { Select, SmallBody } from "../../../components/ui";
 
 export function MasterToolbar({
   search,
@@ -44,7 +44,7 @@ export function MasterToolbar({
         />
       )}
       <span className="grow" />
-      {description && <span className="muted small">{description}</span>}
+      {description && <SmallBody muted>{description}</SmallBody>}
     </div>
   );
 }

@@ -1,5 +1,11 @@
 import { ErrorNote } from "../../../../components/forms";
-import { Badge, Card } from "../../../../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  SmallBody,
+  SubHeading,
+} from "../../../../components/ui";
 import { useRoleSummary } from "../../../../queries/users";
 
 /** Read-only overview of the roles, built by the server from the same definitions it enforces. */
@@ -7,15 +13,17 @@ export default function RolesTab() {
   const roles = useRoleSummary();
 
   if (roles.error) return <ErrorNote error={roles.error} />;
-  if (!roles.data) return <p className="muted">Loading…</p>;
+  if (!roles.data) return <Body muted>Loading…</Body>;
 
   return (
     <div className="stack">
       <div className="note">
-        What each role can do, exactly as the server enforces it. Roles are part
-        of the application, so changing one is a development change. Some
-        capabilities belong to modules that are not built yet (finance, AUC /
-        SoE, staff, meetings …).
+        <Body>
+          What each role can do, exactly as the server enforces it. Roles are
+          part of the application, so changing one is a development change. Some
+          capabilities belong to modules that are not built yet (finance, AUC /
+          SoE, staff, meetings …).
+        </Body>
       </div>
       <div className="grid g3" style={{ alignItems: "start" }}>
         {roles.data.map((r) => {
@@ -25,7 +33,9 @@ export default function RolesTab() {
               key={r.id}
               title={
                 <span className="row" style={{ gap: 8 }}>
-                  {r.label}
+                  <SubHeading as="span" level="card">
+                    {r.label}
+                  </SubHeading>
                   <Badge tone={r.scope === "centre" ? "blue" : "green"}>
                     {r.scope === "centre" ? "Own centre" : "All centres"}
                   </Badge>
@@ -35,19 +45,29 @@ export default function RolesTab() {
               <div className="stack" style={{ gap: 10 }}>
                 <div className="kv two">
                   <div>
-                    <span>Active accounts</span>
-                    <b>{r.activeUsers}</b>
+                    <SmallBody muted as="span">
+                      Active accounts
+                    </SmallBody>
+                    <Body as="b">{r.activeUsers}</Body>
                   </div>
                   <div>
-                    <span>Manages accounts of</span>
-                    <b>{r.manages.length ? r.manages.join(", ") : "—"}</b>
+                    <SmallBody muted as="span">
+                      Manages accounts of
+                    </SmallBody>
+                    <Body as="b">
+                      {r.manages.length ? r.manages.join(", ") : "—"}
+                    </Body>
                   </div>
                 </div>
                 {modules.map((module) => (
                   <div key={module}>
-                    <div className="muted small" style={{ fontWeight: 600 }}>
+                    <SmallBody
+                      color="text-muted"
+                      as="div"
+                      style={{ fontWeight: 600 }}
+                    >
                       {module}
-                    </div>
+                    </SmallBody>
                     <ul
                       className="small"
                       style={{ margin: "2px 0 0", paddingLeft: 18 }}
@@ -55,7 +75,9 @@ export default function RolesTab() {
                       {r.capabilities
                         .filter((c) => c.module === module)
                         .map((c) => (
-                          <li key={c.id}>{c.label}</li>
+                          <SmallBody as="li" key={c.id}>
+                            {c.label}
+                          </SmallBody>
                         ))}
                     </ul>
                   </div>

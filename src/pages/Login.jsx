@@ -6,6 +6,7 @@ import { ROUTES } from "../config/constants";
 import { useAuth } from "../auth";
 import { ErrorNote } from "../components/forms";
 import { programme } from "../programme/config";
+import { Body, LargeHeading, SmallBody, SubHeading } from "../components/ui";
 
 export default function Login() {
   const { login, notice } = useAuth();
@@ -36,8 +37,10 @@ export default function Login() {
         <header className="hero-head">
           <img className="hero-logo" src="/logos/icar.png" alt="ICAR logo" />
           <div>
-            <h1>{programme.name}</h1>
-            <p className="scheme">{programme.system}</p>
+            <LargeHeading as="h1">{programme.name}</LargeHeading>
+            <Body as="p" className="scheme">
+              {programme.system}
+            </Body>
           </div>
         </header>
         <div className="hero-media">
@@ -49,27 +52,37 @@ export default function Login() {
           <PhotoCarousel />
         </div>
         <div className="address">
-          <b>
+          <Body as="b" style={{ fontWeight: 600 }}>
             {programme.unit}
             <br />
             {programme.instituteShort}
             {programme.place}
-          </b>
+          </Body>
         </div>
       </section>
 
       <section className="login-panel">
         <div className="login-card">
           <Link to={ROUTES.landing} className="back-home small">
-            <ArrowLeft size={13} /> Back to the home page
+            <ArrowLeft size={13} /> <SmallBody>Back to the home page</SmallBody>
           </Link>
-          <span className="eyebrow">{programme.short}</span>
-          <h2>Sign in</h2>
+          <SmallBody as="span" className="eyebrow">
+            {programme.short}
+          </SmallBody>
+          <SubHeading as="h2" style={{ fontSize: "1.4em", marginBottom: 12 }}>
+            Sign in
+          </SubHeading>
           <form onSubmit={submit} noValidate>
-            {notice && !error && <div className="note warn">{notice}</div>}
+            {notice && !error && (
+              <div className="note warn">
+                <Body>{notice}</Body>
+              </div>
+            )}
             <ErrorNote error={error} />
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">
+                <Body as="span">Email</Body>
+              </label>
               <input
                 id="email"
                 type="email"
@@ -80,7 +93,9 @@ export default function Login() {
               />
             </div>
             <div className="field">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">
+                <Body as="span">Password</Body>
+              </label>
               <div
                 style={{
                   position: "relative",
@@ -124,10 +139,10 @@ export default function Login() {
               )}{" "}
               Sign in
             </button>
-            <p className="muted small">
+            <SmallBody muted as="p" style={{ marginTop: 14 }}>
               Accounts are created by the Project Coordination Unit. Forgot your
               password? Ask the PCU to reset it.
-            </p>
+            </SmallBody>
           </form>
         </div>
       </section>

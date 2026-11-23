@@ -1,5 +1,6 @@
 import { FileText } from "lucide-react";
 import { programme } from "../../programme/config";
+import { Body, LargeHeading, SubHeading } from "../../components/ui";
 
 // The About / Publications / Annual reports pages of the public site. Their documents and text are
 // supplied by the Project Coordination Unit; until then the lists say so.
@@ -7,8 +8,8 @@ import { programme } from "../../programme/config";
 function PageHead({ title, lead }) {
   return (
     <div className="site-page-head">
-      <h2>{title}</h2>
-      {lead && <p>{lead}</p>}
+      <LargeHeading as="h2">{title}</LargeHeading>
+      {lead && <Body as="p">{lead}</Body>}
     </div>
   );
 }
@@ -21,26 +22,26 @@ export function About() {
         lead={`${programme.name} (${programme.short})`}
       />
       <div className="site-card site-prose">
-        <p>
+        <Body>
           The {programme.name} is coordinated by the {programme.unit} at the{" "}
           {programme.institute}, {programme.place}. Its network of centres
           across the agro-climatic zones of India conducts common experiments on
           natural farming, so that results can be compared and pooled across
           locations.
-        </p>
-        <p>
+        </Body>
+        <Body>
           The {programme.system} records each experiment's protocol, the trials
           run at the centres, their observations and analyses, and the
           programme's finances.
-        </p>
-        <h3>Contact</h3>
-        <p>
+        </Body>
+        <SubHeading as="h3">Contact</SubHeading>
+        <Body>
           {programme.instituteShort}
           <br />
           {programme.instituteHi}
           <br />
           {programme.place}
-        </p>
+        </Body>
       </div>
     </section>
   );
@@ -53,7 +54,7 @@ function DocumentList({ title, lead, empty }) {
       <div className="site-card">
         <div className="site-empty">
           <FileText size={28} />
-          <p>{empty}</p>
+          <Body>{empty}</Body>
         </div>
       </div>
     </section>

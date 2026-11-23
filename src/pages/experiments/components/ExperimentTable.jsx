@@ -1,4 +1,4 @@
-import { Badge, Table } from "../../../components/ui";
+import { Badge, Body, Table } from "../../../components/ui";
 import { TABLE_PAGE_SIZE } from "../../../config/constants";
 
 export function ExperimentTable({
@@ -31,7 +31,11 @@ export function ExperimentTable({
         },
         {
           label: "Title",
-          render: (e) => <b style={{ fontWeight: 550 }}>{e.title}</b>,
+          render: (e) => (
+            <Body as="b" style={{ fontWeight: 550 }}>
+              {e.title}
+            </Body>
+          ),
         },
         {
           label: "Programme",

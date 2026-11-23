@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Lock, LockOpen, Plus, Star } from "lucide-react";
 import { useAuth } from "../../../../auth";
 import { AsyncFormModal } from "../../../../components/forms";
-import { Badge, Card, Table } from "../../../../components/ui";
+import { Badge, Body, Card, SmallBody, Table } from "../../../../components/ui";
 import { TABLE_PAGE_SIZE } from "../../../../config/constants";
 import { formatDate } from "../../../../hooks";
 import { toast } from "../../../../lib/toast";
@@ -42,10 +42,10 @@ export default function FinancialYearsTab() {
       }
     >
       <div className="toolbar">
-        <span className="muted small">
+        <SmallBody muted>
           A closed year is locked: no observation data or other entries can be
           added or changed in it. The current year is the default everywhere.
-        </span>
+        </SmallBody>
       </div>
       <Table
         rows={years.data ?? []}
@@ -54,7 +54,11 @@ export default function FinancialYearsTab() {
         columns={[
           {
             label: "Year",
-            render: (y) => <b style={{ fontWeight: 550 }}>{y.code}</b>,
+            render: (y) => (
+              <Body as="b" style={{ fontWeight: 550 }}>
+                {y.code}
+              </Body>
+            ),
           },
           {
             label: "Period",

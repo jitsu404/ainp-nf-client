@@ -13,7 +13,16 @@ import {
   ErrorNote,
 } from "../components/forms";
 import { seatPasswordField } from "../components/personFields";
-import { Badge, Card, Modal, Page, Table } from "../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Modal,
+  Page,
+  SmallBody,
+  SubHeading,
+  Table,
+} from "../components/ui";
 import { ROUTES } from "../config/constants";
 import { formatDate } from "../hooks";
 import { useExperimentPis } from "../queries/experimentPis";
@@ -68,7 +77,11 @@ export default function ExperimentPis() {
               },
               {
                 label: "Held by",
-                render: (s) => <b style={{ fontWeight: 550 }}>{s.name}</b>,
+                render: (s) => (
+                  <Body as="b" style={{ fontWeight: 550 }}>
+                    {s.name}
+                  </Body>
+                ),
               },
               { label: "Designation", render: (s) => s.designation || "—" },
               { label: "Email", key: "email" },
@@ -111,14 +124,20 @@ export default function ExperimentPis() {
           <div className="stack">
             <PiCard pi={seat} />
             <div>
-              <span className="muted small">Experiment</span>
+              <SmallBody muted as="span" style={{ display: "block" }}>
+                Experiment
+              </SmallBody>
               <div>
                 {seat.experiment ? (
                   <Link to={ROUTES.experiment(seat.experiment.id)}>
-                    {seat.experiment.code} · {seat.experiment.title}
+                    <Body as="span">
+                      {seat.experiment.code} · {seat.experiment.title}
+                    </Body>
                   </Link>
                 ) : (
-                  "Not linked yet. Link it from the experiment's page."
+                  <Body muted>
+                    Not linked yet. Link it from the experiment's page.
+                  </Body>
                 )}
               </div>
             </div>

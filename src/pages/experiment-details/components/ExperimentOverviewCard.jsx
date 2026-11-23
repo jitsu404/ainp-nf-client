@@ -1,7 +1,7 @@
 import { UserSquare2 } from "lucide-react";
 import { PiCard } from "../../../components/ExperimentPis";
 import { useMemo } from "react";
-import { Card } from "../../../components/ui";
+import { Body, Card, LargeHeading, SmallBody } from "../../../components/ui";
 import { experimentFactors } from "../../../config/constants";
 import { useMasters } from "../../../queries/masters";
 
@@ -53,50 +53,53 @@ export function ExperimentOverviewCard({
   return (
     <Card>
       <div className="stack" style={{ gap: 12 }}>
-        <h2 style={{ fontSize: 17, margin: 0 }}>{e.title}</h2>
+        <LargeHeading as="h2" style={{ fontSize: "1.21em", margin: 0 }}>
+          {e.title}
+        </LargeHeading>
         <div className="kv">
           <div>
-            <span>Programme</span>
-            <b>{programmes.nameOf(e.programmeCode)}</b>
+            <SmallBody muted as="span">
+              Programme
+            </SmallBody>
+            <Body as="b">{programmes.nameOf(e.programmeCode)}</Body>
           </div>
           <div>
-            <span>Design</span>
-            <b>
+            <SmallBody muted as="span">
+              Design
+            </SmallBody>
+            <Body as="b">
               {e.design}
               {e.replications ? ` · ${e.replications} replications` : ""}
-            </b>
+            </Body>
           </div>
           <div>
-            <span>Since</span>
-            <b>
+            <SmallBody muted as="span">
+              Since
+            </SmallBody>
+            <Body as="b">
               {e.startYear}
               {e.endYear ? ` – ${e.endYear}` : ""}
-            </b>
-          </div>
-          {/* <div>
-            <span>Reference treatment</span>
-            <b>
-              {e.referenceTreatmentCode
-                ? `${e.referenceTreatmentCode} · ${e.treatments.find((t) => t.code === e.referenceTreatmentCode)?.name ?? ""}`
-                : "—"}
-            </b>
-          </div> */}
-          <div>
-            <span>Seasons</span>
-            <b>{formatSeasons(e.seasons, seasons, cropName)}</b>
+            </Body>
           </div>
           <div>
-            <span>Replication count</span>
-            <b>{e.replications || 0}</b>
+            <SmallBody muted as="span">
+              Seasons
+            </SmallBody>
+            <Body as="b">{formatSeasons(e.seasons, seasons, cropName)}</Body>
+          </div>
+          <div>
+            <SmallBody muted as="span">
+              Replication count
+            </SmallBody>
+            <Body as="b">{e.replications || 0}</Body>
           </div>
 
           {experimentFactors(e).length > 0 && (
             <div>
-              {/* Each treatment is one combination of the factor levels; data is treatment × replication. */}
-              <span>
+              <SmallBody muted as="span">
                 {e.design === "Factorial" ? "Factors" : "Plot layout"}
-              </span>
-              <b>
+              </SmallBody>
+              <Body as="b">
                 {experimentFactors(e)
                   .map(
                     (f) =>
@@ -108,31 +111,37 @@ export function ExperimentOverviewCard({
                 treatment combinations
                 {e.treatments.length > 0 &&
                   ` · ${e.treatments.length * (e.replications || 1)} rows per parameter`}
-              </b>
+              </Body>
             </div>
           )}
           <div>
-            <span>Treatments / parameters</span>
-            <b>
+            <SmallBody muted as="span">
+              Treatments / parameters
+            </SmallBody>
+            <Body as="b">
               {e.treatments.length} /{" "}
               {(e.defaultParameters ?? e.parameters ?? []).length}
-            </b>
+            </Body>
           </div>
           <div>
-            <span>Centres</span>
-            <b>{(e.centreIds ?? trialRows).length}</b>
+            <SmallBody muted as="span">
+              Centres
+            </SmallBody>
+            <Body as="b">{(e.centreIds ?? trialRows).length}</Body>
           </div>
         </div>
         <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
           <div className="grow">
-            <span className="muted small">Experiment PI</span>
+            <SmallBody muted as="span" style={{ display: "block" }}>
+              Experiment PI
+            </SmallBody>
             {e.pi ? (
               <PiCard pi={e.pi} compact={!assign} />
             ) : (
-              <div className="muted">
+              <Body muted>
                 Not assigned yet
                 {assign && ". The PI edits this experiment's definition."}
-              </div>
+              </Body>
             )}
           </div>
           {assign && (

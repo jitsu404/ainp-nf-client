@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { SaveModal } from "../../../components/forms";
+import { Body, SmallBody } from "../../../components/ui";
 
 export function TreatmentsModal({
   experiment,
@@ -220,26 +221,26 @@ export function TreatmentsModal({
       onClose={onClose}
     >
       {isPlot && targetCount <= 0 && (
-        <div className="note warn">
+        <Body as="div" className="note warn">
           {isMainPlot ? names.A : isSubPlot ? names.B : names.C}{" "}
           {isFactorial ? "levels" : "Count"} is 0. Please set the count in Edit
           details before saving.
-        </div>
+        </Body>
       )}
       {isDerivedTreatments && targetCount <= 0 && (
-        <div className="note warn">
+        <Body as="div" className="note warn">
           Plot counts (
           {hasC
             ? `${names.A}, ${names.B}, ${names.C}`
             : `${names.A}, ${names.B}`}
           ) are not configured. Please set plot counts in Edit details before
           configuring treatments.
-        </div>
+        </Body>
       )}
       {(isPlot || isDerivedTreatments) &&
         targetCount > 0 &&
         rows.length !== targetCount && (
-          <div className="note warn">
+          <Body as="div" className="note warn">
             Exactly {targetCount}{" "}
             {isMainPlot
               ? "main plots"
@@ -249,10 +250,10 @@ export function TreatmentsModal({
                   ? "sub-sub plots"
                   : "treatments"}{" "}
             must be configured (currently {rows.length}).
-          </div>
+          </Body>
         )}
       {!valid && rows.length > 0 && (
-        <div className="note warn">
+        <Body as="div" className="note warn">
           Every{" "}
           {isMainPlot
             ? "main plot"
@@ -262,7 +263,7 @@ export function TreatmentsModal({
                 ? "sub-sub plot"
                 : "treatment"}{" "}
           needs a unique code and a name.
-        </div>
+        </Body>
       )}
 
       {isDerivedTreatments && rows.length > 0 && (
@@ -437,15 +438,15 @@ export function TreatmentsModal({
                   : "treatment"}
           </button>
           {isPlot && (
-            <span className="muted small" style={{ marginLeft: 10 }}>
+            <SmallBody muted style={{ marginLeft: 10 }}>
               {rows.length} of {targetCount} configured
-            </span>
+            </SmallBody>
           )}
           {isDerivedTreatments && (
-            <span className="muted small" style={{ marginLeft: 10 }}>
+            <SmallBody muted style={{ marginLeft: 10 }}>
               Fixed layout ({rows.length} of {targetCount} treatments) —
               combinations are fixed by plot design
-            </span>
+            </SmallBody>
           )}
         </div>
       </div>

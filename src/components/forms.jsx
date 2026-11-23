@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
-import { Modal } from "./ui";
+import { Modal, Body, SmallBody } from "./ui";
 
 /** A readable random password that meets the API rule (10+ chars, a letter and a digit). */
 export function generatePassword() {
@@ -19,9 +19,11 @@ export function ErrorNote({ error }) {
   if (!error) return null;
   return (
     <div className="note bad" role="alert">
-      {error.message}
+      <Body>{error.message}</Body>
       {error.requestId && (
-        <div className="muted small">Reference: {error.requestId}</div>
+        <SmallBody muted as="div">
+          Reference: {error.requestId}
+        </SmallBody>
       )}
     </div>
   );
@@ -135,7 +137,7 @@ export function AsyncFormModal({
               <label htmlFor={`f-${f.name}`}>
                 {f.label}
                 {f.required === false && (
-                  <span className="muted"> (optional)</span>
+                  <SmallBody muted> (optional)</SmallBody>
                 )}
               </label>
               {f.render ? (
@@ -193,12 +195,12 @@ export function AsyncFormModal({
                 </div>
               )}
               {fieldErrors[f.name] && (
-                <span className="field-error">
+                <SmallBody className="field-error" as="span">
                   {fieldErrors[f.name].join(". ")}
-                </span>
+                </SmallBody>
               )}
               {f.hint && !fieldErrors[f.name] && (
-                <span className="muted small">{f.hint}</span>
+                <SmallBody muted>{f.hint}</SmallBody>
               )}
             </div>
           ))}

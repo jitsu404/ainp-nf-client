@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ErrorNote, SaveModal } from "../../../components/forms";
+import { Body, SmallBody } from "../../../components/ui";
 import { PARAMETER_LEVELS } from "../../../config/constants";
 import { useParameters, useUnitLabel } from "../../../queries/masters";
 
@@ -81,12 +82,12 @@ export function ParametersModal({ experiment, save, onClose }) {
           padding: 8,
         }}
       >
-        {library.isPending && <p className="muted">Loading…</p>}
+        {library.isPending && <Body muted>Loading…</Body>}
         {byCategory.map(([category, params]) => (
           <div key={category} style={{ marginBottom: 8 }}>
-            <div className="muted small" style={{ fontWeight: 600 }}>
+            <SmallBody muted style={{ fontWeight: 600, display: "block" }}>
               {category}
-            </div>
+            </SmallBody>
             <div className="check-list" style={{ maxHeight: "none" }}>
               {params.map((p) => (
                 <label key={p.id} title={p.code}>
@@ -98,7 +99,7 @@ export function ParametersModal({ experiment, save, onClose }) {
                   />
                   {p.name}
                   {p.unitCode ? (
-                    <span className="muted"> ({unit(p.unitCode)})</span>
+                    <SmallBody muted> ({unit(p.unitCode)})</SmallBody>
                   ) : null}
                 </label>
               ))}
@@ -106,7 +107,7 @@ export function ParametersModal({ experiment, save, onClose }) {
           </div>
         ))}
       </div>
-      <b>{selected.size} selected</b>
+      <Body style={{ fontWeight: 600 }}>{selected.size} selected</Body>
       {selected.size > 0 && (
         <div
           className="table-wrap"

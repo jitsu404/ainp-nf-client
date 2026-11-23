@@ -4,6 +4,7 @@ import { LayoutDashboard, LogIn, Menu, X } from "lucide-react";
 import { useAuth } from "../../auth";
 import { ROUTES } from "../../config/constants";
 import { programme } from "../../programme/config";
+import { Body, LargeHeading, SmallBody } from "../../components/ui";
 
 // The public website around the landing page and the About / Publications / Annual reports pages:
 // a government-style header (logo and programme name on one line), a menu bar and a footer.
@@ -27,7 +28,7 @@ export default function PublicLayout() {
         <div className="site-wrap site-brand">
           <Link to={ROUTES.landing} className="site-title">
             <img src="/logos/icar.png" alt="ICAR logo" />
-            <h1>{programme.name}</h1>
+            <LargeHeading as="h1">{programme.name}</LargeHeading>
           </Link>
           {/* <img
             className="site-partner"
@@ -52,7 +53,7 @@ export default function PublicLayout() {
             {MENU.map((m) => (
               <li key={m.to}>
                 <NavLink to={m.to} end={m.end} onClick={() => setOpen(false)}>
-                  {m.label}
+                  <Body as="span">{m.label}</Body>
                 </NavLink>
               </li>
             ))}
@@ -81,14 +82,16 @@ export default function PublicLayout() {
       <footer className="site-footer">
         <div className="site-wrap">
           <div>
-            <b>{programme.instituteShort}</b>
-            <div>{programme.instituteHi}</div>
-            <div>{programme.place}</div>
+            <Body as="b" style={{ fontWeight: 600 }}>
+              {programme.instituteShort}
+            </Body>
+            <SmallBody as="div">{programme.instituteHi}</SmallBody>
+            <SmallBody as="div">{programme.place}</SmallBody>
           </div>
-          <div className="small">
+          <SmallBody as="div" muted className="small">
             © {new Date().getFullYear()} {programme.institute}.{" "}
             {programme.short} {programme.system}.
-          </div>
+          </SmallBody>
         </div>
       </footer>
     </div>

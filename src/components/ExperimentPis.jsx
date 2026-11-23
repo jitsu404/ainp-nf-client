@@ -16,6 +16,7 @@ import {
   SaveModal,
 } from "./forms";
 import { personFields, personValues, seatPasswordField } from "./personFields";
+import { Body, SmallBody } from "./ui";
 
 // Experiment PI seats: the PCU creates permanent logins (pi1.npnf@icar.org.in, pi2 …) held by one
 // person at a time, and links one to an experiment. Replacing the person keeps the login.
@@ -25,17 +26,19 @@ export function PiCard({ pi, compact = false }) {
   if (!pi) return null;
   return (
     <div className="stack" style={{ gap: 2 }}>
-      <b>{pi.name}</b>
-      {pi.designation && <span className="muted small">{pi.designation}</span>}
-      <span className="small">
+      <Body as="b" style={{ fontWeight: 600 }}>
+        {pi.name}
+      </Body>
+      {pi.designation && <SmallBody muted>{pi.designation}</SmallBody>}
+      <SmallBody>
         {pi.email}
         {pi.mobile && ` · ${pi.mobile}`}
-      </span>
+      </SmallBody>
       {!compact && (
-        <span className="small muted">
+        <SmallBody muted>
           Signs in as <span className="mono">{pi.loginEmail}</span>
           {pi.occupiedSince && ` · since ${formatDate(pi.occupiedSince)}`}
-        </span>
+        </SmallBody>
       )}
     </div>
   );

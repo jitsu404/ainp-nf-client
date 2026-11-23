@@ -1,4 +1,5 @@
 import { AsyncFormModal } from "../../../components/forms";
+import { SmallBody } from "../../../components/ui";
 import {
   defaultExperimentYear,
   experimentYears,
@@ -28,11 +29,11 @@ export function OpenSheetModal({ trial, onClose, onOpened }) {
       title="Open observation sheet"
       submitLabel="Open sheet"
       intro={
-        <p className="muted small" style={{ margin: 0 }}>
+        <SmallBody muted style={{ margin: 0, display: "block" }}>
           One sheet per year and season (and cropping system or crop, if you
           record them separately). The year is the one the season starts in:
           Rabi 2026 runs into 2027 but is recorded as 2026.
-        </p>
+        </SmallBody>
       }
       fields={[
         {

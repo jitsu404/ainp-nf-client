@@ -1,5 +1,5 @@
 import { Loader2, Search } from "lucide-react";
-import { Select } from "../../../components/ui";
+import { Select, SmallBody } from "../../../components/ui";
 import { EXPERIMENT_STATUSES } from "../../../config/constants";
 
 export function ExperimentToolbar({
@@ -37,12 +37,12 @@ export function ExperimentToolbar({
         all="All statuses"
       />
       <span className="grow" />
-      <span className="muted small row" style={{ gap: 6 }}>
+      <SmallBody muted className="row" style={{ gap: 6 }}>
         {isFetching && <Loader2 size={13} className="spin" />}
         {isPending
           ? "Loading…"
           : `${totalCount} experiment${totalCount === 1 ? "" : "s"}`}
-      </span>
+      </SmallBody>
     </div>
   );
 }

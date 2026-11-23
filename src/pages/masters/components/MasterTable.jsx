@@ -1,5 +1,5 @@
 import { Pencil, Power } from "lucide-react";
-import { Badge, Table } from "../../../components/ui";
+import { Badge, Body, SmallBody, Table } from "../../../components/ui";
 import { TABLE_PAGE_SIZE } from "../../../config/constants";
 
 export function MasterTable({
@@ -19,7 +19,11 @@ export function MasterTable({
     },
     {
       label: "Name",
-      render: (m) => <b style={{ fontWeight: 550 }}>{m.name}</b>,
+      render: (m) => (
+        <Body as="b" style={{ fontWeight: 550 }}>
+          {m.name}
+        </Body>
+      ),
     },
     ...(config.groups
       ? [
@@ -39,9 +43,7 @@ export function MasterTable({
       : []),
     {
       label: "Description",
-      render: (m) => (
-        <span className="muted small">{m.description || "—"}</span>
-      ),
+      render: (m) => <SmallBody muted>{m.description || "—"}</SmallBody>,
     },
     ...(usage
       ? [

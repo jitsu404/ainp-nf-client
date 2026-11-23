@@ -6,7 +6,7 @@ import { toast } from "../lib/toast";
 import { sameCrops, seasonCropsPatch } from "../lib/seasonCrops";
 import { useCropOptions, useMasterOptions } from "../queries/masters";
 import { SaveModal } from "./forms";
-import { Badge, Card, Table } from "./ui";
+import { Badge, Body, Card, SmallBody, Table } from "./ui";
 
 // A trial's crops per season (`cropsBySeason` from GET /trials/:id): the experiment's crops unless
 // the centre chose its own, e.g. when the protocol crop isn't available locally. The change is
@@ -52,12 +52,12 @@ export function SeasonCropsCard({ trial, edit, save }) {
             label: "",
             render: (r) =>
               r.changed ? (
-                <span className="small">
+                <SmallBody>
                   <Badge tone="amber">Own crops</Badge>{" "}
-                  <span className="muted">
+                  <SmallBody muted>
                     Experiment: {names(r.defaultCrops) || "—"}
-                  </span>
-                </span>
+                  </SmallBody>
+                </SmallBody>
               ) : (
                 <Badge tone="green">Experiment crops</Badge>
               ),

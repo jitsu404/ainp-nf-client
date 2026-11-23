@@ -12,7 +12,7 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
-import { Modal } from "../../../components/ui";
+import { Body, Modal, SmallBody, SubHeading } from "../../../components/ui";
 import { seasonMap } from "../../../lib/seasonCrops";
 import { toast } from "../../../lib/toast";
 import { useMasterOptions, useUnitLabel } from "../../../queries/masters";
@@ -89,12 +89,12 @@ function PlotStepForm({ label, prefix, rows, onChange }) {
         }}
       >
         <div>
-          <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 600 }}>
+          <SubHeading as="h4" level="card">
             Configure {label}s
-          </h4>
-          <p className="muted small" style={{ margin: "2px 0 0 0" }}>
+          </SubHeading>
+          <SmallBody muted style={{ margin: "2px 0 0 0", display: "block" }}>
             Add, update, or remove {label.toLowerCase()} entries for this trial.
-          </p>
+          </SmallBody>
         </div>
         <button
           type="button"
@@ -284,14 +284,14 @@ function TreatmentsStepForm({
         }}
       >
         <div>
-          <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 600 }}>
+          <SubHeading as="h4" level="card">
             Configure Treatments ({rows.length} treatments)
-          </h4>
-          <p className="muted small" style={{ margin: "2px 0 0 0" }}>
+          </SubHeading>
+          <SmallBody muted style={{ margin: "2px 0 0 0", display: "block" }}>
             {isDerived
               ? "Treatments are dynamically generated from the combination of plots. Provide names and details."
               : "Define the treatment codes, names, and details for this trial."}
-          </p>
+          </SmallBody>
         </div>
         {!isDerived && (
           <button

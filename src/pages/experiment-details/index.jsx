@@ -5,7 +5,7 @@ import { useAuth } from "../../auth";
 import { LinkExperimentPiModal } from "../../components/ExperimentPis";
 import { ErrorNote } from "../../components/forms";
 import { ExperimentMetadata } from "../../components/Metadata";
-import { Card, Page, Tabs } from "../../components/ui";
+import { Body, Card, Page, Tabs } from "../../components/ui";
 import { ROUTES } from "../../config/constants";
 import { useMasterOptions, useUnitLabel } from "../../queries/masters";
 import {
@@ -89,12 +89,9 @@ export default function ExperimentDetail() {
               className="spin"
               style={{ color: "var(--green, #1b7f4b)" }}
             />
-            <div
-              className="muted"
-              style={{ fontSize: "0.95rem", fontWeight: 500 }}
-            >
+            <Body muted style={{ fontSize: "0.95rem", fontWeight: 500 }}>
               Loading experiment details…
-            </div>
+            </Body>
           </div>
         </Card>
       </Page>

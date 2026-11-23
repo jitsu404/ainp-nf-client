@@ -6,7 +6,7 @@ import { formatDateTime } from "../hooks";
 import { toast } from "../lib/toast";
 import { useAudit } from "../queries/audit";
 import { ErrorNote } from "./forms";
-import { Badge, Modal } from "./ui";
+import { Badge, Body, Modal, SmallBody } from "./ui";
 
 // The audit trail as a server-paged table with a detail view (old → new values). Used by the
 // Audit trail page and, with a fixed filter, as an activity panel on sheet and centre pages.
@@ -60,12 +60,12 @@ export function AuditTable({
       <ErrorNote error={audit.error} />
       {(exportable || audit.isFetching) && (
         <div className="toolbar">
-          <span className="muted small row" style={{ gap: 6 }}>
+          <SmallBody muted className="row" style={{ gap: 6 }}>
             {audit.isFetching && <Loader2 size={13} className="spin" />}
             {meta
               ? `${meta.total} entr${meta.total === 1 ? "y" : "ies"}`
               : "Loading…"}
-          </span>
+          </SmallBody>
           <span className="grow" />
           {exportable && (
             <button
@@ -280,14 +280,14 @@ function AuditDetail({ row, onClose }) {
           </div>
         )}
         {!fields.length && !row.cells?.length && (
-          <p className="muted small" style={{ margin: 0 }}>
+          <SmallBody muted as="p" style={{ margin: 0 }}>
             No field-level changes for this entry.
-          </p>
+          </SmallBody>
         )}
-        <p className="muted small" style={{ margin: 0 }}>
+        <SmallBody muted as="p" style={{ margin: 0 }}>
           Reference: <span className="mono">{row.requestId}</span> (matches the
           server log)
-        </p>
+        </SmallBody>
       </div>
     </Modal>
   );

@@ -4,8 +4,9 @@ import { ArrowLeft, FilePlus2, Pencil } from "lucide-react";
 import { useAuth } from "../../auth";
 import { ErrorNote } from "../../components/forms";
 import { TrialMetadata } from "../../components/Metadata";
-import { Badge, Page, Tabs } from "../../components/ui";
+import { Badge, Body, Page, Tabs } from "../../components/ui";
 import { ROUTES } from "../../config/constants";
+import { toast } from "../../lib/toast";
 import { useMasterOptions, useUnitLabel } from "../../queries/masters";
 import {
   useSheets,
@@ -68,7 +69,7 @@ export default function TrialDetail() {
   if (!t) {
     return (
       <Page title="Trial">
-        <p className="muted">Loading…</p>
+        <Body muted>Loading…</Body>
       </Page>
     );
   }
@@ -79,8 +80,15 @@ export default function TrialDetail() {
   const edit = (can("research.enter") || can("research.assign")) && !withdrawn;
   const canLock = can("research.assign") || can("research.config");
   const save = (body) => update.mutateAsync(body);
-  const handleToggleLock = (lockedKey, isLocked) =>
-    toggleLock.mutateAsync({ lockedKey, isLocked });
+  const handleToggleLock = async (lockedKey, isLocked) => {
+    try {
+      await toggleLock.mutateAsync({ lockedKey, isLocked });
+      toast.success(`Section ${isLocked ? "locked" : "unlocked"}`);
+    } catch (err) {
+      toast.error(err?.message || "Failed to toggle section lock");
+      throw err;
+    }
+  };
 
   return (
     <Page

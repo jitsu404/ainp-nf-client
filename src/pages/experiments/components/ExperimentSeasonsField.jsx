@@ -1,4 +1,5 @@
 import Select from "react-select";
+import { Body, SmallBody, SubHeading } from "../../../components/ui";
 
 export const customSelectStyles = {
   control: (base, state) => ({
@@ -163,12 +164,14 @@ export function ExperimentSeasonsField({
   return (
     <div className="field full">
       <div className="row spread" style={{ marginBottom: 8 }}>
-        <label style={{ margin: 0, fontWeight: 600 }}>Seasons & Crops</label>
-        <span className="muted small">
+        <Body as="label" style={{ margin: 0, fontWeight: 600 }}>
+          Seasons & Crops
+        </Body>
+        <SmallBody muted>
           {selectedSeasonCodes.length === 0
             ? "No seasons activated (applies to all)"
             : `${selectedSeasonCodes.length} of ${seasonOptions.length} season${selectedSeasonCodes.length === 1 ? "" : "s"} activated`}
-        </span>
+        </SmallBody>
       </div>
 
       <div
@@ -212,25 +215,27 @@ export function ExperimentSeasonsField({
                   style={{ cursor: "pointer", width: 16, height: 16 }}
                 />
               </th>
-              <th
+              <SubHeading
+                as="th"
+                level="card"
                 style={{
                   width: "180px",
                   padding: "10px 12px",
-                  fontWeight: 600,
                   color: "var(--ink, #1b2420)",
                 }}
               >
                 Season
-              </th>
-              <th
+              </SubHeading>
+              <SubHeading
+                as="th"
+                level="card"
                 style={{
                   padding: "10px 12px",
-                  fontWeight: 600,
                   color: "var(--ink, #1b2420)",
                 }}
               >
                 Crops (Multi-select)
-              </th>
+              </SubHeading>
             </tr>
           </thead>
           <tbody>
@@ -279,7 +284,8 @@ export function ExperimentSeasonsField({
                         gap: 2,
                       }}
                     >
-                      <span
+                      <Body
+                        as="span"
                         style={{
                           fontWeight: isActive ? 600 : 500,
                           color: isActive
@@ -290,13 +296,14 @@ export function ExperimentSeasonsField({
                         onClick={() => toggleSeason(code, !isActive)}
                       >
                         {name}
-                      </span>
-                      <span
-                        className="mono muted small"
+                      </Body>
+                      <SmallBody
+                        className="mono"
+                        muted
                         style={{ fontSize: "0.75rem" }}
                       >
                         {code}
-                      </span>
+                      </SmallBody>
                     </div>
                   </td>
                   <td
@@ -329,16 +336,17 @@ export function ExperimentSeasonsField({
           </tbody>
         </table>
       </div>
-      <div
+      <SmallBody
+        muted
         style={{
+          display: "block",
           marginTop: 6,
           fontSize: "0.775rem",
-          color: "var(--text-muted, #647069)",
         }}
       >
         Check a season to activate it for this experiment, then select the
         relevant crops.
-      </div>
+      </SmallBody>
     </div>
   );
 }

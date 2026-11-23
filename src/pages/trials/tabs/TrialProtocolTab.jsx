@@ -1,13 +1,32 @@
 import { useState } from "react";
-import { AlertCircle, Lock, SlidersHorizontal, Unlock } from "lucide-react";
-import { Card, Table } from "../../../components/ui";
+import {
+  AlertCircle,
+  Loader2,
+  Lock,
+  SlidersHorizontal,
+  Unlock,
+} from "lucide-react";
+import { Body, Card, SmallBody, Table } from "../../../components/ui";
 import { UpdateProtocolModal } from "../components";
 
 /**
  * Lock/Unlock Toggle Button for Protocol sections.
  */
 function SectionLockToggle({ lockedKey, locked = [], canLock, onToggle }) {
+  const [loading, setLoading] = useState(false);
   const isLocked = locked.includes(lockedKey);
+
+  const handleClick = async () => {
+    if (!canLock || loading) return;
+    setLoading(true);
+    try {
+      await onToggle(lockedKey, !isLocked);
+    } catch {
+      // Error handled by onToggle/query
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <button
@@ -24,27 +43,44 @@ function SectionLockToggle({ lockedKey, locked = [], canLock, onToggle }) {
         borderColor: isLocked
           ? "rgba(168, 98, 0, 0.3)"
           : "rgba(27, 127, 75, 0.3)",
-        cursor: canLock ? "pointer" : "default",
+        cursor: canLock && !loading ? "pointer" : "default",
         fontWeight: 600,
         fontSize: "0.8rem",
         padding: "4px 10px",
         height: 28,
         borderRadius: 6,
+        opacity: loading ? 0.7 : 1,
       }}
-      disabled={!canLock}
-      onClick={() => canLock && onToggle(lockedKey, !isLocked)}
+      disabled={!canLock || loading}
+      onClick={handleClick}
       title={
-        canLock
-          ? isLocked
-            ? `Section is locked. Click to unlock.`
-            : `Section is unlocked. Click to lock.`
-          : isLocked
-            ? `Locked`
-            : `Unlocked`
+        loading
+          ? "Updating lock status…"
+          : canLock
+            ? isLocked
+              ? `Section is locked. Click to unlock.`
+              : `Section is unlocked. Click to lock.`
+            : isLocked
+              ? `Locked`
+              : `Unlocked`
       }
     >
-      {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
-      <span>{isLocked ? "Locked" : "Unlocked"}</span>
+      {loading ? (
+        <Loader2 size={13} className="spin" />
+      ) : isLocked ? (
+        <Lock size={13} />
+      ) : (
+        <Unlock size={13} />
+      )}
+      <span>
+        {loading
+          ? isLocked
+            ? "Unlocking…"
+            : "Locking…"
+          : isLocked
+            ? "Locked"
+            : "Unlocked"}
+      </span>
     </button>
   );
 }
@@ -109,10 +145,10 @@ export function TrialProtocolTab({
           gap: 10,
         }}
       >
-        <div className="muted small">
+        <SmallBody muted>
           Protocol setup for this trial based on <b>{e.design || "Standard"}</b>{" "}
           design.
-        </div>
+        </SmallBody>
         {canEditProtocol && (
           <button
             type="button"
@@ -175,9 +211,7 @@ export function TrialProtocolTab({
                   {
                     label: "Details",
                     render: (m) => (
-                      <span className="muted small">
-                        {m.description || "—"}
-                      </span>
+                      <SmallBody muted>{m.description || "—"}</SmallBody>
                     ),
                   },
                 ]}
@@ -220,9 +254,7 @@ export function TrialProtocolTab({
                   {
                     label: "Details",
                     render: (s) => (
-                      <span className="muted small">
-                        {s.description || "—"}
-                      </span>
+                      <SmallBody muted>{s.description || "—"}</SmallBody>
                     ),
                   },
                 ]}
@@ -266,9 +298,7 @@ export function TrialProtocolTab({
                     {
                       label: "Details",
                       render: (ss) => (
-                        <span className="muted small">
-                          {ss.description || "—"}
-                        </span>
+                        <SmallBody muted>{ss.description || "—"}</SmallBody>
                       ),
                     },
                   ]}
@@ -317,11 +347,7 @@ export function TrialProtocolTab({
                         return tr.mainPlotCode ? (
                           <span>
                             <b>{tr.mainPlotCode}</b>
-                            {name ? (
-                              <span className="muted small"> ({name})</span>
-                            ) : (
-                              ""
-                            )}
+                            {name ? <SmallBody muted> ({name})</SmallBody> : ""}
                           </span>
                         ) : (
                           "—"
@@ -337,11 +363,7 @@ export function TrialProtocolTab({
                         return tr.subPlotCode ? (
                           <span>
                             <b>{tr.subPlotCode}</b>
-                            {name ? (
-                              <span className="muted small"> ({name})</span>
-                            ) : (
-                              ""
-                            )}
+                            {name ? <SmallBody muted> ({name})</SmallBody> : ""}
                           </span>
                         ) : (
                           "—"
@@ -360,10 +382,7 @@ export function TrialProtocolTab({
                                 <span>
                                   <b>{tr.subSubPlotCode}</b>
                                   {name ? (
-                                    <span className="muted small">
-                                      {" "}
-                                      ({name})
-                                    </span>
+                                    <SmallBody muted> ({name})</SmallBody>
                                   ) : (
                                     ""
                                   )}
@@ -379,9 +398,7 @@ export function TrialProtocolTab({
                     {
                       label: "Details",
                       render: (tr) => (
-                        <span className="muted small">
-                          {tr.description || "—"}
-                        </span>
+                        <SmallBody muted>{tr.description || "—"}</SmallBody>
                       ),
                     },
                   ]
@@ -391,9 +408,7 @@ export function TrialProtocolTab({
                     {
                       label: "Details",
                       render: (tr) => (
-                        <span className="muted small">
-                          {tr.description || "—"}
-                        </span>
+                        <SmallBody muted>{tr.description || "—"}</SmallBody>
                       ),
                     },
                   ]
@@ -402,7 +417,18 @@ export function TrialProtocolTab({
         </Card>
 
         {/* Parameters Recorded Card */}
-        <Card title="Parameters recorded" pad={false}>
+        <Card
+          title="Parameters recorded"
+          pad={false}
+          actions={
+            <SectionLockToggle
+              lockedKey="parameters"
+              locked={locked}
+              canLock={canLock}
+              onToggle={onToggleLock}
+            />
+          }
+        >
           <Table
             rows={parameters.map((p) => ({
               ...p,
@@ -433,9 +459,9 @@ export function TrialProtocolTab({
               },
             ]}
           />
-          <div className="muted small" style={{ padding: "8px 16px" }}>
+          <SmallBody muted style={{ display: "block", padding: "8px 16px" }}>
             * required before a sheet can be submitted
-          </div>
+          </SmallBody>
         </Card>
       </div>
 

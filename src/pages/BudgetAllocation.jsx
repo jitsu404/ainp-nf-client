@@ -19,11 +19,14 @@ import { useAuth } from "../auth";
 import { AsyncFormModal, ErrorNote } from "../components/forms";
 import {
   Badge,
+  Body,
   Card,
   Modal,
   Page,
   Select,
+  SmallBody,
   Stat,
+  SubHeading,
   Table,
   Tabs,
 } from "../components/ui";
@@ -530,7 +533,9 @@ export default function BudgetAllocation() {
                   render: (r) => (
                     <div>
                       <b>{centreOptionLabel(r)}</b>{" "}
-                      <span className="mono muted small">({r.code})</span>
+                      <SmallBody className="mono" muted>
+                        ({r.code})
+                      </SmallBody>
                     </div>
                   ),
                 },
@@ -551,7 +556,7 @@ export default function BudgetAllocation() {
                   render: (r) => (
                     <span>
                       {fmtInr(r.headSum)}{" "}
-                      <span className="small muted">({r.headCount} heads)</span>
+                      <SmallBody muted>({r.headCount} heads)</SmallBody>
                     </span>
                   ),
                 },
@@ -636,9 +641,9 @@ export default function BudgetAllocation() {
                         render: (r) => (
                           <div>
                             <b>{centreOptionLabel(r.centre)}</b>{" "}
-                            <span className="mono muted small">
+                            <SmallBody className="mono" muted>
                               ({r.centre?.code})
-                            </span>
+                            </SmallBody>
                           </div>
                         ),
                       },
@@ -677,12 +682,12 @@ export default function BudgetAllocation() {
                         label: "% of Sanction",
                         num: true,
                         render: (r) => (
-                          <span className="small muted">
+                          <SmallBody muted>
                             {((r.amount / singleCentreSanction) * 100).toFixed(
                               1,
                             )}
                             %
-                          </span>
+                          </SmallBody>
                         ),
                       },
                     ]

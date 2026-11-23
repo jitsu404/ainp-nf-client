@@ -16,7 +16,15 @@ import { AuditTable } from "../components/AuditTrail";
 import { BarChart } from "../components/Charts";
 import { ExcelImportModal } from "../components/ExcelImport";
 import { ErrorNote, SaveModal } from "../components/forms";
-import { Badge, Card, Page, Tabs } from "../components/ui";
+import {
+  Badge,
+  Body,
+  Card,
+  Page,
+  SmallBody,
+  SubHeading,
+  Tabs,
+} from "../components/ui";
 import { ROUTES, experimentFactors } from "../config/constants";
 import { formatDateTime } from "../hooks";
 import { fmtPct, pctVs } from "../lib/results";
@@ -112,7 +120,7 @@ export default function SheetDetail() {
   if (!s)
     return (
       <Page title="Observation sheet">
-        <p className="muted">Loading…</p>
+        <Body muted>Loading…</Body>
       </Page>
     );
 
@@ -287,20 +295,20 @@ export default function SheetDetail() {
             </div>
           </div>
           {s.status === "Returned" && s.history.at(-1)?.remark && (
-            <div className="note warn" style={{ marginTop: 12 }}>
+            <Body as="div" className="note warn" style={{ marginTop: 12 }}>
               Returned by {s.history.at(-1).byName}: {s.history.at(-1).remark}
-            </div>
+            </Body>
           )}
           {s.status === "Approved" && (
-            <div className="note good" style={{ marginTop: 12 }}>
+            <Body as="div" className="note good" style={{ marginTop: 12 }}>
               Approved and locked.
-            </div>
+            </Body>
           )}
           {s.status === "Submitted" && (
-            <div className="note" style={{ marginTop: 12 }}>
+            <Body as="div" className="note" style={{ marginTop: 12 }}>
               Submitted to the PCU. It can be changed again only if it is
               returned.
-            </div>
+            </Body>
           )}
         </Card>
 
@@ -383,7 +391,7 @@ export default function SheetDetail() {
             {plotParams.length > 0 && (
               <Grid
                 title="Plot data (treatment × replication)"
-                factors={factors}
+                factors={[]}
                 params={plotParams}
                 treatments={e.treatments}
                 reps={Array.from({ length: e.replications }, (_, i) => i + 1)}
@@ -400,7 +408,7 @@ export default function SheetDetail() {
                 title={
                   replicated ? "Treatment data (once per treatment)" : "Data"
                 }
-                factors={factors}
+                factors={[]}
                 params={treatmentParams}
                 treatments={e.treatments}
                 reps={[null]}
@@ -463,7 +471,7 @@ export default function SheetDetail() {
 }
 
 /** Widths (px) of the frozen columns on the left of an entry grid. */
-const FROZEN_COL = { treatment: 96, factor: 124, rep: 60 };
+const FROZEN_COL = { treatment: 200, factor: 124, rep: 60 };
 
 function Grid({
   title,
@@ -570,9 +578,36 @@ function Grid({
                   <td
                     {...frozen(0)}
                     className={`rowhead ${frozen(0).className}`}
-                    title={t.name}
+                    title={t.name ? `${t.code} — ${t.name}` : t.code}
                   >
-                    {r === null || r === 1 ? t.code : ""}
+                    {r === null || r === 1 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                          minWidth: 0,
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{t.code}</span>
+                        {t.name && (
+                          <SmallBody
+                            muted
+                            style={{
+                              fontWeight: 400,
+                              fontSize: "0.75rem",
+                              lineHeight: 1.25,
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {t.name}
+                          </SmallBody>
+                        )}
+                      </div>
+                    ) : (
+                      ""
+                    )}
                   </td>
                   {factors.map((f, i) => {
                     const level = f.levels.find((l) => l.code === t[f.field]);
@@ -703,16 +738,16 @@ function WorkflowModal({ id, action, onClose }) {
       onClose={onClose}
       canSave={!text.required || remark.trim().length >= 3}
     >
-      <p style={{ margin: 0 }}>{text.intro}</p>
+      <Body style={{ margin: 0 }}>{text.intro}</Body>
       {missing?.length > 0 && (
-        <div style={{ maxHeight: 180, overflow: "auto" }} className="small">
+        <SmallBody as="div" style={{ maxHeight: 180, overflow: "auto" }}>
           <b>Missing required values:</b>
           <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
             {missing.map((m) => (
               <li key={m}>{m}</li>
             ))}
           </ul>
-        </div>
+        </SmallBody>
       )}
       <div className="field">
         <label htmlFor="wf-remark">{text.remark}</label>
@@ -778,9 +813,9 @@ function AnalysisTab({ id, dirty }) {
         </button>
       </div>
       {dirty && (
-        <div className="note warn">
+        <Body as="div" className="note warn">
           You have unsaved changes; the analysis uses saved values only.
-        </div>
+        </Body>
       )}
       {!parameters.length && (
         <div className="empty card">No numeric parameters to analyse.</div>
@@ -827,9 +862,7 @@ function AnalysisTab({ id, dirty }) {
                     <tr key={m.treatmentCode}>
                       <td title={nameOf(m.treatmentCode)}>
                         <b>{m.treatmentCode}</b>{" "}
-                        <span className="muted small">
-                          {nameOf(m.treatmentCode)}
-                        </span>
+                        <SmallBody muted>{nameOf(m.treatmentCode)}</SmallBody>
                       </td>
                       <td className="num">{m.n}</td>
                       <td className="num">{fmt(m.mean)}</td>
@@ -945,9 +978,9 @@ function AnalysisTab({ id, dirty }) {
             ) : p.factorial ? (
               <FactorialResult factorial={p.factorial} />
             ) : (
-              <div className="note">
+              <Body as="div" className="note">
                 {p.reason ?? "No analysis of variance for this parameter."}
-              </div>
+              </Body>
             )}
           </div>
           {p.factorial && <FactorMeans factorial={p.factorial} />}
