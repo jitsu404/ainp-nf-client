@@ -1,17 +1,20 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertCircle,
   FlaskConical,
   ListChecks,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { Card, Table } from "../../../components/ui";
 import { seasonMap } from "../../../lib/seasonCrops";
+import { toast } from "../../../lib/toast";
 
 export function ProtocolTab({
   experiment: e,
   config,
   unit,
+  save,
   onEditTreatments,
   onEditParameters,
   onEditMainPlot,
@@ -20,6 +23,7 @@ export function ProtocolTab({
   onEditDetails,
   onSetParameters,
 }) {
+  const [isGenerating, setIsGenerating] = useState(false);
   const isSplitPlot = e.design === "Split plot";
   const isSplitSplitPlot = e.design === "Split-split plot";
   // Factorial: the level lists are factors A, B and (optional) C; treatments are their combinations.
@@ -55,6 +59,104 @@ export function ProtocolTab({
     (e.defaultParameters?.length ?? 0) > 0 &&
     (e.treatments?.length ?? 0) > 0 &&
     seasonCodes.length > 0;
+
+  const validatePlotData = () => {
+    if (mainCount > 0 && mainData.length < mainCount) {
+      toast.error(
+        `Please configure all ${mainCount} ${names.A} entries before creating treatments.`,
+      );
+      return false;
+    }
+    if (subCount > 0 && subData.length < subCount) {
+      toast.error(
+        `Please configure all ${subCount} ${names.B} entries before creating treatments.`,
+      );
+      return false;
+    }
+    if (hasC && subSubCount > 0 && subSubData.length < subSubCount) {
+      toast.error(
+        `Please configure all ${subSubCount} ${names.C} entries before creating treatments.`,
+      );
+      return false;
+    }
+    if (!mainData.length || !subData.length || (hasC && !subSubData.length)) {
+      toast.error("Please configure plot data before creating treatments.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreateTreatments = async () => {
+    if (!validatePlotData()) return;
+
+    const ok = window.confirm(
+      "Are you sure you want to create treatments? Note: This will override all existing treatments.",
+    );
+    if (!ok) return;
+
+    setIsGenerating(true);
+    try {
+      const generated = [];
+      let idx = 1;
+
+      for (const m of mainData) {
+        for (const s of subData) {
+          if (hasC) {
+            for (const ss of subSubData) {
+              const name = [m.name, s.name, ss.name]
+                .map((str) => (str || "").trim())
+                .filter(Boolean)
+                .join(" | ");
+
+              const descParts = [m.description, s.description, ss.description]
+                .map((str) => (str || "").trim().replace(/\.+$/, ""))
+                .filter(Boolean);
+              const description =
+                descParts.length > 0 ? descParts.join(". ") + "." : "";
+
+              generated.push({
+                code: `T${idx}`,
+                mainPlotCode: m.code,
+                subPlotCode: s.code,
+                subSubPlotCode: ss.code,
+                name: name || `Treatment - ${idx}`,
+                description,
+              });
+              idx++;
+            }
+          } else {
+            const name = [m.name, s.name]
+              .map((str) => (str || "").trim())
+              .filter(Boolean)
+              .join(" | ");
+
+            const descParts = [m.description, s.description]
+              .map((str) => (str || "").trim().replace(/\.+$/, ""))
+              .filter(Boolean);
+            const description =
+              descParts.length > 0 ? descParts.join(". ") + "." : "";
+
+            generated.push({
+              code: `T${idx}`,
+              mainPlotCode: m.code,
+              subPlotCode: s.code,
+              subSubPlotCode: null,
+              name: name || `Treatment - ${idx}`,
+              description,
+            });
+            idx++;
+          }
+        }
+      }
+
+      await save({ treatments: generated });
+      toast.success(`Successfully created ${generated.length} treatments.`);
+    } catch (err) {
+      toast.error(err?.message || "Failed to create treatments.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="stack" style={{ gap: 16 }}>
@@ -273,6 +375,18 @@ export function ProtocolTab({
                 {canSetParameters && (
                   <button className="btn ghost sm" onClick={onSetParameters}>
                     <SlidersHorizontal size={14} /> Set parameters
+                  </button>
+                )}
+                {hasPlots && (
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={handleCreateTreatments}
+                    disabled={isGenerating}
+                    title="Auto-create treatment combinations from plot/factor data"
+                  >
+                    <Sparkles size={14} />{" "}
+                    {isGenerating ? "Creating…" : "Create treatments"}
                   </button>
                 )}
                 <button className="btn ghost sm" onClick={onEditTreatments}>

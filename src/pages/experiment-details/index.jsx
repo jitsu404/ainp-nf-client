@@ -162,6 +162,7 @@ export default function ExperimentDetail() {
             experiment={e}
             config={config}
             unit={unit}
+            save={save}
             onEditTreatments={() => setModal("treatments")}
             onEditParameters={() => setModal("parameters")}
             onEditMainPlot={() => setModal("mainPlot")}
