@@ -7,6 +7,7 @@ import { getAvailableTabs, MASTER_TAB_MAP } from "./master-tabs";
 import SeasonsTab from "./tabs/seasons";
 import UnitsTab from "./tabs/units";
 import CropsTab from "./tabs/crops";
+import CroppingSystemsTab from "./tabs/croppingSystems";
 import NfInputsTab from "./tabs/nfInputs";
 import ProgrammesTab from "./tabs/programmes";
 import BudgetHeadTab from "./tabs/budgetHead";
@@ -21,6 +22,7 @@ const TAB_COMPONENTS = {
   season: SeasonsTab,
   unit: UnitsTab,
   crop: CropsTab,
+  croppingSystems: CroppingSystemsTab,
   nfInput: NfInputsTab,
   programme: ProgrammesTab,
   budgetHead: BudgetHeadTab,

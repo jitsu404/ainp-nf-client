@@ -5,7 +5,12 @@ import { Badge, Body, Card, SmallBody, Table } from "../../../components/ui";
 import { ROUTES } from "../../../config/constants";
 import { formatDate } from "../../../hooks";
 import { effectiveSeasonCrops } from "../../../lib/seasonCrops";
-import { useMasterOptions, useMasters } from "../../../queries/masters";
+import { trialSystems } from "../../../lib/croppingSystems";
+import {
+  useCroppingSystems,
+  useMasterOptions,
+  useMasters,
+} from "../../../queries/masters";
 
 // The centres running the experiment, one row per trial. Crops show the experiment's by default;
 // a centre that chose its own for a season is marked. Withdrawn centres are listed apart: their
@@ -25,6 +30,7 @@ export function CentresTab({
   const navigate = useNavigate();
   const seasons = useMasterOptions("season");
   const crops = useMasters("crop");
+  const systems = useCroppingSystems();
   const cropName = useMemo(() => {
     const names = new Map(
       (crops.data ?? []).map((c) => [String(c.id ?? c._id), c.name]),
@@ -68,8 +74,10 @@ export function CentresTab({
     {
       label: "Cropping systems",
       render: (t) =>
-        t.croppingSystems.length ? (
-          t.croppingSystems.map((c) => c.name).join("; ")
+        trialSystems(t).length ? (
+          trialSystems(t)
+            .map((c) => systems.byId(c.croppingSystemId)?.name ?? "?")
+            .join("; ")
         ) : (
           <Badge tone="amber">Not set up</Badge>
         ),

@@ -29,14 +29,6 @@ export function SheetsTab({ sheets, trial, withdrawn, seasons, crops }) {
             render: (s) => seasons.nameOf(s.seasonCode),
           },
           {
-            label: "Cropping system",
-            render: (s) =>
-              t.croppingSystems.find((c) => c.code === s.croppingSystemCode)
-                ?.name ??
-              s.croppingSystemCode ??
-              "—",
-          },
-          {
             label: "Crop",
             render: (s) => (s.cropCode ? crops.nameOf(s.cropCode) : "—"),
           },

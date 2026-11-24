@@ -1,50 +1,55 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api";
+import {
+  useCroppingSystems as useCroppingSystemsMaster,
+  useMasterOptions,
+} from "./masters";
 
-export const DEFAULT_CROPPING_SYSTEMS = [
-  { id: "650000000000000000000001", code: "CS-RW", name: "Rice – Wheat" },
-  { id: "650000000000000000000002", code: "CS-MW", name: "Maize – Wheat" },
-  { id: "650000000000000000000003", code: "CS-CW", name: "Cotton – Wheat" },
-  { id: "650000000000000000000004", code: "CS-SW", name: "Soybean – Wheat" },
-  { id: "650000000000000000000005", code: "CS-RM", name: "Rice – Mustard" },
-  { id: "650000000000000000000006", code: "CS-MM", name: "Maize – Mustard" },
-  { id: "650000000000000000000007", code: "CS-RP", name: "Rice – Potato" },
-  {
-    id: "650000000000000000000008",
-    code: "CS-PG",
-    name: "Pigeonpea – Green Gram",
-  },
-];
-
+// The cropping systems master (GET /cropping-systems) in the shape the protocol editors use. A sub
+// plot of a split / split-split plot names one system per season (`croppingSystems:
+// [{ seasonCode, croppingSystem }]`), since a treatment's land is cropped season after season.
+//  - `options` [id, "Rice + Soybean · Kharif (CSY-001)"]: every system (inactive ones marked, so an
+//    existing choice still shows; the server refuses choosing one anew).
+//  - `optionsFor(season, currentId)`: the active systems of one season, plus the current choice.
+//  - `nameOf(id or code)`: a system's name.
+//  - `subPlotName(subPlot)`: "Rice + Soybean → Wheat + Chickpea", its systems in season order.
 export function useCroppingSystems() {
-  const query = useQuery({
-    queryKey: ["cropping-systems"],
-    queryFn: async () => {
-      try {
-        const res = await api.get("/api/cropping-systems");
-        return Array.isArray(res.data) && res.data.length
-          ? res.data
-          : DEFAULT_CROPPING_SYSTEMS;
-      } catch {
-        return DEFAULT_CROPPING_SYSTEMS;
-      }
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const list = query.data || DEFAULT_CROPPING_SYSTEMS;
+  const query = useCroppingSystemsMaster();
+  const seasons = useMasterOptions("season");
+  const list = query.items;
   const nameOf = (idOrCode) => {
     if (!idOrCode) return "";
-    const item = list.find(
-      (c) => c.id === idOrCode || c._id === idOrCode || c.code === idOrCode,
-    );
-    return item?.name || "";
+    const key = String(idOrCode);
+    return list.find((c) => c.id === key || c.code === key)?.name || "";
   };
+  const label = (c) =>
+    `${c.name} · ${seasons.nameOf(c.seasonCode)} (${c.code})${c.isActive ? "" : " · inactive"}`;
+  const seasonOrder = (code) => {
+    const i = seasons.options.findIndex(([c]) => c === code);
+    return i === -1 ? 99 : i;
+  };
+  const subPlotName = (subPlot) =>
+    [...(subPlot?.croppingSystems ?? [])]
+      .sort((a, b) => seasonOrder(a.seasonCode) - seasonOrder(b.seasonCode))
+      .map((x) => nameOf(x.croppingSystem))
+      .filter(Boolean)
+      .join(" → ");
 
   return {
     ...query,
     systems: list,
-    options: list.map((c) => [c.id || c._id, `${c.name} (${c.code})`]),
+    options: list.map((c) => [c.id, label(c)]),
+    optionsFor: (seasonCode, currentId) =>
+      list
+        .filter(
+          (c) =>
+            c.seasonCode === seasonCode &&
+            (c.isActive || c.id === String(currentId ?? "")),
+        )
+        .map((c) => [
+          c.id,
+          `${c.name} (${c.code})${c.isActive ? "" : " · inactive"}`,
+        ]),
     nameOf,
+    subPlotName,
+    seasons,
   };
 }

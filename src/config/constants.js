@@ -203,6 +203,7 @@ export const GENERATED_CODES = {
   crop: "CRP-001",
   unit: "UNT-001",
   parameter: "PRM_001",
+  programme: "P1",
 };
 export const EXPERIMENT_STATUSES = ["Draft", "Active", "Closed"];
 export const TRIAL_STATUSES = ["Setup", "Running", "Completed"];

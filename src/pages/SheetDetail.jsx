@@ -27,9 +27,14 @@ import {
 } from "../components/ui";
 import { ROUTES, experimentFactors } from "../config/constants";
 import { formatDateTime } from "../hooks";
+import { rowRatioOf, trialSystems } from "../lib/croppingSystems";
 import { fmtPct, pctVs } from "../lib/results";
 import { toast } from "../lib/toast";
-import { useMasterOptions, useUnitLabel } from "../queries/masters";
+import {
+  useCroppingSystems,
+  useMasterOptions,
+  useUnitLabel,
+} from "../queries/masters";
 import {
   useImportSheet,
   useSaveSheetValues,
@@ -76,6 +81,7 @@ export default function SheetDetail() {
   const trial = useTrial(s?.trialId);
   const seasons = useMasterOptions("season");
   const crops = useMasterOptions("crop");
+  const systems = useCroppingSystems();
   const importer = useImportSheet(id);
 
   // Unsaved edits: cell key → text as typed. Invalid cells: key → the API's message.
@@ -137,9 +143,6 @@ export default function SheetDetail() {
     (p) => !(p.level === "plot" && replicated),
   );
   const centre = trial.data?.centreId;
-  const system = trial.data?.croppingSystems.find(
-    (c) => c.code === s.croppingSystemCode,
-  );
 
   // Treatment × parameter cells switched off in the trial protocol for this season take no value.
   const disabledCells = new Set(
@@ -199,6 +202,35 @@ export default function SheetDetail() {
   };
 
   const factors = experimentFactors(e);
+  // Sub plots name a cropping system per season: hovering a treatment shows this season's system
+  // (its crops, with the centre's varieties and row ratio).
+  const subPlots = trial.data?.subPlotData?.length
+    ? trial.data.subPlotData
+    : (e.subPlotData ?? []);
+  const treatmentTitle = (t) => {
+    const head = t.name ? `${t.code} — ${t.name}` : t.code;
+    const level = subPlots.find((l) => l.code === t.subPlotCode);
+    if (!level?.croppingSystems?.length) return head;
+    const system = systems.byId(
+      level.croppingSystems.find((x) => x.seasonCode === s.seasonCode)
+        ?.croppingSystem,
+    );
+    if (!system)
+      return `${head}
+${t.subPlotCode}: no cropping system in ${seasons.nameOf(s.seasonCode)}`;
+    const grown = trialSystems(trial.data).find(
+      (cs) => String(cs.croppingSystemId) === system.id,
+    )?.crops;
+    const label = [system.mainCropCode, ...(system.intercropCodes ?? [])]
+      .map((code, i) => {
+        const variety = grown?.find((c) => c.cropCode === code)?.variety;
+        return `${crops.nameOf(code)}${i === 0 ? " (main)" : ""}${variety ? `, ${variety}` : ""}`;
+      })
+      .join(" + ");
+    const ratio = grown ? rowRatioOf(grown) : "";
+    return `${head}
+${t.subPlotCode} ${seasons.nameOf(system.seasonCode)}: ${label}${ratio ? ` · row ratio ${ratio}` : ""}`;
+  };
   const expected = e.parameters
     .filter((p) => !p.formula)
     .reduce(
@@ -273,14 +305,6 @@ export default function SheetDetail() {
                   ? ` · ${factors.map((f) => f.levels.length).join(" × ")} ${factors.map((f) => f.label.toLowerCase()).join(" × ")}`
                   : ""}
                 {replicated ? ` · ${e.replications} replications` : ""}
-              </b>
-            </div>
-            <div>
-              <span>Cropping system</span>
-              <b>
-                {system
-                  ? `${system.code} · ${system.name}`
-                  : (s.croppingSystemCode ?? "—")}
               </b>
             </div>
             <div>
@@ -401,6 +425,7 @@ export default function SheetDetail() {
                 edits={edits}
                 invalid={invalid}
                 isDisabled={isDisabled}
+                treatmentTitle={treatmentTitle}
               />
             )}
             {treatmentParams.length > 0 && (
@@ -418,6 +443,7 @@ export default function SheetDetail() {
                 edits={edits}
                 invalid={invalid}
                 isDisabled={isDisabled}
+                treatmentTitle={treatmentTitle}
               />
             )}
           </>
@@ -485,6 +511,7 @@ function Grid({
   edits,
   invalid,
   isDisabled = () => false,
+  treatmentTitle = (t) => (t.name ? `${t.code} — ${t.name}` : t.code),
 }) {
   const unit = useUnitLabel();
   const replicated = reps[0] !== null;
@@ -578,7 +605,7 @@ function Grid({
                   <td
                     {...frozen(0)}
                     className={`rowhead ${frozen(0).className}`}
-                    title={t.name ? `${t.code} — ${t.name}` : t.code}
+                    title={treatmentTitle(t)}
                   >
                     {r === null || r === 1 ? (
                       <div

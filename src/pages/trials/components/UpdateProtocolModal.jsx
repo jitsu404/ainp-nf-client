@@ -16,6 +16,10 @@ import { Body, Modal, SmallBody, SubHeading } from "../../../components/ui";
 import { seasonMap } from "../../../lib/seasonCrops";
 import { toast } from "../../../lib/toast";
 import { useCroppingSystems } from "../../../queries/croppingSystems";
+import {
+  SubPlotSystemsPicker,
+  subPlotSeasons,
+} from "../../../components/SubPlotSystems";
 import { useMasterOptions, useUnitLabel } from "../../../queries/masters";
 
 /**
@@ -58,6 +62,7 @@ function PlotStepForm({
   onChange,
   isSubPlot = false,
   croppingSystems,
+  seasonCodes = [],
 }) {
   const setField = (index, field, value) => {
     onChange(rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
@@ -70,7 +75,7 @@ function PlotStepForm({
       isSubPlot
         ? {
             code: `${prefix}${nextNum}`,
-            croppingSystem: "",
+            croppingSystems: [],
             description: "",
           }
         : {
@@ -194,22 +199,12 @@ function PlotStepForm({
                 </td>
                 <td style={{ padding: "8px 12px" }}>
                   {isSubPlot ? (
-                    <select
-                      className="select"
-                      style={{ height: 32, width: "100%" }}
-                      value={row.croppingSystem || ""}
-                      onChange={(e) =>
-                        setField(idx, "croppingSystem", e.target.value)
-                      }
-                      required
-                    >
-                      <option value="">Select Cropping System…</option>
-                      {croppingSystems?.options.map(([id, optLabel]) => (
-                        <option key={id} value={id}>
-                          {optLabel}
-                        </option>
-                      ))}
-                    </select>
+                    <SubPlotSystemsPicker
+                      label={row.code}
+                      value={row.croppingSystems ?? []}
+                      onChange={(v) => setField(idx, "croppingSystems", v)}
+                      seasonCodes={seasonCodes}
+                    />
                   ) : (
                     <input
                       className="select"
@@ -303,7 +298,7 @@ function TreatmentsStepForm({
     const item = level2Data.find((s) => s.code === code);
     return isFactorial
       ? item?.name || ""
-      : croppingSystems?.nameOf(item?.croppingSystem) || "";
+      : croppingSystems?.subPlotName(item) || "";
   };
   const l3Name = (code) =>
     level3Data.find((ss) => ss.code === code)?.name || "";
@@ -827,7 +822,7 @@ function ParametersStepForm({
       }
       if (t.subPlotCode) {
         const s = level2Data.find((sp) => sp.code === t.subPlotCode);
-        const csName = croppingSystems?.nameOf(s?.croppingSystem);
+        const csName = croppingSystems?.subPlotName(s);
         lines.push(`Sub: ${t.subPlotCode}${csName ? ` (${csName})` : ""}`);
       }
       if (t.subSubPlotCode) {
@@ -1522,7 +1517,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
 
       for (const m of mainPlotData) {
         for (const s of subPlotData) {
-          const sLabel = croppingSystems.nameOf(s.croppingSystem) || s.code;
+          const sLabel = croppingSystems.subPlotName(s) || s.code;
           if (hasC && subSubPlotData.length > 0) {
             for (const ss of subSubPlotData) {
               const key = `${m.code}|${s.code}|${ss.code}`;
@@ -1600,15 +1595,15 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
         await save({ mainPlotData });
         toast.success(`${names.A} updated`);
       } else if (currentStep.key === "subPlot") {
-        if (subPlotData.some((s) => !s.croppingSystem)) {
+        if (subPlotData.some((s) => !s.croppingSystems?.length)) {
           throw new Error(
-            `Cropping system must be selected for all sub plots.`,
+            `Choose a cropping system for at least one season of every sub plot.`,
           );
         }
         await save({
           subPlotData: subPlotData.map((s) => ({
             code: s.code.trim(),
-            croppingSystem: s.croppingSystem || null,
+            croppingSystems: s.croppingSystems ?? [],
             ...(s.description?.trim()
               ? { description: s.description.trim() }
               : {}),
@@ -1856,6 +1851,7 @@ export function UpdateProtocolModal({ trial, save, onClose }) {
             onChange={setSubPlotData}
             isSubPlot
             croppingSystems={croppingSystems}
+            seasonCodes={subPlotSeasons(e, croppingSystems.seasons.options)}
           />
         )}
 

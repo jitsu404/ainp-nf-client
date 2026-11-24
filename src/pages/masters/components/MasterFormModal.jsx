@@ -11,7 +11,7 @@ export function MasterFormModal({
   onDone,
   onClose,
 }) {
-  // Crops and units get their code from the server (CRP-001 …); other lists are given one.
+  // Crops, units and programmes get their code from the server (CRP-001, P1 …); other lists are given one.
   const firstCode = GENERATED_CODES[config.id];
   const fields = [
     ...(firstCode

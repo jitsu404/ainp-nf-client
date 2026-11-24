@@ -1,7 +1,16 @@
 import { Sprout } from "lucide-react";
 import { SeasonCropsCard } from "../../../components/SeasonCrops";
-import { Body, Card, Table } from "../../../components/ui";
+import { Badge, Body, Card, SmallBody, Table } from "../../../components/ui";
 import { formatDate } from "../../../hooks";
+import {
+  rowRatioOf,
+  subPlotsBySystem,
+  trialSystems,
+} from "../../../lib/croppingSystems";
+import { useCroppingSystems } from "../../../queries/masters";
+
+const measure = (v, unit) =>
+  v === null || v === undefined ? "—" : `${v} ${unit}`;
 
 export function CroppingSystemsTab({
   trial: t,
@@ -11,6 +20,17 @@ export function CroppingSystemsTab({
   seasons,
   crops,
 }) {
+  const systems = useCroppingSystems();
+  const usedBy = subPlotsBySystem(t);
+  // The centre's own entries, plus every system the sub plots grow (shown even before it is filled in).
+  const saved = trialSystems(t);
+  const list = [
+    ...saved,
+    ...[...usedBy.keys()]
+      .filter((id) => !saved.some((cs) => String(cs.croppingSystemId) === id))
+      .map((id) => ({ croppingSystemId: id, crops: [] })),
+  ];
+
   return (
     <div className="stack" style={{ gap: 16 }}>
       <SeasonCropsCard trial={t} edit={edit} save={save} />
@@ -26,55 +46,73 @@ export function CroppingSystemsTab({
           )
         }
       >
-        {!t.croppingSystems.length && (
+        {!list.length && (
           <div className="empty">
             No cropping systems yet.
-            {edit ? " Add the crops and varieties grown in each season." : ""}
+            {edit
+              ? " Choose the systems grown here and record their varieties, spacings and seed rates."
+              : ""}
           </div>
         )}
-        {t.croppingSystems.map((cs) => (
-          <div key={cs.code} style={{ padding: "6px 0 10px" }}>
-            <Body style={{ padding: "4px 16px" }}>
-              <b>{cs.code}</b> · {cs.name}
-            </Body>
-            <Table
-              rows={cs.seasons.map((s) => ({ ...s, id: s.seasonCode }))}
-              pageSize={10}
-              empty="No seasons."
-              columns={[
-                {
-                  label: "Season",
-                  render: (s) => seasons.nameOf(s.seasonCode),
-                },
-                {
-                  label: "Main crop",
-                  render: (s) =>
-                    `${crops.nameOf(s.mainCropCode)}${s.mainVariety ? ` (${s.mainVariety})` : ""}`,
-                },
-                {
-                  label: "Intercrop",
-                  render: (s) =>
-                    s.intercropCode
-                      ? `${crops.nameOf(s.intercropCode)}${s.intercropVariety ? ` (${s.intercropVariety})` : ""}${s.rowRatio ? ` · ${s.rowRatio}` : ""}`
-                      : "—",
-                },
-                {
-                  label: "Seed rate (kg/ha)",
-                  num: true,
-                  render: (s) => s.seedRate ?? "—",
-                },
-                {
-                  label: "Sowing",
-                  render: (s) => formatDate(s.sowingDate),
-                },
-                {
-                  label: "Harvest",
-                  render: (s) => formatDate(s.harvestDate),
-                },
-              ]}
-            />
-          </div>
-        ))}
+        {list.map((cs) => {
+          const system = systems.byId(cs.croppingSystemId);
+          const subPlots = usedBy.get(String(cs.croppingSystemId));
+          const rows = (cs.crops ?? []).map((c) => ({ ...c, id: c.cropCode }));
+          const ratio = rowRatioOf(cs.crops ?? []);
+          return (
+            <div key={cs.croppingSystemId} style={{ padding: "6px 0 10px" }}>
+              <Body style={{ padding: "4px 16px" }}>
+                <b>{system?.code ?? "?"}</b> ·{" "}
+                {system?.name ?? "Unknown system"} ·{" "}
+                {seasons.nameOf(system?.seasonCode)}
+                {subPlots && (
+                  <SmallBody muted> · sub plot {subPlots.join(", ")}</SmallBody>
+                )}
+                <SmallBody muted style={{ display: "block" }}>
+                  Sowing {formatDate(cs.sowingDate)} · harvest{" "}
+                  {formatDate(cs.harvestDate)}
+                  {ratio ? ` · row ratio ${ratio}` : ""}
+                </SmallBody>
+              </Body>
+              <Table
+                rows={rows}
+                pageSize={20}
+                empty="Crops not filled in yet."
+                columns={[
+                  {
+                    label: "Crop",
+                    render: (r) => (
+                      <span>
+                        {crops.nameOf(r.cropCode)}{" "}
+                        <Badge tone={r.role === "main" ? "green" : "blue"}>
+                          {r.role === "main" ? "Main" : "Intercrop"}
+                        </Badge>
+                      </span>
+                    ),
+                  },
+                  { label: "Variety", render: (r) => r.variety || "—" },
+                  {
+                    label: "Plant × row spacing",
+                    render: (r) =>
+                      r.plantSpacing == null && r.rowSpacing == null
+                        ? "—"
+                        : `${r.plantSpacing ?? "?"} × ${r.rowSpacing ?? "?"} cm`,
+                  },
+                  {
+                    label: "Rows",
+                    num: true,
+                    render: (r) => r.rowRatio ?? "—",
+                  },
+                  {
+                    label: "Seed rate",
+                    num: true,
+                    render: (r) => measure(r.seedRate, "kg/ha"),
+                  },
+                ]}
+              />
+            </div>
+          );
+        })}
       </Card>
     </div>
   );

@@ -178,7 +178,7 @@ export function ProtocolTab({
         // Split plot / Split-split plot
         for (const m of level1Data) {
           for (const s of level2Data) {
-            const csName = croppingSystems.nameOf(s.croppingSystem);
+            const csName = croppingSystems.subPlotName(s);
             const subLabel = csName || s.code;
 
             if (hasC && level3Data.length > 0) {
@@ -377,8 +377,7 @@ export function ProtocolTab({
                       ) : (
                         <span>
                           <b>
-                            {croppingSystems.nameOf(t.croppingSystem) ||
-                              "Not selected"}
+                            {croppingSystems.subPlotName(t) || "Not selected"}
                           </b>
                         </span>
                       ),
@@ -544,7 +543,7 @@ export function ProtocolTab({
                         const item = level2Data.find((s) => s.code === code);
                         const label = isFactorial
                           ? item?.name
-                          : croppingSystems.nameOf(item?.croppingSystem);
+                          : croppingSystems.subPlotName(item);
                         return code ? (
                           <span>
                             <b>{code}</b>

@@ -26,6 +26,10 @@ export const queryKeys = {
   financialYears: {
     all: ["financialYears"],
   },
+  croppingSystems: {
+    all: ["croppingSystems"],
+    list: (filters) => ["croppingSystems", "list", filters],
+  },
   parameters: {
     all: ["parameters"],
     list: (filters) => ["parameters", "list", filters],

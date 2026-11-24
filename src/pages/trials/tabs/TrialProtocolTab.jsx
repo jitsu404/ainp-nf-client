@@ -274,8 +274,7 @@ export function TrialProtocolTab({
                       ) : (
                         <span>
                           <b>
-                            {croppingSystems.nameOf(s.croppingSystem) ||
-                              "Not selected"}
+                            {croppingSystems.subPlotName(s) || "Not selected"}
                           </b>
                         </span>
                       ),
@@ -397,7 +396,7 @@ export function TrialProtocolTab({
                         const item = level2Data.find((s) => s.code === code);
                         const label = isFactorial
                           ? item?.name
-                          : croppingSystems.nameOf(item?.croppingSystem);
+                          : croppingSystems.subPlotName(item);
                         return code ? (
                           <span>
                             <b>{code}</b>

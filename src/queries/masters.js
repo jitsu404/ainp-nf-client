@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { financialYearsApi, mastersApi, parametersApi } from "../api";
+import {
+  croppingSystemsApi,
+  financialYearsApi,
+  mastersApi,
+  parametersApi,
+} from "../api";
 import { REFERENCE_STALE_TIME_MS } from "../config/constants";
 import { queryKeys } from "../lib/queryKeys";
 
@@ -109,6 +114,36 @@ export const useUpdateFinancialYear = () =>
   useInvalidating(
     async ({ id, ...body }) => (await financialYearsApi.update(id, body)).data,
     queryKeys.financialYears.all,
+  );
+
+/**
+ * Cropping systems master: per season one main crop and its intercrops. `filters` = { isActive }.
+ * Adds `byId(id)` (any system, active or not, so old choices still read well).
+ */
+export function useCroppingSystems(filters = {}) {
+  const query = useQuery({
+    queryKey: queryKeys.croppingSystems.list(filters),
+    queryFn: async () => (await croppingSystemsApi.list(filters)).data,
+    staleTime: REFERENCE_STALE_TIME_MS,
+  });
+  const items = query.data ?? [];
+  return {
+    ...query,
+    items,
+    byId: (id) => (id ? items.find((s) => s.id === String(id)) : undefined),
+  };
+}
+
+export const useCreateCroppingSystem = () =>
+  useInvalidating(
+    async (body) => (await croppingSystemsApi.create(body)).data,
+    queryKeys.croppingSystems.all,
+  );
+
+export const useUpdateCroppingSystem = () =>
+  useInvalidating(
+    async ({ id, ...body }) => (await croppingSystemsApi.update(id, body)).data,
+    queryKeys.croppingSystems.all,
   );
 
 /** Parameter library. `filters` = { category, isActive, search }. */

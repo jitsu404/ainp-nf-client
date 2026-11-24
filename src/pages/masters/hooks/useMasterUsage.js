@@ -37,7 +37,7 @@ export function useMasterUsage(typeId) {
     {},
     { enabled: wants("programme", "season", "crop") },
   );
-  // Experiments and a centre's own crops store crop ids; cropping systems store codes.
+  // Experiments and a centre's own crops store crop ids; trials' cropping systems store codes.
   const crops = useMasters(wants("crop") ? "crop" : null);
   const trials = useTrials({}, { enabled: wants("crop") });
   const parameters = useParameters({}, { enabled: wants("unit") });
@@ -81,7 +81,7 @@ export function useMasterUsage(typeId) {
       const fromTrials = tally(trials.data, (t) => [
         ...codes(t.seasonCrops),
         ...(t.croppingSystems ?? []).flatMap((cs) =>
-          (cs.seasons ?? []).flatMap((s) => [s.mainCropCode, s.intercropCode]),
+          (cs.crops ?? []).map((c) => c.cropCode),
         ),
       ]);
       if (!fromExperiments || !fromTrials) {

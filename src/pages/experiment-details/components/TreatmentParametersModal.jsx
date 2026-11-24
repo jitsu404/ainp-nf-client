@@ -149,7 +149,7 @@ export function TreatmentParametersModal({ experiment, save, onClose }) {
       }
       if (t.subPlotCode) {
         const subPlot = subPlotData.find((s) => s.code === t.subPlotCode);
-        sName = croppingSystems.nameOf(subPlot?.croppingSystem) || "";
+        sName = croppingSystems.subPlotName(subPlot) || "";
         lines.push(`Sub Plot: ${t.subPlotCode}${sName ? ` (${sName})` : ""}`);
       }
       if (t.subSubPlotCode) {

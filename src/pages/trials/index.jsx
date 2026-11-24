@@ -6,6 +6,7 @@ import { ErrorNote } from "../../components/forms";
 import { TrialMetadata } from "../../components/Metadata";
 import { Badge, Body, Page, Tabs } from "../../components/ui";
 import { ROUTES } from "../../config/constants";
+import { subPlotsBySystem, trialSystems } from "../../lib/croppingSystems";
 import { toast } from "../../lib/toast";
 import { useMasterOptions, useUnitLabel } from "../../queries/masters";
 import {
@@ -144,7 +145,10 @@ export default function TrialDetail() {
           onChange={setTab}
           tabs={getTrialTabs({
             sheetCount: sheets.data?.length,
-            systemCount: t.croppingSystems.length,
+            systemCount: new Set([
+              ...trialSystems(t).map((cs) => String(cs.croppingSystemId)),
+              ...subPlotsBySystem(t).keys(),
+            ]).size,
           })}
         />
 

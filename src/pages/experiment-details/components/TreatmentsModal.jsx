@@ -3,6 +3,10 @@ import { Plus, Trash2 } from "lucide-react";
 import { SaveModal } from "../../../components/forms";
 import { Body, SmallBody } from "../../../components/ui";
 import { useCroppingSystems } from "../../../queries/croppingSystems";
+import {
+  SubPlotSystemsPicker,
+  subPlotSeasons,
+} from "../../../components/SubPlotSystems";
 
 export function TreatmentsModal({
   experiment,
@@ -108,7 +112,7 @@ export function TreatmentsModal({
     (experiment.mainPlotData ?? []).find((t) => t.code === code)?.name || "";
   const subPlotName = (code) => {
     const sp = (experiment.subPlotData ?? []).find((t) => t.code === code);
-    return croppingSystems.nameOf(sp?.croppingSystem) || sp?.code || "";
+    return croppingSystems.subPlotName(sp) || sp?.code || "";
   };
   const subSubPlotName = (code) =>
     (experiment.subSubPlotData ?? []).find((t) => t.code === code)?.name || "";
@@ -210,7 +214,7 @@ export function TreatmentsModal({
         for (let s = 1; s <= sCount; s++) {
           const sCode = sList[s - 1]?.code || `S${s}`;
           const sItem = sList[s - 1];
-          const csName = croppingSystems.nameOf(sItem?.croppingSystem);
+          const csName = croppingSystems.subPlotName(sItem);
           if (hasC) {
             for (let ss = 1; ss <= ssCount; ss++) {
               const ssCode = ssList[ss - 1]?.code || `SS${ss}`;
@@ -266,7 +270,7 @@ export function TreatmentsModal({
       return existingList.map((t) => ({
         code: t.code,
         name: t.name ?? "",
-        croppingSystem: t.croppingSystem ?? "",
+        croppingSystems: t.croppingSystems ?? [],
         description: t.description ?? "",
         mainPlotCode: t.mainPlotCode ?? null,
         subPlotCode: t.subPlotCode ?? null,
@@ -280,12 +284,12 @@ export function TreatmentsModal({
       return Array.from({ length: targetCount }, (_, idx) => ({
         code: `${prefix}${idx + 1}`,
         name: "",
-        croppingSystem: "",
+        croppingSystems: [],
         description: "",
       }));
     }
     return [
-      { code: `${prefix}1`, name: "", croppingSystem: "", description: "" },
+      { code: `${prefix}1`, name: "", croppingSystems: [], description: "" },
     ];
   });
 
@@ -300,7 +304,7 @@ export function TreatmentsModal({
       {
         code: `${prefix}${r.length + 1}`,
         name: "",
-        croppingSystem: "",
+        croppingSystems: [],
         description: "",
       },
     ]);
@@ -323,7 +327,7 @@ export function TreatmentsModal({
     countValid &&
     rows.length > 0 &&
     (isSubPlot
-      ? rows.every((r) => r.code.trim() && r.croppingSystem)
+      ? rows.every((r) => r.code.trim() && r.croppingSystems?.length)
       : rows.every((r) => r.code.trim() && r.name.trim())) &&
     new Set(codes).size === codes.length;
 
@@ -350,7 +354,7 @@ export function TreatmentsModal({
         : isMainPlot
           ? `The main plots configured for this experiment (${targetCount} required).`
           : isSubPlot
-            ? `The sub plots (Cropping Systems) configured for this experiment (${targetCount} required).`
+            ? `The sub plots configured for this experiment (${targetCount} required): one cropping system per season, as the same land is cropped each season. Centres get these choices.`
             : isSubSubPlot
               ? `The sub-sub plots configured for this Split-split plot experiment (${targetCount} required).`
               : isDerivedTreatments
@@ -366,7 +370,7 @@ export function TreatmentsModal({
       return save({
         subPlotData: rows.map((r) => ({
           code: r.code.trim(),
-          croppingSystem: r.croppingSystem || null,
+          croppingSystems: r.croppingSystems ?? [],
           ...(r.description?.trim()
             ? { description: r.description.trim() }
             : {}),
@@ -481,7 +485,7 @@ export function TreatmentsModal({
                       ? "sub-sub plot"
                       : "treatment"}{" "}
           {isSubPlot
-            ? "needs a unique code and a selected Cropping System."
+            ? "needs a unique code and a cropping system for at least one season."
             : "needs a unique code and a name."}
         </Body>
       )}
@@ -611,20 +615,15 @@ export function TreatmentsModal({
             )}
 
             {isSubPlot ? (
-              <select
-                aria-label="Cropping System"
-                value={r.croppingSystem || ""}
-                onChange={(e) => set(i, "croppingSystem", e.target.value)}
-                className="select"
-                style={{ flex: 1, height: 32 }}
-              >
-                <option value="">Select Cropping System…</option>
-                {croppingSystems.options.map(([id, label]) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <SubPlotSystemsPicker
+                label={r.code}
+                value={r.croppingSystems ?? []}
+                onChange={(v) => set(i, "croppingSystems", v)}
+                seasonCodes={subPlotSeasons(
+                  experiment,
+                  croppingSystems.seasons.options,
+                )}
+              />
             ) : (
               <input
                 aria-label={

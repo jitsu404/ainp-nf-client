@@ -58,10 +58,17 @@ export const MASTER_TABS = [
       label: "Trials",
       by: "code",
       extract: (t) =>
-        t.croppingSystems?.flatMap((cs) =>
-          cs.seasons?.flatMap((s) => [s.mainCropCode, s.intercropCode]),
+        t.croppingSystems?.flatMap(
+          (cs) => cs.crops?.map((c) => c.cropCode) ?? [],
         ),
     },
+  },
+  {
+    id: "croppingSystems",
+    label: "Cropping systems",
+    description:
+      "One season, its main crop and its intercrops; chosen as sub plots of split and split-split plot experiments.",
+    kind: "custom",
   },
   {
     id: "nfInput",

@@ -192,6 +192,12 @@ export const financialYearsApi = {
   update: (id, body) => api.patch(`/financial-years/${id}`, body),
 };
 
+export const croppingSystemsApi = {
+  list: (params) => api.get("/cropping-systems", params),
+  create: (body) => api.post("/cropping-systems", body),
+  update: (id, body) => api.patch(`/cropping-systems/${id}`, body),
+};
+
 export const parametersApi = {
   list: (params) => api.get("/parameters", params),
   create: (body) => api.post("/parameters", body),

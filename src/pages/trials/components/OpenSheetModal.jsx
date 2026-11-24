@@ -30,9 +30,9 @@ export function OpenSheetModal({ trial, onClose, onOpened }) {
       submitLabel="Open sheet"
       intro={
         <SmallBody muted style={{ margin: 0, display: "block" }}>
-          One sheet per year and season (and cropping system or crop, if you
-          record them separately). The year is the one the season starts in:
-          Rabi 2026 runs into 2027 but is recorded as 2026.
+          One sheet per year and season (and crop, if you record crops
+          separately). The year is the one the season starts in: Rabi 2026 runs
+          into 2027 but is recorded as 2026.
         </SmallBody>
       }
       fields={[
@@ -49,16 +49,6 @@ export function OpenSheetModal({ trial, onClose, onOpened }) {
           label: "Season",
           type: "select",
           options: allowedSeasons,
-        },
-        {
-          name: "croppingSystemCode",
-          label: "Cropping system",
-          type: "select",
-          required: false,
-          options: trial.croppingSystems.map((c) => [
-            c.code,
-            `${c.code} · ${c.name}`,
-          ]),
         },
         {
           name: "cropCode",
