@@ -6,13 +6,14 @@ import { ROUTES } from "../../config/constants";
 import { programme } from "../../programme/config";
 import { Body, LargeHeading, SmallBody } from "../../components/ui";
 
-// The public website around the landing page and the About / Publications / Annual reports pages:
+// The public website around the landing page and the About / PCU / Publications / Annual reports pages:
 // a government-style header (logo and programme name on one line), a menu bar and a footer.
 // Anyone can see it; the menu's last button is "Login", or "Dashboard" once signed in.
 
 const MENU = [
   { to: ROUTES.landing, label: "Home", end: true },
   { to: ROUTES.about, label: "About us" },
+  { to: ROUTES.pcu, label: "PCU" },
   { to: ROUTES.publications, label: "Publications" },
   { to: ROUTES.annualReports, label: "Annual reports" },
 ];

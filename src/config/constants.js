@@ -265,6 +265,7 @@ export const ROUTES = {
   // Public site (anyone, signed in or not).
   landing: "/",
   about: "/about",
+  pcu: "/pcu",
   publications: "/publications",
   annualReports: "/annual-reports",
   login: "/login",

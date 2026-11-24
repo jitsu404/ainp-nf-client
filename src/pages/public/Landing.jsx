@@ -3,11 +3,13 @@ import { ExperimentCentresChart } from "../../components/stat-charts";
 import { ErrorNote } from "../../components/forms";
 import { PhotoCarousel } from "../../components/PhotoCarousel";
 import { programme } from "../../programme/config";
+import { KNOWLEDGE_PRODUCTS } from "../../programme/publicContent";
 import { usePublicSummary } from "../../queries/public";
 import { Body, LargeHeading, SmallBody, SubHeading } from "../../components/ui";
 
 // The public home page: field photos, then the network map beside the experiments running now and
-// how many centres run each (GET /public/summary, no sign-in).
+// how many centres run each (GET /public/summary, no sign-in), and at the bottom the knowledge
+// products of the National Mission on Natural Farming (programme/publicContent.js).
 
 export default function Landing() {
   const summary = usePublicSummary();
@@ -73,6 +75,40 @@ export default function Landing() {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="site-wrap site-section">
+        <div className="table-wrap">
+          <table className="site-kp">
+            <caption>Knowledge Products</caption>
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Title</th>
+                <th>Resources</th>
+              </tr>
+            </thead>
+            <tbody>
+              {KNOWLEDGE_PRODUCTS.items.map((p, i) => (
+                <tr key={p.href}>
+                  <td>{i + 1}.</td>
+                  <td>{p.title}</td>
+                  <td>
+                    <a href={p.href} target="_blank" rel="noreferrer">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <SmallBody muted as="p" className="site-source">
+          Source:{" "}
+          <a href={KNOWLEDGE_PRODUCTS.source} target="_blank" rel="noreferrer">
+            {KNOWLEDGE_PRODUCTS.sourceName}
+          </a>
+        </SmallBody>
       </section>
     </>
   );

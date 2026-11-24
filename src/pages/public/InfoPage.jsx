@@ -1,9 +1,11 @@
 import { FileText } from "lucide-react";
+import { ANNUAL_REPORTS, PCU } from "../../programme/publicContent";
 import { programme } from "../../programme/config";
-import { Body, LargeHeading, SubHeading } from "../../components/ui";
+import { Body, LargeHeading, SmallBody, SubHeading } from "../../components/ui";
 
-// The About / Publications / Annual reports pages of the public site. Their documents and text are
-// supplied by the Project Coordination Unit; until then the lists say so.
+// The About / PCU / Publications / Annual reports pages of the public site. The PCU and Annual
+// reports pages show content taken from the ICAR-IIFSR website (programme/publicContent.js), with a
+// link to the source; Publications waits for the Project Coordination Unit's documents.
 
 function PageHead({ title, lead }) {
   return (
@@ -71,12 +73,115 @@ export function Publications() {
   );
 }
 
+/** "Source: …" under content taken from another site. */
+function Source({ href, name }) {
+  return (
+    <SmallBody muted as="p" className="site-source">
+      Source:{" "}
+      <a href={href} target="_blank" rel="noreferrer">
+        {name ?? href.replace(/^https?:\/\//, "")}
+      </a>
+    </SmallBody>
+  );
+}
+
+export function ProjectCoordinationUnit() {
+  return (
+    <section className="site-wrap site-section">
+      <PageHead
+        title="Project Coordination Unit (PCU)"
+        lead={programme.institute}
+      />
+      <div className="stack" style={{ gap: 20 }}>
+        <div className="site-card">
+          <div className="site-prose">
+            <Body>{PCU.intro}</Body>
+            <SubHeading as="h3">Mandate</SubHeading>
+            <Body>{PCU.mandate}</Body>
+            <SubHeading as="h3">Target activities</SubHeading>
+            <ul>
+              {PCU.activities.map((a) => (
+                <li key={a}>
+                  <Body as="span">{a}</Body>
+                </li>
+              ))}
+            </ul>
+            <SubHeading as="h3">Schemes coordinated</SubHeading>
+            <ul>
+              {PCU.links.map((l) => (
+                <li key={l.href}>
+                  <a href={l.href} target="_blank" rel="noreferrer">
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="site-card">
+          <SubHeading as="h3">Scientists and staff</SubHeading>
+          <div className="table-wrap">
+            <table className="site-table">
+              <thead>
+                <tr>
+                  <th>S. No.</th>
+                  <th>Name</th>
+                  <th>Designation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PCU.staff.map(([name, designation], i) => (
+                  <tr key={name}>
+                    <td>{i + 1}</td>
+                    <td>
+                      <b>{name}</b>
+                    </td>
+                    <td>{designation}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <Source href={PCU.source} />
+      </div>
+    </section>
+  );
+}
+
 export function AnnualReports() {
   return (
-    <DocumentList
-      title="Annual reports"
-      lead={`Yearly reports of the ${programme.short} network.`}
-      empty="Annual reports will be listed here once the Project Coordination Unit adds them."
-    />
+    <section className="site-wrap site-section">
+      <PageHead
+        title="Annual reports"
+        lead={`Annual reports of the ${programme.institute}.`}
+      />
+      <div className="site-card">
+        <div className="table-wrap">
+          <table className="site-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Document</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ANNUAL_REPORTS.reports.map((r) => (
+                <tr key={r.href}>
+                  <td>{r.title}</td>
+                  <td>
+                    <a href={r.href} target="_blank" rel="noreferrer">
+                      <FileText size={14} /> View / download
+                    </a>{" "}
+                    <SmallBody muted>PDF, English</SmallBody>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <Source href={ANNUAL_REPORTS.source} />
+    </section>
   );
 }

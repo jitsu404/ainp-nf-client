@@ -18,7 +18,12 @@ import Masters from "./pages/masters";
 import SheetDetail from "./pages/SheetDetail";
 import Sheets from "./pages/Sheets";
 import TrialDetail from "./pages/trials/index.jsx";
-import { About, AnnualReports, Publications } from "./pages/public/InfoPage";
+import {
+  About,
+  AnnualReports,
+  ProjectCoordinationUnit,
+  Publications,
+} from "./pages/public/InfoPage";
 import Landing from "./pages/public/Landing";
 import PublicLayout from "./pages/public/PublicLayout";
 
@@ -35,6 +40,7 @@ const publicRoutes = (
   <Route element={<PublicLayout />}>
     <Route path={ROUTES.landing} element={<Landing />} />
     <Route path={ROUTES.about} element={<About />} />
+    <Route path={ROUTES.pcu} element={<ProjectCoordinationUnit />} />
     <Route path={ROUTES.publications} element={<Publications />} />
     <Route path={ROUTES.annualReports} element={<AnnualReports />} />
   </Route>
