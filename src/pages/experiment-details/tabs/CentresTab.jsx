@@ -47,12 +47,6 @@ export function CentresTab({
           <SmallBody as="div" key={s.seasonCode}>
             <span className="muted">{seasons.nameOf(s.seasonCode)}:</span>{" "}
             {s.crops.length ? s.crops.map(cropName).join(", ") : "—"}
-            {s.changed && (
-              <>
-                {" "}
-                <Badge tone="amber">Own crops</Badge>
-              </>
-            )}
           </SmallBody>
         ))}
       </div>

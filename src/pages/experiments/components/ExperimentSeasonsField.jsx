@@ -1,5 +1,4 @@
-import Select from "react-select";
-import { Body, SmallBody, SubHeading } from "../../../components/ui";
+import { Body, SmallBody } from "../../../components/ui";
 
 export const customSelectStyles = {
   control: (base, state) => ({
@@ -75,277 +74,150 @@ export const customSelectStyles = {
 };
 
 export function ExperimentSeasonsField({
-  value = {},
+  value = [],
   onChange,
   seasonOptions = [],
-  cropOptions = [],
 }) {
-  // Normalize value to Record<string, string[]>
-  const seasonsMap = (() => {
-    if (!value) return {};
-    if (value instanceof Map) {
-      const obj = {};
-      for (const [k, v] of value.entries()) {
-        obj[k] = Array.isArray(v)
-          ? v.map((item) =>
-              typeof item === "object" ? item?._id || item?.id : String(item),
-            )
-          : [];
-      }
-      return obj;
-    }
-    if (Array.isArray(value)) {
-      return Object.fromEntries(
-        value.map((s) => [typeof s === "string" ? s : s?.code, []]),
-      );
-    }
-    if (typeof value === "object") {
-      const obj = {};
-      for (const [k, v] of Object.entries(value)) {
-        obj[k] = Array.isArray(v)
-          ? v.map((item) =>
-              typeof item === "object" ? item?._id || item?.id : String(item),
-            )
-          : [];
-      }
-      return obj;
-    }
-    return {};
-  })();
+  const selectedCodes = Array.isArray(value)
+    ? value.map((s) => (typeof s === "string" ? s : s?.code)).filter(Boolean)
+    : value && typeof value === "object"
+      ? Object.keys(value)
+      : [];
 
-  const selectedSeasonCodes = Object.keys(seasonsMap);
   const allSelected =
     seasonOptions.length > 0 &&
-    seasonOptions.every(([code]) => selectedSeasonCodes.includes(code));
+    seasonOptions.every(([code]) => selectedCodes.includes(code));
   const someSelected =
-    seasonOptions.some(([code]) => selectedSeasonCodes.includes(code)) &&
+    seasonOptions.some(([code]) => selectedCodes.includes(code)) &&
     !allSelected;
 
   const toggleSeason = (code, checked) => {
-    const next = { ...seasonsMap };
-    if (checked) {
-      next[code] = next[code] || [];
-    } else {
-      delete next[code];
-    }
+    const next = checked
+      ? [...selectedCodes, code]
+      : selectedCodes.filter((c) => c !== code);
     onChange(next);
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const next = {};
-      for (const [code] of seasonOptions) {
-        next[code] = seasonsMap[code] || [];
-      }
-      onChange(next);
+      onChange(seasonOptions.map(([code]) => code));
     } else {
-      onChange({});
+      onChange([]);
     }
   };
 
-  const handleCropsChange = (seasonCode, selected) => {
-    const newCropIds = (selected ?? []).map((s) => s.value);
-    onChange({
-      ...seasonsMap,
-      [seasonCode]: newCropIds,
-    });
-  };
-
-  // cropOptions holds every crop; a deactivated one is offered only where it is already chosen
-  // (marked), so editing the experiment never drops it silently.
-  const chosen = new Set(Object.values(seasonsMap).flat().map(String));
-  const cropSelectOptions = cropOptions
-    .filter((c) => c.isActive !== false || chosen.has(String(c._id || c.id)))
-    .map((c) => ({
-      value: String(c._id || c.id),
-      label: `${c.name}${c.code ? ` (${c.code})` : ""}${c.isActive === false ? " · inactive" : ""}`,
-    }));
-
   return (
     <div className="field full">
-      <div className="row spread" style={{ marginBottom: 8 }}>
+      <div className="row spread" style={{ marginBottom: 6 }}>
         <Body as="label" style={{ margin: 0, fontWeight: 600 }}>
-          Seasons & Crops
+          Seasons
         </Body>
         <SmallBody muted>
-          {selectedSeasonCodes.length === 0
-            ? "No seasons activated (applies to all)"
-            : `${selectedSeasonCodes.length} of ${seasonOptions.length} season${selectedSeasonCodes.length === 1 ? "" : "s"} activated`}
+          {selectedCodes.length === 0
+            ? "All seasons (unrestricted)"
+            : `${selectedCodes.length} of ${seasonOptions.length} season${selectedCodes.length === 1 ? "" : "s"} selected`}
         </SmallBody>
       </div>
 
       <div
         style={{
-          border: "1px solid var(--line, #e3e8e4)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 16,
+          padding: "10px 14px",
           borderRadius: "var(--radius, 8px)",
-          overflow: "hidden",
+          border: "1px solid var(--line, #e3e8e4)",
           backgroundColor: "var(--surface, #ffffff)",
+          minHeight: 44,
         }}
       >
-        <table
+        <label
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontSize: "0.875rem",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            cursor: "pointer",
+            userSelect: "none",
+            fontSize: "0.8125rem",
+            color: "var(--text-muted, #556056)",
+            fontWeight: 550,
+            paddingRight: 14,
+            borderRight: "1px solid var(--line, #e3e8e4)",
           }}
         >
-          <thead>
-            <tr
+          <input
+            type="checkbox"
+            checked={allSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = someSelected;
+            }}
+            onChange={handleSelectAll}
+            title={allSelected ? "Deactivate all" : "Activate all"}
+            style={{
+              cursor: "pointer",
+              width: 16,
+              height: 16,
+              accentColor: "var(--green, #1b7f4b)",
+            }}
+          />
+          <span>Select all</span>
+        </label>
+
+        {seasonOptions.map(([code, name]) => {
+          const isActive = selectedCodes.includes(code);
+
+          return (
+            <label
+              key={code}
               style={{
-                backgroundColor: "var(--bg, #f5f7f5)",
-                borderBottom: "1px solid var(--line, #e3e8e4)",
-                textAlign: "left",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                cursor: "pointer",
+                userSelect: "none",
+                fontSize: "0.875rem",
+                fontWeight: isActive ? 600 : 450,
+                color: isActive
+                  ? "var(--ink, #1b2420)"
+                  : "var(--text-muted, #556056)",
               }}
             >
-              <th
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => toggleSeason(code, e.target.checked)}
                 style={{
-                  width: "48px",
-                  padding: "10px 12px",
-                  textAlign: "center",
+                  cursor: "pointer",
+                  width: 16,
+                  height: 16,
+                  accentColor: "var(--green, #1b7f4b)",
+                }}
+              />
+              <span>{name}</span>
+              <span
+                className="mono"
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--text-muted, #647069)",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = someSelected;
-                  }}
-                  onChange={handleSelectAll}
-                  title={allSelected ? "Deactivate all" : "Activate all"}
-                  style={{ cursor: "pointer", width: 16, height: 16 }}
-                />
-              </th>
-              <SubHeading
-                as="th"
-                level="card"
-                style={{
-                  width: "180px",
-                  padding: "10px 12px",
-                  color: "var(--ink, #1b2420)",
-                }}
-              >
-                Season
-              </SubHeading>
-              <SubHeading
-                as="th"
-                level="card"
-                style={{
-                  padding: "10px 12px",
-                  color: "var(--ink, #1b2420)",
-                }}
-              >
-                Crops (Multi-select)
-              </SubHeading>
-            </tr>
-          </thead>
-          <tbody>
-            {seasonOptions.map(([code, name]) => {
-              const isActive = selectedSeasonCodes.includes(code);
-              const selectedCropIds = seasonsMap[code] || [];
-              const selectedValues = cropSelectOptions.filter((opt) =>
-                selectedCropIds.includes(opt.value),
-              );
-
-              return (
-                <tr
-                  key={code}
-                  style={{
-                    borderBottom: "1px solid var(--line, #e3e8e4)",
-                    backgroundColor: isActive
-                      ? "var(--surface, #ffffff)"
-                      : "var(--bg, #f5f7f5)",
-                    transition: "background-color 0.15s ease",
-                  }}
-                >
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      textAlign: "center",
-                      verticalAlign: "middle",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isActive}
-                      onChange={(e) => toggleSeason(code, e.target.checked)}
-                      style={{ cursor: "pointer", width: 16, height: 16 }}
-                    />
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      verticalAlign: "middle",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                      }}
-                    >
-                      <Body
-                        as="span"
-                        style={{
-                          fontWeight: isActive ? 600 : 500,
-                          color: isActive
-                            ? "var(--ink, #1b2420)"
-                            : "var(--text-muted, #647069)",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => toggleSeason(code, !isActive)}
-                      >
-                        {name}
-                      </Body>
-                      <SmallBody
-                        className="mono"
-                        muted
-                        style={{ fontSize: "0.75rem" }}
-                      >
-                        {code}
-                      </SmallBody>
-                    </div>
-                  </td>
-                  <td
-                    style={{
-                      padding: "8px 12px",
-                      verticalAlign: "middle",
-                    }}
-                  >
-                    <Select
-                      isMulti
-                      isDisabled={!isActive}
-                      options={cropSelectOptions}
-                      value={isActive ? selectedValues : []}
-                      onChange={(selected) => handleCropsChange(code, selected)}
-                      placeholder={
-                        isActive
-                          ? `Select crops for ${name}…`
-                          : "Check season to select crops"
-                      }
-                      styles={customSelectStyles}
-                      menuPortalTarget={
-                        typeof document !== "undefined" ? document.body : null
-                      }
-                      closeMenuOnSelect={false}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                ({code})
+              </span>
+            </label>
+          );
+        })}
       </div>
       <SmallBody
         muted
         style={{
           display: "block",
-          marginTop: 6,
+          marginTop: 4,
           fontSize: "0.775rem",
         }}
       >
-        Check a season to activate it for this experiment, then select the
-        relevant crops.
+        Select the seasons this experiment runs in. If none are selected, it
+        applies to all seasons.
       </SmallBody>
     </div>
   );

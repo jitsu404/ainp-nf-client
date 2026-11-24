@@ -1,15 +1,10 @@
 import { useMemo, useState } from "react";
 import Select from "react-select";
-import { RotateCcw, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { ErrorNote, SaveModal } from "../../../components/forms";
 import { Badge, Body, SmallBody } from "../../../components/ui";
 import { toast } from "../../../lib/toast";
-import {
-  effectiveSeasonCrops,
-  sameCrops,
-  seasonCropsPatch,
-  seasonMap,
-} from "../../../lib/seasonCrops";
+import { effectiveSeasonCrops, seasonMap } from "../../../lib/seasonCrops";
 import { useCentres } from "../../../queries/centres";
 import { useCropOptions, useMasterOptions } from "../../../queries/masters";
 import { useAssignCentres } from "../../../queries/research";
@@ -26,12 +21,11 @@ export function CentresModal({ experiment, trials = [], onClose }) {
   const seasons = useMasterOptions("season");
   const assign = useAssignCentres(experiment.id);
 
-  // experiment.seasons: { SEASON_CODE: [cropId, …], … } (after seasonMap normalises it)
-  const defaults = useMemo(
-    () => seasonMap(experiment.seasons),
-    [experiment.seasons],
+  // experiment.seasons: list of season codes
+  const seasonCodes = useMemo(
+    () => (Array.isArray(experiment?.seasons) ? experiment.seasons : []),
+    [experiment?.seasons],
   );
-  const seasonCodes = Object.keys(defaults);
 
   const rows = useMemo(() => centres.data?.data ?? [], [centres.data]);
 
@@ -45,21 +39,19 @@ export function CentresModal({ experiment, trials = [], onClose }) {
     [experiment.centreIds],
   );
 
-  // Crop ids already selected anywhere (defaults + per-centre own) stay selectable even if the
+  // Crop ids already selected anywhere in trials stay selectable even if the
   // crop master has since been deactivated (useCropOptions keeps them, labelled "inactive").
   const inUse = useMemo(
-    () => [
-      ...Object.values(defaults).flat(),
-      ...trials.flatMap((t) =>
+    () =>
+      trials.flatMap((t) =>
         Object.values(seasonMap(t.seasonCrops ?? {})).flat(),
       ),
-    ],
-    [defaults, trials],
+    [trials],
   );
   const { options: cropOptions, optionOf } = useCropOptions(inUse);
 
   // Per-centre editable config: { [centreId]: { selected: bool, crops: { [seasonCode]: id[] } } }
-  // Starts empty; first access seeds from the existing trial's crops (or the experiment defaults).
+  // Starts empty; first access seeds from the existing trial's crops.
   const [configs, setConfigs] = useState({});
 
   const configOf = (centreId) => {
@@ -115,14 +107,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
 
   const onSave = async () => {
     const cropsMap = Object.fromEntries(
-      selectedIds.map((id) => [
-        id,
-        seasonCropsPatch(
-          experiment.seasons,
-          trialByCentre.get(id)?.seasonCrops,
-          configOf(id).crops,
-        ),
-      ]),
+      selectedIds.map((id) => [id, configOf(id).crops]),
     );
     await assign.mutateAsync({
       centreIds: selectedIds,
@@ -143,7 +128,7 @@ export function CentresModal({ experiment, trials = [], onClose }) {
   return (
     <SaveModal
       title="Assign centres"
-      subtitle="Select the centres that run this experiment. Each one uses the experiment's crops unless you set its own for a season."
+      subtitle="Select the centres that run this experiment and configure crops for each season."
       canSave={!centres.isPending && reasonOk}
       onSave={onSave}
       onClose={onClose}
@@ -216,8 +201,8 @@ export function CentresModal({ experiment, trials = [], onClose }) {
           const cfg = configOf(c.id);
           const wasWithdrawn =
             trialByCentre.get(c.id)?.assignmentStatus === "Withdrawn";
-          const own = seasonCodes.filter(
-            (code) => !sameCrops(cfg.crops[code] ?? [], defaults[code] ?? []),
+          const hasCrops = seasonCodes.some(
+            (code) => (cfg.crops[code] ?? []).length > 0,
           );
 
           return (
@@ -308,16 +293,9 @@ export function CentresModal({ experiment, trials = [], onClose }) {
                   {!cfg.selected && !wasWithdrawn && assigned.has(c.id) && (
                     <Badge tone="amber">Will be withdrawn</Badge>
                   )}
-                  {cfg.selected && own.length > 0 && (
-                    <Badge tone="amber">
-                      Own crops: {own.map(seasons.nameOf).join(", ")}
-                    </Badge>
+                  {cfg.selected && hasCrops && (
+                    <Badge tone="green">Crops configured</Badge>
                   )}
-                  {cfg.selected &&
-                    own.length === 0 &&
-                    seasonCodes.length > 0 && (
-                      <Badge tone="green">Experiment crops</Badge>
-                    )}
                 </div>
               </div>
 
@@ -352,17 +330,6 @@ export function CentresModal({ experiment, trials = [], onClose }) {
                     >
                       Crops per season
                     </span>
-                    {own.length > 0 && (
-                      <button
-                        type="button"
-                        className="btn ghost xs"
-                        onClick={() =>
-                          update(c.id, () => ({ crops: { ...defaults } }))
-                        }
-                      >
-                        <RotateCcw size={11} /> Reset to experiment defaults
-                      </button>
-                    )}
                   </div>
 
                   {/* One row per experiment season */}
@@ -382,9 +349,6 @@ export function CentresModal({ experiment, trials = [], onClose }) {
                           fontSize: "0.875rem",
                           paddingTop: 6,
                           flexShrink: 0,
-                          color: own.includes(code)
-                            ? "var(--amber, #a86200)"
-                            : "inherit",
                         }}
                       >
                         {seasons.nameOf(code)}

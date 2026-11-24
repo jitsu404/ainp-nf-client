@@ -8,7 +8,11 @@ const idOf = (item) =>
 /** { KHARIF: ["id", …] } from a map-like value (or a plain list of season codes). */
 export const seasonMap = (raw) => {
   if (!raw) return {};
-  if (Array.isArray(raw)) return Object.fromEntries(raw.map((c) => [c, []]));
+  if (Array.isArray(raw)) {
+    return Object.fromEntries(
+      raw.map((c) => [typeof c === "string" ? c : c?.code, []]),
+    );
+  }
   const entries = raw instanceof Map ? [...raw.entries()] : Object.entries(raw);
   return Object.fromEntries(
     entries.map(([code, ids]) => [code, (ids ?? []).map(idOf)]),
@@ -17,6 +21,10 @@ export const seasonMap = (raw) => {
 
 /** Whether a season is one of the experiment's (an experiment without seasons allows any). */
 export const inProtocolSeasons = (experimentSeasons, code) => {
+  if (!experimentSeasons) return true;
+  if (Array.isArray(experimentSeasons)) {
+    return !experimentSeasons.length || experimentSeasons.includes(code);
+  }
   const codes = Object.keys(seasonMap(experimentSeasons));
   return !codes.length || codes.includes(code);
 };
@@ -29,33 +37,31 @@ export const sameCrops = (a = [], b = []) =>
  * [{ seasonCode, crops, defaultCrops, changed }] (crop ids).
  */
 export const effectiveSeasonCrops = (experimentSeasons, trialSeasonCrops) => {
-  const defaults = seasonMap(experimentSeasons);
+  const seasonCodes = Array.isArray(experimentSeasons)
+    ? experimentSeasons
+    : Object.keys(seasonMap(experimentSeasons));
   const own = seasonMap(trialSeasonCrops);
-  return Object.keys(defaults).map((seasonCode) => {
-    const changed = seasonCode in own;
+  return seasonCodes.map((seasonCode) => {
+    const crops = own[seasonCode] ?? [];
     return {
       seasonCode,
-      crops: changed ? own[seasonCode] : defaults[seasonCode],
-      defaultCrops: defaults[seasonCode],
-      changed,
+      crops,
+      defaultCrops: [],
+      changed: crops.length > 0,
     };
   });
 };
 
 /**
- * The `seasonCrops` PATCH that turns `current` (the trial's stored choices) into `wanted`
- * (season → crop ids the centre should grow): a season equal to the experiment's default is sent
- * as null (back to the default). Returns null when nothing changes.
+ * The `seasonCrops` PATCH that turns `current` into `wanted`.
  */
-export const seasonCropsPatch = (experimentSeasons, current, wanted) => {
-  const defaults = seasonMap(experimentSeasons);
+export const seasonCropsPatch = (_experimentSeasons, current, wanted) => {
   const own = seasonMap(current);
   const patch = {};
   for (const [code, crops] of Object.entries(wanted)) {
-    const next = sameCrops(crops, defaults[code] ?? []) ? null : crops;
-    const before = code in own ? own[code] : null;
-    if (next === null ? before !== null : !sameCrops(next, before ?? [])) {
-      patch[code] = next;
+    const before = own[code] ?? [];
+    if (!sameCrops(crops, before)) {
+      patch[code] = crops;
     }
   }
   return Object.keys(patch).length ? patch : null;

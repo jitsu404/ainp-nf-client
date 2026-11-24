@@ -13,44 +13,21 @@ import {
   UNREPLICATED_DESIGNS,
 } from "../../../config/constants";
 import { toast } from "../../../lib/toast";
-import {
-  useFinancialYears,
-  useMasterOptions,
-  useMasters,
-} from "../../../queries/masters";
+import { useFinancialYears, useMasterOptions } from "../../../queries/masters";
 import { useCreateExperiment } from "../../../queries/research";
 import { ExperimentSeasonsField } from "./ExperimentSeasonsField";
 
 const parseInitialSeasons = (seasonsData) => {
-  if (!seasonsData) return {};
-  if (seasonsData instanceof Map) {
-    const obj = {};
-    for (const [k, v] of seasonsData.entries()) {
-      obj[k] = Array.isArray(v)
-        ? v.map((item) =>
-            typeof item === "object" ? item?._id || item?.id : String(item),
-          )
-        : [];
-    }
-    return obj;
-  }
+  if (!seasonsData) return [];
   if (Array.isArray(seasonsData)) {
-    return Object.fromEntries(
-      seasonsData.map((s) => [typeof s === "string" ? s : s?.code, []]),
-    );
+    return seasonsData
+      .map((s) => (typeof s === "string" ? s : s?.code))
+      .filter(Boolean);
   }
   if (typeof seasonsData === "object") {
-    const obj = {};
-    for (const [k, v] of Object.entries(seasonsData)) {
-      obj[k] = Array.isArray(v)
-        ? v.map((item) =>
-            typeof item === "object" ? item?._id || item?.id : String(item),
-          )
-        : [];
-    }
-    return obj;
+    return Object.keys(seasonsData);
   }
-  return {};
+  return [];
 };
 
 export function ExperimentDetailsModal({
@@ -62,8 +39,6 @@ export function ExperimentDetailsModal({
   const create = useCreateExperiment();
   const programmes = useMasterOptions("programme");
   const seasons = useMasterOptions("season");
-  // Every crop: the seasons field offers inactive ones only where already chosen.
-  const crops = useMasters("crop");
   const years = useFinancialYears();
   // Only the PCU links the Experiment PI (research.assign), and here only when creating; later
   // it is Assign / Change PI on the experiment page.
@@ -490,7 +465,6 @@ export function ExperimentDetailsModal({
           value={v.seasons}
           onChange={(newSeasons) => set("seasons", newSeasons)}
           seasonOptions={seasons.options}
-          cropOptions={crops.data ?? []}
         />
 
         <div className="field full">

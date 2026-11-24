@@ -4,7 +4,9 @@ import { SmallBody } from "./ui";
 
 /** The seasons a sub plot can have systems for: the protocol's, or every season when it lists none. */
 export const subPlotSeasons = (experiment, seasonOptions) => {
-  const own = Object.keys(seasonMap(experiment?.seasons));
+  const own = Array.isArray(experiment?.seasons)
+    ? experiment.seasons
+    : Object.keys(seasonMap(experiment?.seasons));
   return own.length ? own : seasonOptions.map(([c]) => c);
 };
 

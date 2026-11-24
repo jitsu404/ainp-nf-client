@@ -1,38 +1,14 @@
 import { UserSquare2 } from "lucide-react";
 import { PiCard } from "../../../components/ExperimentPis";
-import { useMemo } from "react";
 import { Body, Card, LargeHeading, SmallBody } from "../../../components/ui";
 import { experimentFactors } from "../../../config/constants";
-import { useMasters } from "../../../queries/masters";
 
-/** "Kharif (Rice, Maize); Rabi (Wheat)". The API returns crop ids; `cropName` turns one into a name. */
-export function formatSeasons(seasonsData, seasonsMaster, cropName = (c) => c) {
-  const seasonsMap =
-    seasonsData instanceof Map
-      ? seasonsData
-      : typeof seasonsData === "object" && !Array.isArray(seasonsData)
-        ? new Map(Object.entries(seasonsData || {}))
-        : new Map();
-
-  if (seasonsMap.size === 0) {
-    return Array.isArray(seasonsData) && seasonsData.length
-      ? seasonsData.map(seasonsMaster.nameOf).join(", ")
-      : "Any";
+/** "Kharif, Rabi". Formats protocol season codes into names. */
+export function formatSeasons(seasonsData, seasonsMaster) {
+  if (Array.isArray(seasonsData) && seasonsData.length > 0) {
+    return seasonsData.map(seasonsMaster.nameOf).join(", ");
   }
-
-  const parts = [];
-  for (const [sCode, cropList] of seasonsMap.entries()) {
-    const sName = seasonsMaster.nameOf(sCode);
-    const cropNames = Array.isArray(cropList)
-      ? cropList
-          .map((c) => (typeof c === "object" ? c.name : cropName(c)))
-          .filter(Boolean)
-      : [];
-    parts.push(
-      cropNames.length > 0 ? `${sName} (${cropNames.join(", ")})` : sName,
-    );
-  }
-  return parts.join("; ");
+  return "All seasons";
 }
 
 export function ExperimentOverviewCard({
@@ -43,13 +19,6 @@ export function ExperimentOverviewCard({
   assign = false,
   onAssignPi,
 }) {
-  const crops = useMasters("crop");
-  const cropName = useMemo(() => {
-    const names = new Map(
-      (crops.data ?? []).map((c) => [String(c.id ?? c._id), c.name]),
-    );
-    return (id) => names.get(String(id)) ?? "…";
-  }, [crops.data]);
   return (
     <Card>
       <div className="stack" style={{ gap: 12 }}>
@@ -85,7 +54,7 @@ export function ExperimentOverviewCard({
             <SmallBody muted as="span">
               Seasons
             </SmallBody>
-            <Body as="b">{formatSeasons(e.seasons, seasons, cropName)}</Body>
+            <Body as="b">{formatSeasons(e.seasons, seasons)}</Body>
           </div>
           <div>
             <SmallBody muted as="span">
