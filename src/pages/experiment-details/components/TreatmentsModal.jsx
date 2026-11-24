@@ -15,6 +15,11 @@ export function TreatmentsModal({
   onClose,
 }) {
   const croppingSystems = useCroppingSystems();
+  const seasonCodes = subPlotSeasons(
+    experiment,
+    croppingSystems.seasons.options,
+  );
+  const subPlotGridCols = `70px minmax(0, ${Math.max(1, seasonCodes.length) * 1.4}fr) minmax(160px, 1fr) 36px`;
 
   const isSplitPlot = experiment?.design === "Split plot";
   const isSplitSplitPlot = experiment?.design === "Split-split plot";
@@ -515,6 +520,79 @@ export function TreatmentsModal({
         </div>
       )}
 
+      {isSubPlot && rows.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: subPlotGridCols,
+            gap: 8,
+            padding: "0 4px",
+            fontWeight: 600,
+            fontSize: "0.8rem",
+            color: "var(--text-muted, #556056)",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          <div>Code</div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${seasonCodes.length || 1}, minmax(0, 1fr))`,
+              gap: 8,
+            }}
+          >
+            {seasonCodes.map((s) => (
+              <div
+                key={s}
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {croppingSystems.seasons.nameOf(s)}
+              </div>
+            ))}
+          </div>
+          <div>Details (optional)</div>
+          <div></div>
+        </div>
+      )}
+
+      {!isDerivedTreatments && !isSubPlot && rows.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "70px 1.5fr 1fr 36px",
+            gap: 8,
+            padding: "0 4px",
+            fontWeight: 600,
+            fontSize: "0.8rem",
+            color: "var(--text-muted, #556056)",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          <div>Code</div>
+          <div>
+            {isFactor1
+              ? "Factor 1 Name *"
+              : isFactor2
+                ? "Factor 2 Name *"
+                : isFactor3
+                  ? "Factor 3 Name *"
+                  : isMainPlot
+                    ? "Main Plot Name *"
+                    : isSubSubPlot
+                      ? "Sub-sub Plot Name *"
+                      : "Treatment Name *"}
+          </div>
+          <div>Details (optional)</div>
+          <div></div>
+        </div>
+      )}
+
       <div className="stack" style={{ gap: 8 }}>
         {rows.map((r, i) => (
           <div
@@ -528,8 +606,21 @@ export function TreatmentsModal({
                       ? "65px 75px 75px 75px 1.2fr 1fr"
                       : "65px 85px 85px 1.2fr 1fr",
                     gap: 8,
+                    alignItems: "center",
                   }
-                : undefined
+                : isSubPlot
+                  ? {
+                      display: "grid",
+                      gridTemplateColumns: subPlotGridCols,
+                      gap: 8,
+                      alignItems: "center",
+                    }
+                  : {
+                      display: "grid",
+                      gridTemplateColumns: "70px 1.5fr 1fr 36px",
+                      gap: 8,
+                      alignItems: "center",
+                    }
             }
           >
             <input
@@ -539,12 +630,13 @@ export function TreatmentsModal({
               readOnly
               className="select"
               style={{
-                width: isDerivedTreatments ? "100%" : 70,
+                width: "100%",
+                height: 36,
                 cursor: "not-allowed",
                 backgroundColor: "var(--surface-muted, #f3f5f3)",
                 color: "var(--text-muted, #556056)",
                 fontWeight: 600,
-                textAlign: isDerivedTreatments ? "center" : "left",
+                textAlign: "center",
               }}
             />
             {isDerivedTreatments && (
@@ -565,6 +657,7 @@ export function TreatmentsModal({
                     justifyContent: "center",
                     cursor: "default",
                     userSelect: "none",
+                    height: 36,
                   }}
                 >
                   {isFactorial ? r.factor1Code : r.mainPlotCode}
@@ -585,6 +678,7 @@ export function TreatmentsModal({
                     justifyContent: "center",
                     cursor: "default",
                     userSelect: "none",
+                    height: 36,
                   }}
                 >
                   {isFactorial ? r.factor2Code : r.subPlotCode}
@@ -606,6 +700,7 @@ export function TreatmentsModal({
                       justifyContent: "center",
                       cursor: "default",
                       userSelect: "none",
+                      height: 36,
                     }}
                   >
                     {isFactorial ? r.factor3Code : r.subSubPlotCode}
@@ -619,10 +714,8 @@ export function TreatmentsModal({
                 label={r.code}
                 value={r.croppingSystems ?? []}
                 onChange={(v) => set(i, "croppingSystems", v)}
-                seasonCodes={subPlotSeasons(
-                  experiment,
-                  croppingSystems.seasons.options,
-                )}
+                seasonCodes={seasonCodes}
+                hideLabels
               />
             ) : (
               <input
@@ -655,15 +748,17 @@ export function TreatmentsModal({
                             : "Treatment name, e.g. Complete NF"
                 }
                 className="select"
+                style={{ height: 36, width: "100%", maxWidth: "none" }}
               />
             )}
 
             <input
               aria-label="Details"
-              value={r.description}
+              value={r.description || ""}
               onChange={(e) => set(i, "description", e.target.value)}
               placeholder="Details (optional)"
               className="select"
+              style={{ height: 36, width: "100%", maxWidth: "none" }}
             />
             {!isDerivedTreatments && (
               <button
@@ -672,8 +767,15 @@ export function TreatmentsModal({
                 title={frozen(r) ? "Has recorded data" : "Remove"}
                 disabled={frozen(r)}
                 onClick={() => remove(i)}
+                style={{
+                  height: 36,
+                  width: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <Trash2 size={15} />
+                <Trash2 size={16} />
               </button>
             )}
           </div>

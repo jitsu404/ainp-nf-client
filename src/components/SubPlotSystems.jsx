@@ -15,8 +15,9 @@ export const subPlotSeasons = (experiment, seasonOptions) => {
 export function SubPlotSystemsPicker({
   value = [],
   onChange,
-  seasonCodes,
+  seasonCodes = [],
   label,
+  hideLabels = false,
 }) {
   const systems = useCroppingSystems();
   const chosen = (season) =>
@@ -32,37 +33,52 @@ export function SubPlotSystemsPicker({
       ),
     );
 
+  const cols = seasonCodes.length || 1;
+
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${Math.min(seasonCodes.length, 3)}, minmax(150px, 1fr))`,
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         gap: 8,
-        flex: 1,
         minWidth: 0,
+        width: "100%",
+        alignItems: "center",
       }}
     >
       {seasonCodes.map((season) => {
         const options = systems.optionsFor(season, chosen(season));
+        const select = (
+          <select
+            aria-label={`${label ?? "Sub plot"} ${systems.seasons.nameOf(season)} cropping system`}
+            className="select"
+            style={{ height: 36, width: "100%", maxWidth: "none" }}
+            value={chosen(season)}
+            onChange={(e) => setSeason(season, e.target.value)}
+          >
+            <option value="">
+              {options.length ? "None" : "No systems for this season"}
+            </option>
+            {options.map(([id, text]) => (
+              <option key={id} value={id}>
+                {text}
+              </option>
+            ))}
+          </select>
+        );
+
+        if (hideLabels) {
+          return (
+            <div key={season} style={{ minWidth: 0 }}>
+              {select}
+            </div>
+          );
+        }
+
         return (
           <label key={season} style={{ display: "grid", gap: 2, minWidth: 0 }}>
             <SmallBody muted>{systems.seasons.nameOf(season)}</SmallBody>
-            <select
-              aria-label={`${label ?? "Sub plot"} ${systems.seasons.nameOf(season)} cropping system`}
-              className="select"
-              style={{ height: 32 }}
-              value={chosen(season)}
-              onChange={(e) => setSeason(season, e.target.value)}
-            >
-              <option value="">
-                {options.length ? "None" : "No systems for this season"}
-              </option>
-              {options.map(([id, text]) => (
-                <option key={id} value={id}>
-                  {text}
-                </option>
-              ))}
-            </select>
+            {select}
           </label>
         );
       })}
