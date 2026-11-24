@@ -75,7 +75,7 @@ export const navItems = (auth) =>
     },
     {
       to: ROUTES.masters,
-      label: "Masters",
+      label: "Repository",
       icon: Database,
       show: auth.can("masters.edit"),
     },
