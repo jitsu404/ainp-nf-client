@@ -70,6 +70,10 @@ export const EXPERIMENT_DESIGNS = [
   "Non-replicated",
   "Farmer participatory",
   "Survey",
+  "IBD",
+  "RSD",
+  "2 Stage Stratified Sampling (No replication)",
+  "CRD",
 ];
 export const DESIGN_HINTS = {
   RBD: "Randomized (complete) block design. Treatment ANOVA, CD and CV are calculated.",
@@ -87,6 +91,11 @@ export const DESIGN_HINTS = {
   "Farmer participatory":
     "Validation in farmers’ fields (e.g. SCSP/STC). One value per treatment.",
   Survey: "Characterization survey (e.g. geo-referenced). One value per item.",
+  IBD: "Incomplete block design for large treatment sets where complete blocks are not feasible. Replications required.",
+  RSD: "Response surface design evaluating quantitative factor levels and optimal combinations. Replications required.",
+  "2 Stage Stratified Sampling (No replication)":
+    "Two-stage stratified sampling protocol for survey and characterization studies. One value per sample unit (no replication).",
+  CRD: "Completely randomized design for homogeneous experimental units. Replications required.",
 };
 /**
  * Laid out in main plots × sub plots; each plot is a complete RBD (every treatment × replication).
@@ -170,12 +179,16 @@ export const DESIGNS_NEEDING_REPLICATIONS = [
   "Split plot",
   "Split-split plot",
   "Factorial",
+  "IBD",
+  "RSD",
+  "CRD",
 ];
 /** Never replicated (data is one value per treatment). Strip plot may be either. */
 export const UNREPLICATED_DESIGNS = [
   "Non-replicated",
   "Farmer participatory",
   "Survey",
+  "2 Stage Stratified Sampling (No replication)",
 ];
 /**
  * Sheets are recorded per year: the year the season starts in (Kharif 2026 and Rabi 2026 are
