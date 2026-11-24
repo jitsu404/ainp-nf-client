@@ -6,6 +6,7 @@ import {
   Database,
   FlaskConical,
   History,
+  Mail,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -15,6 +16,7 @@ import {
   UserSquare2,
 } from "lucide-react";
 import { useAuth } from "../auth";
+import { useUnreadCommunications } from "../queries/communications";
 import { ROUTES } from "../config/constants";
 import { programme } from "../programme/config";
 import { PageErrorBoundary } from "./ErrorBoundaries";
@@ -80,6 +82,13 @@ export const navItems = (auth) =>
       show: auth.can("masters.edit"),
     },
     {
+      to: ROUTES.communication,
+      label: "Communication",
+      icon: Mail,
+      show: auth.can("comm.issue") || auth.can("comm.ack"),
+      badge: "unreadCommunications",
+    },
+    {
       to: ROUTES.audit,
       label: "Audit trail",
       icon: History,
@@ -87,6 +96,17 @@ export const navItems = (auth) =>
     },
     { to: ROUTES.myAccount, label: "My account", icon: UserCog, show: true },
   ].filter((item) => item.show);
+
+/** Unread communications for the user's side (PCU or centre), next to the nav item. */
+function UnreadBadge() {
+  const unread = useUnreadCommunications();
+  if (!unread.data) return null;
+  return (
+    <span className="nav-badge" aria-label={`${unread.data} unread`}>
+      {unread.data > 99 ? "99+" : unread.data}
+    </span>
+  );
+}
 
 export default function Layout() {
   const auth = useAuth();
@@ -139,12 +159,13 @@ export default function Layout() {
             >
               {role.label}
             </SmallBody>
-            {navItems(auth).map(({ to, label, icon: Icon }) => (
+            {navItems(auth).map(({ to, label, icon: Icon, badge }) => (
               <NavLink key={to} to={to} end={to === ROUTES.home}>
                 <Icon size={17} />
                 <Body as="span" style={{ fontWeight: 500 }}>
                   {label}
                 </Body>
+                {badge === "unreadCommunications" && <UnreadBadge />}
               </NavLink>
             ))}
           </div>

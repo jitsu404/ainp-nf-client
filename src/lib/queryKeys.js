@@ -26,6 +26,18 @@ export const queryKeys = {
   financialYears: {
     all: ["financialYears"],
   },
+  communications: {
+    all: ["communications"],
+    list: (filters) => ["communications", "list", filters],
+    detail: (id) => ["communications", "detail", id],
+    replies: (id, centreId) => [
+      "communications",
+      "replies",
+      id,
+      centreId ?? null,
+    ],
+    unread: () => ["communications", "unread"],
+  },
   croppingSystems: {
     all: ["croppingSystems"],
     list: (filters) => ["croppingSystems", "list", filters],

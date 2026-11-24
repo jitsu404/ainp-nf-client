@@ -192,6 +192,25 @@ export const financialYearsApi = {
   update: (id, body) => api.patch(`/financial-years/${id}`, body),
 };
 
+export const communicationsApi = {
+  list: (params) => api.get("/communications", params),
+  get: (id) => api.get(`/communications/${id}`),
+  send: (body) => api.post("/communications", body),
+  read: (id) => api.post(`/communications/${id}/read`),
+  acknowledge: (id) => api.post(`/communications/${id}/acknowledge`),
+  replies: (id, centreId) =>
+    api.get(
+      `/communications/${id}/replies`,
+      centreId ? { centreId } : undefined,
+    ),
+  reply: (id, body, centreId) =>
+    api.post(
+      `/communications/${id}/replies${centreId ? `?centreId=${centreId}` : ""}`,
+      { body },
+    ),
+  unreadCount: () => api.get("/communications/unread-count"),
+};
+
 export const croppingSystemsApi = {
   list: (params) => api.get("/cropping-systems", params),
   create: (body) => api.post("/cropping-systems", body),

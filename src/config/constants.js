@@ -283,5 +283,6 @@ export const ROUTES = {
   sheet: (id) => `/sheets/${id}`,
   budgetAllocations: "/budget-allocations",
   audit: "/audit",
+  communication: "/communication",
   myAccount: "/account",
 };
